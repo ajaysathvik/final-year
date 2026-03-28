@@ -1,0 +1,157 @@
+{
+  "subreddits": {
+  "tier_1": [
+    "Scams",
+    "IsThisAScamIndia",
+    "CryptoScams",
+    "FraudPrevention",
+    "ScamCenter"
+  ],
+
+  "tier_2": [
+    "phishing",
+    "CreditCards",
+    "IndianPersonalFinance",
+    "PersonalFinanceIndia",
+    "UPI"
+  ],
+
+  "tier_3": [
+    "legaladvice",
+    "LegalAdviceIndia",
+    "India"
+  ]
+  },
+
+  "keywords": {
+    "general_scam_indicators": [
+      "scam",
+      "fraud",
+      "fake",
+      "cheated",
+      "got scammed",
+      "almost scammed",
+      "nearly scammed",
+      "is this legit",
+      "is this a scam",
+      "lost money",
+      "suspicious call",
+      "suspicious message",
+      "someone called me",
+      "unknown number",
+      "impersonating",
+      "pretending to be",
+      "claiming to be"
+    ],
+
+    "crypto_scams": [
+      "crypto scam",
+      "rug pull",
+      "airdrop scam",
+      "wallet drain",
+      "seed phrase",
+      "private key",
+      "connect wallet",
+      "metamask scam",
+      "fake exchange",
+      "guaranteed returns crypto"
+    ],
+
+   "investment_scams": [
+      "investment scam",
+      "guaranteed returns",
+      "risk free investment",
+      "telegram investment",
+      "whatsapp investment",
+      "stock tips scam",
+      "trading mentor",
+      "trading group",
+      "forex scam",
+      "ponzi",
+      "double money",
+      "task based earning",
+      "online task scam"
+    ],
+
+    "upi_payment_fraud": [
+      "upi fraud",
+      "upi scam",
+      "gpay scam",
+      "phonepe scam",
+      "paytm scam",
+      "qr code scam",
+      "otp scam",
+      "otp shared",
+      "otp call",
+      "upi collect request",
+      "upi request scam",
+      "customer care scam",
+      "refund scam",
+      "wrong upi transfer",
+      "money debited",
+      "amount debited",
+      "unauthorized debit",
+      "bank account hacked"
+    ],
+
+    "credit_card_banking_fraud": [
+      "credit card fraud",
+      "card blocked",
+      "unauthorized transaction",
+      "bank call scam",
+      "kyc update scam",
+      "phishing link",
+      "account hacked"
+    ],
+
+    "comment_confirmation_strong": [
+      "this is a scam",
+      "definitely a scam",
+      "known scam",
+      "100% scam",
+      "classic scam"
+    ],
+
+    "comment_confirmation_medium": [
+      "this looks like a scam",
+      "sounds like a scam",
+      "same thing happened to me",
+      "common trick",
+      "very common scam",
+      "scammers do this",
+      "dont reply",
+      "cut contact",
+      "block immediately",
+      "report cyber crime",
+      "cyber crime portal"
+    ],
+
+    "comment_negative_signals": [
+      "not a scam",
+      "legitimate",
+      "this is normal",
+      "happened to me but legit"
+    ],
+    "impersonation_scams": [
+      "police call",
+      "customs call",
+      "income tax call",
+      "cbi call",
+      "ed call",
+      "courier scam",
+      "fedex scam",
+      "customs parcel",
+      "illegal parcel",
+      "threatening call",
+      "arrest warrant",
+      "legal notice scam"
+    ]
+
+  },
+
+  "collection_params": {
+    "max_results": 2000,
+    "top_n_comments": 20,
+    "sleep_time_sec": 1.5
+  }
+}

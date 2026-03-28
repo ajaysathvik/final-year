@@ -1,0 +1,43 @@
+{
+  "input_file": "C:\\Users\\SAKETH\\Documents\\Project\\9k-dataset\\data.csv",
+  "output_file": "C:\\Users\\SAKETH\\Documents\\Project\\9k-dataset\\processed\\data_preprocessed.csv",
+  "raw_shape": [
+    9630,
+    45
+  ],
+  "processed_shape": [
+    9630,
+    26
+  ],
+  "dropped_trailing_columns": 21,
+  "is_fraud_distribution": {
+    "-1": 3902,
+    "0": 294,
+    "1": 5434
+  },
+  "fraud_type_top_10": {
+    "none": 4199,
+    "transaction": 3719,
+    "commerce": 795,
+    "social_engineering": 767,
+    "meta": 45,
+    "credential": 35,
+    "advanced": 22,
+    "pig_butchering": 11,
+    "task": 5,
+    "identity_theft": 4
+  },
+  "currencies_top_10": {
+    "unknown": 7611,
+    "USD": 1168,
+    "INR": 586,
+    "EUR": 78,
+    "GBP": 45,
+    "USDT": 27,
+    "CAD": 24,
+    "BTC": 18,
+    "ETH": 12,
+    "SOL": 9
+  },
+  "parsed_amount_count": 2513
+}

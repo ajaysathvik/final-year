@@ -1,0 +1,69 @@
+{
+  "train_rows": 242,
+  "test_rows": 600,
+  "train_class_counts": {
+    "0": 121,
+    "1": 121
+  },
+  "test_class_counts": {
+    "0": 30,
+    "1": 570
+  },
+  "accuracy": 0.93,
+  "precision": 0.9943820224719101,
+  "recall": 0.9315789473684211,
+  "f1": 0.9619565217391305,
+  "roc_auc": 0.9787719298245614,
+  "confusion_matrix": [
+    [
+      27,
+      3
+    ],
+    [
+      39,
+      531
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.4090909090909091,
+      "recall": 0.9,
+      "f1-score": 0.5625,
+      "support": 30.0
+    },
+    "1": {
+      "precision": 0.9943820224719101,
+      "recall": 0.9315789473684211,
+      "f1-score": 0.9619565217391305,
+      "support": 570.0
+    },
+    "accuracy": 0.93,
+    "macro avg": {
+      "precision": 0.7017364657814096,
+      "recall": 0.9157894736842105,
+      "f1-score": 0.7622282608695652,
+      "support": 600.0
+    },
+    "weighted avg": {
+      "precision": 0.96511746680286,
+      "recall": 0.93,
+      "f1-score": 0.941983695652174,
+      "support": 600.0
+    }
+  },
+  "feature_columns": [
+    "annotation.key_features.payment_method",
+    "annotation.key_features.fraud_channel",
+    "annotation.key_features.victim_action",
+    "annotation.key_features.request_type",
+    "annotation.key_features.impersonated_entity",
+    "annotation.key_features.currency",
+    "annotation.key_features.urgency_level",
+    "annotation.psychological_tactics.urgency",
+    "annotation.psychological_tactics.fear",
+    "annotation.psychological_tactics.authority",
+    "annotation.psychological_tactics.reward",
+    "annotation.key_features.amount_normalized",
+    "annotation.key_features.has_amount"
+  ]
+}
