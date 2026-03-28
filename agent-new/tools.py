@@ -18,14 +18,11 @@ from config import (
     ADVERSARIAL_ROBUSTNESS_CURVE_PATH,
     ADVERSARIAL_SUMMARY_PATH,
     ADVERSARIAL_TRAINING_SCRIPT_PATH,
-    ADV_CTGAN_SCRIPT_PATH,
     BOOTSTRAP_TEST_PATH,
     BOOTSTRAP_TRAIN_PATH,
     CLASSIFIER_RESULTS_PATH,
     CTGAN_SCRIPT_PATH,
-    EVAL_SCRIPT_PATH,
     TRAINING_SCRIPT_PATH,
-    FIN_FRAUD_ROOT,
     INGESTED_POST_IDS_PATH,
     LABEL_SCRIPT_PATH,
     LABEL_WORKDIR,
@@ -96,6 +93,11 @@ def _safe_float(value: Any) -> float | None:
 
 def _read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_metrics_json(path: Path) -> dict[str, Any]:
+    payload = _read_json(path)
+    return payload if isinstance(payload, dict) else {}
 
 
 def _target_column(df: pd.DataFrame) -> str:
@@ -638,13 +640,16 @@ class CTGANTool:
 
     def run(self) -> dict[str, Any]:
         result = run_python_script(CTGAN_SCRIPT_PATH, CTGAN_SCRIPT_PATH.parent)
-        output_path = CTGAN_SCRIPT_PATH.parent / "ctgan_balanced_data.csv"
+        output_path = CLASSIFIER_RESULTS_PATH.parent / "augmented" / "synthetic_not_fraud.csv"
+        summary_path = CLASSIFIER_RESULTS_PATH
         return {
             "returncode": result.returncode,
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
             "output_path": str(output_path),
             "exists": output_path.exists(),
+            "summary_path": str(summary_path),
+            "summary_exists": summary_path.exists(),
         }
 
 
@@ -716,18 +721,21 @@ class ClassifierTrainingTool:
     name = "classifier_training"
 
     def run(self) -> dict[str, Any]:
-        env = {"FINFRAUD_DATASET_FILTER": "Original,CTGAN"}
-        result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent, extra_env=env)
-        classifier_df = _load_csv(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else pd.DataFrame()
-        
+        result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent)
+        summary = _read_metrics_json(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else {}
+
         best_f1 = 0.0
-        if not classifier_df.empty and "F1-Score" in classifier_df.columns:
-            best_f1 = float(classifier_df["F1-Score"].max())
-            
+        results = summary.get("results", {})
+        if isinstance(results, dict):
+            for run_metrics in results.values():
+                if isinstance(run_metrics, dict):
+                    best_f1 = max(best_f1, float(run_metrics.get("f1", 0.0)))
+
         return {
             "returncode": result.returncode,
             "best_f1": round(best_f1, 4),
             "results_path": str(CLASSIFIER_RESULTS_PATH),
+            "summary_exists": CLASSIFIER_RESULTS_PATH.exists(),
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
         }
@@ -737,15 +745,25 @@ class EvaluationTool:
     name = "evaluation_runner"
 
     def run(self) -> dict[str, Any]:
-        eval_result = run_python_script(EVAL_SCRIPT_PATH, FIN_FRAUD_ROOT)
-        robustness_result = run_python_script(ROBUSTNESS_SCRIPT_PATH, FIN_FRAUD_ROOT)
-        classifier_df = _load_csv(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else pd.DataFrame()
+        eval_result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent)
+        robustness_result = run_python_script(ROBUSTNESS_SCRIPT_PATH, ROBUSTNESS_SCRIPT_PATH.parent)
+        summary = _read_metrics_json(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else {}
         robustness_df = _load_csv(ROBUSTNESS_RESULTS_PATH) if ROBUSTNESS_RESULTS_PATH.exists() else pd.DataFrame()
 
-        best_f1 = float(classifier_df["F1-Score"].max()) if "F1-Score" in classifier_df.columns else 0.0
+        best_f1 = 0.0
+        results = summary.get("results", {})
+        if isinstance(results, dict):
+            for run_metrics in results.values():
+                if isinstance(run_metrics, dict):
+                    best_f1 = max(best_f1, float(run_metrics.get("f1", 0.0)))
+
         robustness = 0.0
-        if "Robustness Score" in robustness_df.columns:
-            robustness = float(1.0 - robustness_df["Robustness Score"].min())
+        if not robustness_df.empty and {"Model", "Test Set", "F1"}.issubset(robustness_df.columns):
+            adv_attack_row = robustness_df[
+                (robustness_df["Model"] == "Adversarial XGB") & (robustness_df["Test Set"] == "FGSM Attack")
+            ]
+            if not adv_attack_row.empty:
+                robustness = float(adv_attack_row["F1"].iloc[0])
 
         return {
             "eval_returncode": eval_result.returncode,
