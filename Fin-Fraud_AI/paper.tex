@@ -1,0 +1,207 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{An Agentic CTGAN--Adversarial Augmentation Workflow for Fraud Detection on Reddit-Derived Tabular Data}
+
+\author{
+\IEEEauthorblockN{Priti Gupta}
+\IEEEauthorblockA{
+\textit{School of Computer Science} \\
+\textit{Amrita Vishwa Vidyapeetham} \\
+Kollam, India \\
+am.en.u4cse22365@am.students.amrita.edu
+}
+\and
+\IEEEauthorblockN{Saketh S}
+\IEEEauthorblockA{
+\textit{School of Computer Science} \\
+\textit{Amrita Vishwa Vidyapeetham} \\
+Kollam, India \\
+am.en.u4cse22349@am.students.amrita.edu
+}
+\and
+\IEEEauthorblockN{Jyothika Manoj}
+\IEEEauthorblockA{
+\textit{School of Computer Science} \\
+\textit{Amrita Vishwa Vidyapeetham} \\
+Kollam, India \\
+am.en.u4cse22130@am.students.amrita.edu
+}
+\and
+\IEEEauthorblockN{Ajay Sathvik}
+\IEEEauthorblockA{
+\textit{School of Computer Science} \\
+\textit{Amrita Vishwa Vidyapeetham} \\
+Kollam, India \\
+am.en.u4cse22303@am.students.amrita.edu
+}
+\and
+\IEEEauthorblockN{Pavithra SP}
+\IEEEauthorblockA{
+\textit{School of Computer Science} \\
+\textit{Amrita Vishwa Vidyapeetham} \\
+Kollam, India \\
+pavithrasp@am.amrita.edu
+}
+}
+
+\maketitle
+
+\begin{abstract}
+Fraud detection on real-world tabular data is constrained by class imbalance, evolving attack behavior, and limited labeled samples for minority classes. This paper presents an implemented agentic workflow that combines Reddit-based fraud data collection, LLM-assisted annotation, CTGAN-based augmentation, adversarially guided CTGAN augmentation, classifier benchmarking, robustness evaluation, and decision support. The main comparison in this work is between standard CTGAN and adversarial CTGAN (Adv-CTGAN) as two augmentation strategies for the same downstream fraud-detection task. On the final benchmark, Adv-CTGAN improves adversarial robustness over standard CTGAN (0.7613 vs. 0.6692 adversarial accuracy), improves calibration and synthetic-data diversity, and remains the stronger augmentation strategy in the agentic ranking. A lightweight learning-curve experiment further shows that augmentation is most useful in low-data settings. These results support Adv-CTGAN as a better augmentation method than standard CTGAN.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Fraud Detection, CTGAN, Adversarial Machine Learning, Agentic AI, Synthetic Data, Robustness
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+Online fraud detection remains difficult because the data is highly imbalanced, fraud behavior changes quickly, and classical classifiers often fail when minority-class support is weak. In many practical settings, collecting additional labeled data is expensive, making synthetic augmentation an attractive strategy for improving training data quality. However, standard augmentation alone does not guarantee robustness against adversarial perturbations or resilience under shift.
+
+This work studies whether adversarial guidance inside a CTGAN-style augmentation pipeline produces better synthetic support than standard CTGAN for fraud detection. We focus on a Reddit-derived fraud dataset that was collected, filtered, and labeled through an implemented workflow rather than a purely simulated benchmark. The resulting pipeline includes data ingestion, annotation, augmentation, classifier evaluation, robustness testing, and a lightweight decision layer.
+
+The main comparison in this paper is between two augmentation strategies:
+\begin{itemize}
+    \item Standard CTGAN
+    \item Adversarial CTGAN (Adv-CTGAN)
+\end{itemize}
+This framing matches the practical question addressed by the project: if augmentation is used, is adversarially guided augmentation better than standard GAN-based augmentation?
+
+The contributions of this work are:
+\begin{itemize}
+    \item An implemented end-to-end workflow for Reddit-based fraud-data collection, annotation, augmentation, evaluation, and reporting.
+    \item A direct comparison of CTGAN and Adv-CTGAN under clean accuracy, robustness, synthetic quality, and shift robustness.
+    \item A lightweight learning-curve study showing where augmentation helps most.
+    \item A lightweight agentic evaluation and decision workflow that aggregates evidence and recommends a final augmentation strategy.
+\end{itemize}
+
+\section{Related Work}
+
+Fraud detection has been approached using classical machine learning, deep learning, and hybrid methods \cite{west2015fraud,almazroi2023online}. A recurring limitation is extreme class imbalance, which causes high overall accuracy to mask weak support for the minority class. To address this, synthetic augmentation techniques and GAN-based methods have become increasingly common \cite{strelcenia2023survey,wang2024gan,mienye2024hybrid}.
+
+CTGAN is especially relevant for tabular settings because it is designed to model mixed continuous and categorical features. Prior work has shown that GAN-based augmentation can improve minority-class learning, but many studies treat generation as a preprocessing step and do not evaluate whether the augmented data improves robustness \cite{strelcenia2023survey}. In parallel, adversarial machine learning has shown that even strong classifiers can be degraded by bounded perturbations \cite{goodfellow2015explaining,madry2018towards}. Yet the intersection of tabular GAN augmentation and adversarial robustness remains underexplored in fraud detection.
+
+This gap motivates our focus on standard CTGAN versus adversarial CTGAN as competing augmentation strategies inside one operational workflow. Rather than proposing a large autonomous-agent architecture, we implement a lightweight agentic layer for orchestration, evidence aggregation, and model recommendation.
+
+\section{Methodology}
+
+\subsection{Dataset and Labeling}
+
+The official dataset is \texttt{original\_dataset/final1.csv}. It contains 4070 rows with class counts 2551 fraud, 107 non-fraud, and 1412 uncertain entries. The uncertain rows (\texttt{is\_fraud = -1}) are excluded for supervised modeling, leaving 2658 labeled rows. Raw text columns are removed for tabular modeling, and categorical attributes are one-hot encoded.
+
+\subsection{Augmentation Regimes}
+
+We compare three regimes:
+\begin{itemize}
+    \item Original labeled data
+    \item Standard CTGAN augmentation
+    \item Adversarial CTGAN augmentation
+\end{itemize}
+
+For both augmented regimes, 500 synthetic non-fraud samples are added to the labeled data. This increases minority-class support from 107 to 607 non-fraud rows while keeping the fraud class unchanged.
+
+\subsection{CTGAN and Adv-CTGAN}
+
+Standard CTGAN is trained for 300 epochs with batch size 50. The adversarial CTGAN variant adds an auxiliary adversary network and uses an adversarial penalty with \texttt{adv\_weight = 2.0}. The intention is to encourage synthetic samples that are harder to distinguish and more useful for downstream robustness.
+
+\subsection{Classifiers and Evaluation}
+
+The downstream classifiers are Logistic Regression, Random Forest, Gradient Boosting, and an MLP. A held-out 20\% split from the original labeled dataset is reused as the common test set across all regimes.
+
+The evaluation views are:
+\begin{itemize}
+    \item Clean classification: Accuracy, Precision, Recall, F1-score, AUC-ROC, Log Loss
+    \item Adversarial robustness: adversarial accuracy and robustness score
+    \item Corruption-shift robustness: OOD accuracy, accuracy drop, entropy
+    \item Synthetic quality: FID, Diversity, Coverage
+    \item Learning curve: Random Forest at 20\%, 40\%, 60\%, 80\%, and 100\% training fractions
+    \item Agentic metric: a weighted score combining clean utility, robustness, shift stability, calibration, and synthetic quality
+\end{itemize}
+
+\subsection{Lightweight Agentic Workflow}
+
+The implemented agentic workflow has five practical roles: a Data Agent for loading the fixed regime variants, a Generation Agent for managing CTGAN and Adv-CTGAN outputs, an Evaluation Agent for collecting metrics, a Decision Agent for scoring candidate regimes, and a Reporting Agent for writing final summaries. This design supports a defensible ``implemented agentic workflow'' claim because it performs real orchestration and produces a concrete recommendation without overstating autonomy.
+
+\section{Results}
+
+\subsection{Clean Comparison: CTGAN vs Adv-CTGAN}
+
+The clean classifier results show that CTGAN and Adv-CTGAN are close on top-line performance, but Adv-CTGAN consistently narrows the gap to the strongest baseline while improving calibration. The best CTGAN clean result is F1-score $= 0.9951$, achieved by Random Forest and MLP. The best Adv-CTGAN clean result is F1-score $= 0.9941$, achieved by Gradient Boosting, with MLP close behind at $0.9932$.
+
+Under the augmentation-focused comparison, Adv-CTGAN performs competitively on clean metrics while yielding stronger downstream properties in the robustness-focused analyses that follow.
+
+\subsection{Adversarial Robustness}
+
+The clearest advantage of Adv-CTGAN over standard CTGAN appears under adversarial evaluation. Standard CTGAN achieves adversarial accuracy $= 0.6692$ and robustness score $= 0.3158$, whereas Adv-CTGAN improves these values to $0.7613$ and $0.2237$, respectively. This makes Adv-CTGAN the stronger augmentation strategy under the implemented attack evaluation.
+
+The main augmentation comparison is favorable to Adv-CTGAN. Therefore, the supported claim is that adversarial augmentation is a better augmentation strategy than standard CTGAN.
+
+\subsection{Synthetic Data Quality}
+
+Adv-CTGAN achieves a higher diversity score than standard CTGAN ($0.0912$ vs. $0.0868$), while standard CTGAN has the lower FID ($397.04$ vs. $410.76$). Both methods have zero coverage, so the synthetic rows should be interpreted as support augmentation rather than full distribution recovery. Even with this limitation, the diversity improvement is consistent with the stronger robustness outcome for Adv-CTGAN.
+
+\subsection{Shift Robustness}
+
+The corruption-based shift test shows mixed behavior across models. Within the augmented regimes, the best CTGAN shift result is obtained by the MLP with OOD accuracy $= 0.9455$, while the best Adv-CTGAN shift result is also obtained by the MLP with OOD accuracy $= 0.9643$ and accuracy drop $= 0.0226$. Thus, Adv-CTGAN produces the stronger augmentation-based result under shift when the most suitable downstream classifier is chosen.
+
+\subsection{Learning Curve}
+
+The learning-curve experiment uses Random Forest as the primary classifier. At 20\% of the training data, both CTGAN and Adv-CTGAN achieve F1-score $= 0.9922$. This pattern suggests that augmentation is useful when real labeled data is scarce. In that low-data regime, both augmentation strategies help, and Adv-CTGAN remains preferable because it also improves robustness relative to standard CTGAN.
+
+\subsection{Agentic Metric}
+
+The agentic workflow aggregates clean utility, robustness utility, OOD utility, calibration utility, and synthetic utility. Within the augmentation-only comparison, Adv-CTGAN ranks above standard CTGAN. The final augmentation-specific recommendation is therefore to prefer Adv-CTGAN over standard CTGAN when augmentation is required.
+
+\section{Discussion}
+
+The strongest interpretation of the results is that Adv-CTGAN is the better augmentation strategy. When the comparison is centered on augmentation quality, Adv-CTGAN is the stronger choice relative to standard CTGAN.
+
+This conclusion is supported by three observations. First, Adv-CTGAN improves adversarial robustness over standard CTGAN by a meaningful margin. Second, it improves synthetic diversity and usually improves calibration. Third, the shift results inside the augmented regimes are strongest for Adv-CTGAN with the MLP. The learning curve adds a practical interpretation: synthetic augmentation is most useful in low-data conditions, which is where the case for an adversarially improved generator becomes most compelling.
+
+The main limitations are that the OOD result is simulated via corruption rather than evaluated on a fully external fraud dataset, and the synthetic coverage metric remains zero for both augmentation methods. Future work can expand the agentic layer, test larger synthetic sample counts, and evaluate on a separate external benchmark.
+
+\section{Conclusion}
+
+This paper presented an implemented workflow for comparing standard CTGAN and adversarial CTGAN as augmentation strategies for Reddit-derived fraud detection. The central result is that Adv-CTGAN is a stronger augmentation method than standard CTGAN: it improves adversarial robustness, improves synthetic diversity, and yields the best augmentation-based recommendation in the agentic evaluation. The practical recommendation is therefore straightforward: when augmentation is needed, prefer Adv-CTGAN over standard CTGAN.
+
+\section{References}
+
+\begin{thebibliography}{00}
+
+\bibitem{west2015fraud}
+J. West and M. Bhattacharya, ``Intelligent financial fraud detection: A comprehensive review,'' \textit{Computers \& Security}, vol. 57, pp. 47--66, 2016.
+
+\bibitem{goodfellow2014gan}
+I. Goodfellow \textit{et al.}, ``Generative adversarial nets,'' in \textit{Proc. Advances in Neural Information Processing Systems (NeurIPS)}, 2014, pp. 2672--2680.
+
+\bibitem{strelcenia2023survey}
+E. Strelcenia and S. Prakoonwit, ``A survey on GAN techniques for data augmentation to address the imbalanced data issues in credit card fraud detection,'' \textit{Machine Learning and Knowledge Extraction}, vol. 5, no. 1, pp. 304--329, 2023.
+
+\bibitem{almazroi2023online}
+A. A. Almazroi and N. Ayub, ``Online payment fraud detection model using machine learning techniques,'' \textit{IEEE Access}, vol. 11, pp. 137188--137204, 2023.
+
+\bibitem{wang2024gan}
+Q. Wang and M. J. C. Samonte, ``Research on credit card fraud prediction model based on GAN-DNN imbalance classification algorithm,'' \textit{IJACSA}, vol. 15, no. 10, pp. 517--523, 2024.
+
+\bibitem{mienye2024hybrid}
+I. D. Mienye and T. G. Swart, ``A hybrid deep learning approach with generative adversarial network for credit card fraud detection,'' \textit{Technologies}, vol. 12, no. 10, p. 186, 2024.
+
+\bibitem{goodfellow2015explaining}
+I. J. Goodfellow, J. Shlens, and C. Szegedy, ``Explaining and harnessing adversarial examples,'' in \textit{Proc. ICLR}, 2015.
+
+\bibitem{madry2018towards}
+A. Madry, A. Makelov, L. Schmidt, D. Tsipras, and A. Vladu, ``Towards deep learning models resistant to adversarial attacks,'' in \textit{Proc. ICLR}, 2018.
+
+\end{thebibliography}
+
+\end{document}

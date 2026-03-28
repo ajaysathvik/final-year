@@ -1,0 +1,13 @@
+Dataset,Classifier,Clean Accuracy,OOD Accuracy,Accuracy Drop,OOD Entropy
+Original,Logistic Regression,0.9868,0.9511,0.0357,0.0778
+Original,Random Forest,0.9962,0.9774,0.0188,0.1197
+Original,Gradient Boosting,0.9906,0.985,0.0056,0.0444
+Original,Neural Network (MLP),0.9906,0.9718,0.0188,0.0437
+CTGAN,Logistic Regression,0.985,0.8722,0.1128,0.1234
+CTGAN,Random Forest,0.9906,0.906,0.0846,0.3595
+CTGAN,Gradient Boosting,0.9887,0.8722,0.1165,0.2105
+CTGAN,Neural Network (MLP),0.9906,0.9455,0.0451,0.065
+Adv-CTGAN,Logistic Regression,0.985,0.9023,0.0827,0.1182
+Adv-CTGAN,Random Forest,0.9887,0.7707,0.218,0.4643
+Adv-CTGAN,Gradient Boosting,0.9887,0.5865,0.4023,0.2747
+Adv-CTGAN,Neural Network (MLP),0.9868,0.9643,0.0226,0.0721

@@ -1,0 +1,167 @@
+[
+  {
+    "tool": "prepare_main_dataset",
+    "inputs": {
+      "source_path": "Data labeling/outputs/main.csv"
+    },
+    "output": {
+      "dataset_name": "main.csv_normalized_for_finfraud",
+      "source_path": "Data labeling/outputs/main.csv",
+      "prepared_path": "/home/norm/Projects/Reddit-dataset/Fin-Fraud_AI/original_dataset/final1.csv",
+      "row_count": 5729,
+      "class_counts": {
+        "0": 294,
+        "1": 5435
+      },
+      "column_count": 44,
+      "new_scam_row_count": 0,
+      "new_scam_seed_path": "/home/norm/Projects/Reddit-dataset/Fin-Fraud_AI/original_dataset/new_scam_seeds.csv",
+      "new_scam_report_path": "/home/norm/Projects/Reddit-dataset/Fin-Fraud_AI/original_dataset/new_scam_report.json",
+      "base_row_count": 6584,
+      "labeled_scraped_row_count": 2566,
+      "labeled_scraped_class_counts": {
+        "-1": 855,
+        "0": 64,
+        "1": 1647
+      },
+      "labeled_scraped_usable_count": 2324,
+      "new_scam_signatures": [],
+      "collection_summary": {
+        "collection": {
+          "status": "reused",
+          "reason": "fresh:0d",
+          "posts_count": 2576,
+          "comments_count": 16235,
+          "posts_path": "/home/norm/Projects/Reddit-dataset/Reddit-dataset/Data Scrapping/posts.csv",
+          "comments_path": "/home/norm/Projects/Reddit-dataset/Reddit-dataset/Data Scrapping/comments.csv",
+          "available": true,
+          "max_age_days": 3
+        },
+        "labeling": {
+          "labeled_row_count": 2566,
+          "class_counts": {
+            "1": 1647,
+            "-1": 855,
+            "0": 64
+          },
+          "usable_for_training_count": 2324,
+          "high_confidence_count": 1586,
+          "status": "reused",
+          "reason": "fresh:0d",
+          "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+          "max_age_days": 3
+        },
+        "main_dataset_sync": {
+          "status": "reused",
+          "new_rows_added": 0,
+          "base_row_count": 6584,
+          "final_row_count": 6584,
+          "min_created_utc_exclusive": 0.0,
+          "latest_added_created_utc": 0.0,
+          "latest_added_created_at": "",
+          "target_path": "Data labeling/outputs/main.csv",
+          "scraped_row_count": 2566
+        }
+      },
+      "recorded_at": "2026-03-25T06:32:39.449165+00:00"
+    }
+  },
+  {
+    "tool": "latest_fraud_intel",
+    "inputs": {
+      "enabled": true,
+      "max_items": 8
+    },
+    "output": [
+      {
+        "query": "gift card scam fraud alert",
+        "title": "The latest scam alerts from Which? - which.co.uk",
+        "link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxOd3haQXhkOG1mM2RJWnBQYXktcU5ieG5TTkVFSXdBbmVHb1hjM0tTS2JlUjREc2N3NF9OM081d3J3VFNYZFJITTdteG9WQmczOHZYR2pCSFh3WGJoLW1qcUthOWVhWWJ0ekRneDAtUlJJSGhvT195UWxQYnM2OXlXRWFXbmRhQzBhQ09v?oc=5",
+        "published_at": "2026-03-22T07:00:00+00:00"
+      },
+      {
+        "query": "financial fraud scam phishing bank impersonation",
+        "title": "Top 5 Financial Scams Targeting Older Adults and How to Avoid Them - The National Council on Aging (NCOA)",
+        "link": "https://news.google.com/rss/articles/CBMif0FVX3lxTE9PcDVNbVRzRG5Tc0tySy1rQl9kbkwzVmJDMDFNVV9lUlpXVzVialI5Sl9uSThmc0hGTlhpWUNyeTRnWThMLUZyT3N1TEwxTVdpMi1GRXJQZ2t2eF93WTBLbGgyQ0JmOTA0SXhaZllQZExNTmdlSDk5cjVZQjlZR3c?oc=5",
+        "published_at": "2026-03-17T04:00:00+00:00"
+      },
+      {
+        "query": "crypto investment scam fraud alert",
+        "title": "DoJ Seizes $61 Million in Tether Linked to Pig Butchering Crypto Scams - The Hacker News",
+        "link": "https://news.google.com/rss/articles/CBMigwFBVV95cUxOLUhxdzdoVFFTT2QydElpU3locWJDQTlnZXNmYTJRRXJHRW1WSjY3ZFo0NmZIUU9QSURrSTd2bThfRDNTLVpIMEVXYkcwTVJsMjlzQVZKZDhBT0pvTkxvb2VKa1FJdHRDRjdlc3Y4el9LSGRjTmFneS1pTVU1MDN4OXBhWQ?oc=5",
+        "published_at": "2026-02-27T08:00:00+00:00"
+      },
+      {
+        "query": "gift card scam fraud alert",
+        "title": "Nanaimo RCMP warns public to be alert to ongoing gift card scams - Nanaimo News Bulletin",
+        "link": "https://news.google.com/rss/articles/CBMipwFBVV95cUxPa3hxN2xPQ21oZ1BwbGR2THowcXB5ZmFMLWkyN3JWTG9wVWo2bWgzbjZWT0I2TS1BbUxka2V4NTladmZJUHBlWUxaaWR4dU9xSTZXOVRseVFRSHRscnZaMlh0T0ZJanU5S2hoUGl1SmM3Yjk4anBXOGo2OUYtWjJBYjRBR1p1aUhwT0NPdGNSUFNnQ1dKX3JRem8yV284a2ViU3E0ZFBrRQ?oc=5",
+        "published_at": "2026-02-24T13:49:12+00:00"
+      },
+      {
+        "query": "financial fraud scam phishing bank impersonation",
+        "title": "Bank warns public of increase in scams, fraud - The National | Your Number One Daily!",
+        "link": "https://news.google.com/rss/articles/CBMiggFBVV95cUxQVUlXeTNONFRzV2lNTGphc3Y0UFRrd25mQ2l2OEVGdVJQRjd0dlprMlR2cnllNGNkTnBqY2NqU1pVVGVJa1lUR1RFQ01XLWVROWJMTU1fSXFsUWh1QmRST3kxTndENmVfYXNFalotTzFSZGFvR1d4YUFxa01abGxKYm1n?oc=5",
+        "published_at": "2026-02-24T08:00:00+00:00"
+      },
+      {
+        "query": "gift card scam fraud alert",
+        "title": "Nanaimo RCMP issue warning about ongoing gift card scams - CHEK News",
+        "link": "https://news.google.com/rss/articles/CBMijgFBVV95cUxPVmFLSjB6ZFQxeXl3dkNnM21uSDZlYlhuOE5RZGpxMllCck54WnctMWZMZE4tTnRfckhBeXFEOFA4NHAxRUZRcWJ1cm1BZ1N2Y3A5V1NXQ1JDamFaUE8taW80VWp5YURmbndhbnhwdkpQR09jSGhkMU9vOHNneTFtQnJLNnlVZmVaM1JoVVV3?oc=5",
+        "published_at": "2026-02-21T08:00:00+00:00"
+      },
+      {
+        "query": "gift card scam fraud alert",
+        "title": "\u2018Be suspicious:\u2019 Nanaimo RCMP warns of gift card scams - NanaimoNewsNOW",
+        "link": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPa0p4Y2dWTlJNaTFhSnY1MEkzX0IyUXAybGVscS1JVTNzVkRrNEdIXzY1anJvT0dlTHBHeDUtb2R3aGtvdEI0d2pMaHJOV1dZVjZxc0laUS1xa0JoT3F1U3hlWVFidGtDbkxoQ2RkM3gxTVdyOUc1S3BsbWx2TGFSbmEwV2VrTm1pR3dYNGk3cmdIcl9O?oc=5",
+        "published_at": "2026-02-20T08:00:00+00:00"
+      },
+      {
+        "query": "crypto investment scam fraud alert",
+        "title": "NY AG issues alert on crypto-based pig butchering scams - American Banker",
+        "link": "https://news.google.com/rss/articles/CBMilgFBVV95cUxQcVktZ0wzTVRHNFVKRXFuWjkwVEF0aFJTekRPWU1zUkxiZ1MzSGdXdU9sLUtxZzBIRFMzY1gzRHI3bHZZWUVkaGJ3U0FldEVCaUl0RXBQcUpnVGhnWTAyNGpKYVliWjcxV2xYdlBqZUFWMnBMcG81Q2oxWVBZUjlWR0YzT25WVXk1NXI0VEx4emVDYWo0QVE?oc=5",
+        "published_at": "2026-02-17T08:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "tool": "ollama_classifier_advisor",
+    "inputs": {
+      "model": "qwen3.5:0.8b",
+      "fraud_signal_count": 8
+    },
+    "output": {
+      "model": "qwen3.5:0.8b",
+      "status": "ok",
+      "assessment": "```json\n{\n    \"risk_level\": \"HIGH\",\n    \"retrain\": \"true\",\n    \"stop_early\": \"false\",\n    \"augmentation_choice\": \"main.csv_normalized_for_finfraud\",\n    \"evaluation_dataset_filter\": \"main.csv_normalized_for_finfraud\",\n    \"reason\": \"Dataset reused with recent fraud alerts requiring model retraining.\",\n    \"confidence\": \"0.9\",\n    \"new_attack_types\": [\"financial fraud\", \"crypto investment scam\", \"gift card scam\", \"phishing\"],\n    \"feature_updates\": [\"scraped\", \"labeled\"],\n    \"classifier_updates\": [\"scraped\", \"labeled\"],\n    \"data_collection_updates\": [\"labeled\"]\n}\n```",
+      "visible_thinking": "```json",
+      "final_json_text": "{\n    \"risk_level\": \"HIGH\",\n    \"retrain\": \"true\",\n    \"stop_early\": \"false\",\n    \"augmentation_choice\": \"main.csv_normalized_for_finfraud\",\n    \"evaluation_dataset_filter\": \"main.csv_normalized_for_finfraud\",\n    \"reason\": \"Dataset reused with recent fraud alerts requiring model retraining.\",\n    \"confidence\": \"0.9\",\n    \"new_attack_types\": [\"financial fraud\", \"crypto investment scam\", \"gift card scam\", \"phishing\"],\n    \"feature_updates\": [\"scraped\", \"labeled\"],\n    \"classifier_updates\": [\"scraped\", \"labeled\"],\n    \"data_collection_updates\": [\"labeled\"]\n}",
+      "parsed_assessment": {
+        "risk_level": "HIGH",
+        "retrain": "true",
+        "stop_early": "false",
+        "augmentation_choice": "main.csv_normalized_for_finfraud",
+        "evaluation_dataset_filter": "main.csv_normalized_for_finfraud",
+        "reason": "Dataset reused with recent fraud alerts requiring model retraining.",
+        "confidence": "0.9",
+        "new_attack_types": [
+          "financial fraud",
+          "crypto investment scam",
+          "gift card scam",
+          "phishing"
+        ],
+        "feature_updates": [
+          "scraped",
+          "labeled"
+        ],
+        "classifier_updates": [
+          "scraped",
+          "labeled"
+        ],
+        "data_collection_updates": [
+          "labeled"
+        ]
+      }
+    }
+  }
+]

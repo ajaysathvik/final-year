@@ -1,0 +1,16 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temp files
+result_temp.txt
+check_counts.py
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db

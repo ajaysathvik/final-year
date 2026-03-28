@@ -1,0 +1,1414 @@
+{
+  "created_at": "2026-03-27T17:49:50.634197+00:00",
+  "runs": [],
+  "snapshots": [
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3125,
+        "posts_after": 3125,
+        "new_posts_detected": 0,
+        "comments_after": 19116,
+        "stdout_tail": ":45] r/LegalAdviceIndia - Fetching page 6 (yielded: 87)\n[15:16:46] r/legaladvice - Fetching page 8 (yielded: 47)\n[15:16:46] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[15:16:46] r/India - Reached posts older than 7 days, stopping\n[15:16:46] Skipping cached post 1s1ib2d\n[15:16:46] Skipping cached post 1s1dzro\n[15:16:46] Skipping cached post 1s0fzbj\n[15:16:46] ===== EXIT r/India =====\n[15:16:47] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[15:16:47] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[15:16:47] Skipping cached post 1s3hudp\n[15:16:47] Skipping cached post 1s3exp4\n[15:16:47] Skipping cached post 1s3c6vm\n[15:16:47] Skipping cached post 1s316vj\n[15:16:47] Skipping cached post 1s2yzph\n[15:16:47] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[15:16:47] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[15:16:47] Sleeping 2.65s (r/legaladvice post pagination)\n[15:16:47] r/LegalAdviceIndia - Accepted post 1rznzrj (age 6.0 days)\n[15:16:47] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[15:16:47] Skipping cached post 1rzpgne\n[15:16:47] Skipping cached post 1rzokl9\n[15:16:47] Skipping cached post 1rznzrj\n[15:16:47] ===== EXIT r/LegalAdviceIndia =====\n[15:16:50] r/legaladvice - Fetching page 9 (yielded: 51)\n[15:16:51] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[15:16:51] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[15:16:51] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[15:16:51] Sleeping 2.10s (r/legaladvice post pagination)\n[15:16:53] r/legaladvice - Fetching page 10 (yielded: 54)\n[15:16:55] Skipping cached post 1s2xi3m\n[15:16:55] Skipping cached post 1s2verh\n[15:16:55] Skipping cached post 1s2rqzb\n[15:16:55] Skipping cached post 1s2ojnv\n[15:16:55] Skipping cached post 1s2k8eq\n[15:16:55] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[15:16:55] Skipping cached post 1s2i01u\n[15:16:55] Skipping cached post 1s2hfzv\n[15:16:55] Skipping cached post 1s2erw0\n[15:16:55] Skipping cached post 1s2fhsn\n[15:16:55] Skipping cached post 1s2dqir\n[15:16:55] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[15:16:55] r/legaladvice - Pagination cursor exhausted\n[15:16:55] Skipping cached post 1s2cc74\n[15:16:55] Skipping cached post 1s27wog\n[15:16:55] Skipping cached post 1s261av\n[15:16:55] ===== EXIT r/legaladvice =====\n[15:16:55] ============================================================\n[15:16:55] SCRAPING COMPLETE\n[15:16:55] Total posts: 0\n[15:16:55] Total comments: 0\n[15:16:55] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": " 9612/9666 - 1r3m9lx\n[CACHE HIT] 1r3m9lx\nAnnotating 9613/9666 - 1nejowy\n[CACHE HIT] 1nejowy\nAnnotating 9614/9666 - 1qdx7bi\n[CACHE HIT] 1qdx7bi\nAnnotating 9615/9666 - 1nhqtmd\n[CACHE HIT] 1nhqtmd\nAnnotating 9616/9666 - 16z3qmy\n[CACHE HIT] 16z3qmy\nAnnotating 9617/9666 - 1qjoa4v\n[CACHE HIT] 1qjoa4v\nAnnotating 9618/9666 - 1o3l2c9\n[CACHE HIT] 1o3l2c9\nAnnotating 9619/9666 - 1okohl9\n[CACHE HIT] 1okohl9\nAnnotating 9620/9666 - 1nujg69\n[CACHE HIT] 1nujg69\nAnnotating 9621/9666 - 1mbdnlu\n[CACHE HIT] 1mbdnlu\nAnnotating 9622/9666 - 1q1f5fb\n[CACHE HIT] 1q1f5fb\nAnnotating 9623/9666 - 1qyl5q7\n[CACHE HIT] 1qyl5q7\nAnnotating 9624/9666 - 1ow3ut2\n[CACHE HIT] 1ow3ut2\nAnnotating 9625/9666 - 1l26rge\n[CACHE HIT] 1l26rge\nAnnotating 9626/9666 - 1nk2sz0\n[CACHE HIT] 1nk2sz0\nAnnotating 9627/9666 - 1llegpj\n[CACHE HIT] 1llegpj\nAnnotating 9628/9666 - 1o8lei4\n[CACHE HIT] 1o8lei4\nAnnotating 9629/9666 - 1lxbbmf\n[CACHE HIT] 1lxbbmf\nAnnotating 9630/9666 - 1pwtt1g\n[CACHE HIT] 1pwtt1g\nAnnotating 9631/9666 - 1b760ws\n[CACHE HIT] 1b760ws\nAnnotating 9632/9666 - 1r0yhga\n[CACHE HIT] 1r0yhga\nAnnotating 9633/9666 - 1ob0gzo\n[CACHE HIT] 1ob0gzo\nAnnotating 9634/9666 - 1ioyk57\n[CACHE HIT] 1ioyk57\nAnnotating 9635/9666 - 1o6k9lx\n[CACHE HIT] 1o6k9lx\nAnnotating 9636/9666 - 1qw7lvt\n[CACHE HIT] 1qw7lvt\nAnnotating 9637/9666 - 1ntt8b8\n[CACHE HIT] 1ntt8b8\nAnnotating 9638/9666 - 1qknlew\n[CACHE HIT] 1qknlew\nAnnotating 9639/9666 - 161515u\n[CACHE HIT] 161515u\nAnnotating 9640/9666 - l3y8oe\n[CACHE HIT] l3y8oe\nAnnotating 9641/9666 - 1pplu00\n[CACHE HIT] 1pplu00\nAnnotating 9642/9666 - 1lohvmy\n[CACHE HIT] 1lohvmy\nAnnotating 9643/9666 - 1qichc9\n[CACHE HIT] 1qichc9\nAnnotating 9644/9666 - 1q24gkh\n[CACHE HIT] 1q24gkh\nAnnotating 9645/9666 - 1lohbip\n[CACHE HIT] 1lohbip\nAnnotating 9646/9666 - 1pqsz9g\n[CACHE HIT] 1pqsz9g\nAnnotating 9647/9666 - 18ie5jb\n[CACHE HIT] 18ie5jb\nAnnotating 9648/9666 - 1qzbsb4\n[CACHE HIT] 1qzbsb4\nAnnotating 9649/9666 - 1ikfgyq\n[CACHE HIT] 1ikfgyq\nAnnotating 9650/9666 - 1mw6j4e\n[CACHE HIT] 1mw6j4e\nAnnotating 9651/9666 - 1qd9m7q\n[CACHE HIT] 1qd9m7q\nAnnotating 9652/9666 - 1qmir6q\n[CACHE HIT] 1qmir6q\nAnnotating 9653/9666 - 1k8512u\n[CACHE HIT] 1k8512u\nAnnotating 9654/9666 - 1pzhfpt\n[CACHE HIT] 1pzhfpt\nAnnotating 9655/9666 - 1bxmefx\n[CACHE HIT] 1bxmefx\nAnnotating 9656/9666 - 9g5tt9\n[CACHE HIT] 9g5tt9\nAnnotating 9657/9666 - 1lbhijs\n[CACHE HIT] 1lbhijs\nAnnotating 9658/9666 - 1e04r43\n[CACHE HIT] 1e04r43\nAnnotating 9659/9666 - 1ngq4ty\n[CACHE HIT] 1ngq4ty\nAnnotating 9660/9666 - 1r0rgqd\n[CACHE HIT] 1r0rgqd\nAnnotating 9661/9666 - 1qvwznd\n[CACHE HIT] 1qvwznd\nAnnotating 9662/9666 - 1nlihmb\n[CACHE HIT] 1nlihmb\nAnnotating 9663/9666 - 1h5rpbe\n[CACHE HIT] 1h5rpbe\nAnnotating 9664/9666 - 1d5h4sx\n[CACHE HIT] 1d5h4sx\nAnnotating 9665/9666 - 1qcapay\n[CACHE HIT] 1qcapay\nAnnotating 9666/9666 - 1qcsfxr\n[CACHE HIT] 1qcsfxr\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "identity_theft": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (75,76,77,78,79,81,83) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 16008,
+        "test_rows": 4107
+      },
+      "profile": {
+        "train_rows": 16008,
+        "test_rows": 4107,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9530859570214892,
+          "0": 0.04691404297851075
+        },
+        "class_balance_test": {
+          "1": 0.9459459459459459,
+          "0": 0.05405405405405406
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.96,
+          "0": 0.04
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T10:09:33.974569+00:00"
+    },
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3128,
+        "posts_after": 3130,
+        "new_posts_detected": 2,
+        "comments_after": 19116,
+        "stdout_tail": "7 days, stopping\n[15:52:10] Skipping cached post 1s255c2\n[15:52:10] Skipping cached post 1s1ib2d\n[15:52:10] Skipping cached post 1s1dzro\n[15:52:10] Skipping cached post 1s0fzbj\n[15:52:10] ===== EXIT r/India =====\n[15:52:11] Skipping cached post 1rzv2vt\n[15:52:11] Skipping cached post 1rzu7ah\n[15:52:11] Skipping cached post 1rztds8\n[15:52:11] Skipping cached post 1rzpgne\n[15:52:11] Skipping cached post 1rzokl9\n[15:52:11] r/LegalAdviceIndia - Accepted post 1rzokl9 (age 6.0 days)\n[15:52:11] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[15:52:11] ===== EXIT r/LegalAdviceIndia =====\n[15:52:11] r/legaladvice - Fetching page 8 (yielded: 48)\n[15:52:13] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[15:52:13] Skipping cached post 1s3k53a\n[15:52:13] Skipping cached post 1s3hudp\n[15:52:13] Skipping cached post 1s3exp4\n[15:52:13] Skipping cached post 1s3c6vm\n[15:52:13] Skipping cached post 1s316vj\n[15:52:13] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[15:52:13] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[15:52:13] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[15:52:13] Sleeping 1.97s (r/legaladvice post pagination)\n[15:52:15] r/legaladvice - Fetching page 9 (yielded: 52)\n[15:52:17] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[15:52:17] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[15:52:17] Skipping cached post 1s2yzph\n[15:52:17] Skipping cached post 1s2xi3m\n[15:52:17] Skipping cached post 1s2verh\n[15:52:17] Skipping cached post 1s2rqzb\n[15:52:17] Skipping cached post 1s2ojnv\n[15:52:17] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[15:52:17] Sleeping 2.82s (r/legaladvice post pagination)\n[15:52:19] r/legaladvice - Fetching page 10 (yielded: 55)\n[15:52:21] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[15:52:21] Skipping cached post 1s2k8eq\n[15:52:21] Skipping cached post 1s2i01u\n[15:52:21] Skipping cached post 1s2hfzv\n[15:52:21] Skipping cached post 1s2fhsn\n[15:52:21] Skipping cached post 1s2erw0\n[15:52:21] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[15:52:21] r/legaladvice - Pagination cursor exhausted\n[15:52:21] Skipping cached post 1s2dqir\n[15:52:21] Skipping cached post 1s2cc74\n[15:52:21] Skipping cached post 1s27wog\n[15:52:21] Skipping cached post 1s261av\n[15:52:21] ===== EXIT r/legaladvice =====\n[15:52:21] ============================================================\n[15:52:21] SCRAPING COMPLETE\n[15:52:21] Total posts: 2\n[15:52:21] Total comments: 0\n[15:52:21] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": "2/9666 - 1pqyvf2\n[CACHE HIT] 1pqyvf2\nAnnotating 9613/9666 - 1ploo5l\n[CACHE HIT] 1ploo5l\nAnnotating 9614/9666 - 1o3zgl6\n[CACHE HIT] 1o3zgl6\nAnnotating 9615/9666 - 1j7ia2z\n[CACHE HIT] 1j7ia2z\nAnnotating 9616/9666 - 1mjzs3a\n[CACHE HIT] 1mjzs3a\nAnnotating 9617/9666 - 1ln5lwv\n[CACHE HIT] 1ln5lwv\nAnnotating 9618/9666 - 1kx69sd\n[CACHE HIT] 1kx69sd\nAnnotating 9619/9666 - 1qem9ct\n[CACHE HIT] 1qem9ct\nAnnotating 9620/9666 - 1qsyh6g\n[CACHE HIT] 1qsyh6g\nAnnotating 9621/9666 - 1oqf58r\n[CACHE HIT] 1oqf58r\nAnnotating 9622/9666 - 1m31cpv\n[CACHE HIT] 1m31cpv\nAnnotating 9623/9666 - 1qu4hob\n[CACHE HIT] 1qu4hob\nAnnotating 9624/9666 - 1qxja0s\n[CACHE HIT] 1qxja0s\nAnnotating 9625/9666 - 1m3d96z\n[CACHE HIT] 1m3d96z\nAnnotating 9626/9666 - 1pso70f\n[CACHE HIT] 1pso70f\nAnnotating 9627/9666 - 1onfq5q\n[CACHE HIT] 1onfq5q\nAnnotating 9628/9666 - 1pdgwno\n[CACHE HIT] 1pdgwno\nAnnotating 9629/9666 - 1r1sgbx\n[CACHE HIT] 1r1sgbx\nAnnotating 9630/9666 - 1p0auox\n[CACHE HIT] 1p0auox\nAnnotating 9631/9666 - 1besx9v\n[CACHE HIT] 1besx9v\nAnnotating 9632/9666 - 1p6o4vy\n[CACHE HIT] 1p6o4vy\nAnnotating 9633/9666 - 1naay2f\n[CACHE HIT] 1naay2f\nAnnotating 9634/9666 - 1hjts16\n[CACHE HIT] 1hjts16\nAnnotating 9635/9666 - 1g6q1aw\n[CACHE HIT] 1g6q1aw\nAnnotating 9636/9666 - 1jatvpz\n[CACHE HIT] 1jatvpz\nAnnotating 9637/9666 - 1led7g6\n[CACHE HIT] 1led7g6\nAnnotating 9638/9666 - 1qskn92\n[CACHE HIT] 1qskn92\nAnnotating 9639/9666 - 1i2y12r\n[CACHE HIT] 1i2y12r\nAnnotating 9640/9666 - 1lah9jr\n[CACHE HIT] 1lah9jr\nAnnotating 9641/9666 - 1m4pyxx\n[CACHE HIT] 1m4pyxx\nAnnotating 9642/9666 - 1jc8p3i\n[CACHE HIT] 1jc8p3i\nAnnotating 9643/9666 - 1r3au1l\n[CACHE HIT] 1r3au1l\nAnnotating 9644/9666 - 1ptx8d7\n[CACHE HIT] 1ptx8d7\nAnnotating 9645/9666 - 1kzyzz3\n[CACHE HIT] 1kzyzz3\nAnnotating 9646/9666 - 1qeaz42\n[CACHE HIT] 1qeaz42\nAnnotating 9647/9666 - 1lwruvx\n[CACHE HIT] 1lwruvx\nAnnotating 9648/9666 - 1r3amch\n[CACHE HIT] 1r3amch\nAnnotating 9649/9666 - 1qss3br\n[CACHE HIT] 1qss3br\nAnnotating 9650/9666 - 16z3qmy\n[CACHE HIT] 16z3qmy\nAnnotating 9651/9666 - 1j0uy2s\n[CACHE HIT] 1j0uy2s\nAnnotating 9652/9666 - 1qi6m0q\n[CACHE HIT] 1qi6m0q\nAnnotating 9653/9666 - 1cfqrk9\n[CACHE HIT] 1cfqrk9\nAnnotating 9654/9666 - 1lbyet8\n[CACHE HIT] 1lbyet8\nAnnotating 9655/9666 - 1qaqpbj\n[CACHE HIT] 1qaqpbj\nAnnotating 9656/9666 - 1qnz4u7\n[CACHE HIT] 1qnz4u7\nAnnotating 9657/9666 - 1qiznrp\n[CACHE HIT] 1qiznrp\nAnnotating 9658/9666 - 1jd9pr7\n[CACHE HIT] 1jd9pr7\nAnnotating 9659/9666 - 1ks3s9k\n[CACHE HIT] 1ks3s9k\nAnnotating 9660/9666 - 1eixxqb\n[CACHE HIT] 1eixxqb\nAnnotating 9661/9666 - 1gceho4\n[CACHE HIT] 1gceho4\nAnnotating 9662/9666 - 1f2fxek\n[CACHE HIT] 1f2fxek\nAnnotating 9663/9666 - 1og4sw3\n[CACHE HIT] 1og4sw3\nAnnotating 9664/9666 - 1n1gt4l\n[CACHE HIT] 1n1gt4l\nAnnotating 9665/9666 - 1pqv1ng\n[CACHE HIT] 1pqv1ng\nAnnotating 9666/9666 - 1pj6dwh\n[CACHE HIT] 1pj6dwh\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "identity_theft": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (35,55,56,57,58,59,61,63,64,65,66,67,69,79,80,83) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 20544,
+        "test_rows": 5276
+      },
+      "profile": {
+        "train_rows": 20544,
+        "test_rows": 5276,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9530276479750779,
+          "0": 0.046972352024922115
+        },
+        "class_balance_test": {
+          "1": 0.9465504169825626,
+          "0": 0.05344958301743745
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.92,
+          "0": 0.08
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T10:43:44.377997+00:00"
+    },
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3131,
+        "posts_after": 3131,
+        "new_posts_detected": 0,
+        "comments_after": 19116,
+        "stdout_tail": ":24] Sleeping 2.03s (r/legaladvice post pagination)\n[16:29:25] r/LegalAdviceIndia - Fetching page 6 (yielded: 90)\n[16:29:26] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[16:29:26] ===== EXIT r/LegalAdviceIndia =====\n[16:29:27] r/legaladvice - Fetching page 8 (yielded: 48)\n[16:29:27] r/India - Fetching page 4 (yielded: 13)\n[16:29:28] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[16:29:28] Skipping cached post 1s3k53a\n[16:29:28] Skipping cached post 1s3hudp\n[16:29:28] Skipping cached post 1s3exp4\n[16:29:28] Skipping cached post 1s3c6vm\n[16:29:28] Skipping cached post 1s316vj\n[16:29:28] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[16:29:28] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[16:29:28] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[16:29:28] Sleeping 2.10s (r/legaladvice post pagination)\n[16:29:29] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[16:29:29] r/India - Reached posts older than 7 days, stopping\n[16:29:29] Skipping cached post 1s255c2\n[16:29:29] Skipping cached post 1s1ib2d\n[16:29:29] Skipping cached post 1s1dzro\n[16:29:29] Skipping cached post 1s0fzbj\n[16:29:29] ===== EXIT r/India =====\n[16:29:30] r/legaladvice - Fetching page 9 (yielded: 52)\n[16:29:32] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[16:29:32] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[16:29:32] Skipping cached post 1s2yzph\n[16:29:32] Skipping cached post 1s2xi3m\n[16:29:32] Skipping cached post 1s2verh\n[16:29:32] Skipping cached post 1s2rqzb\n[16:29:32] Skipping cached post 1s2ojnv\n[16:29:32] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[16:29:32] Sleeping 2.06s (r/legaladvice post pagination)\n[16:29:34] r/legaladvice - Fetching page 10 (yielded: 55)\n[16:29:35] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[16:29:35] Skipping cached post 1s2k8eq\n[16:29:35] Skipping cached post 1s2i01u\n[16:29:35] Skipping cached post 1s2hfzv\n[16:29:35] Skipping cached post 1s2fhsn\n[16:29:35] Skipping cached post 1s2erw0\n[16:29:35] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[16:29:35] r/legaladvice - Pagination cursor exhausted\n[16:29:35] Skipping cached post 1s2dqir\n[16:29:35] Skipping cached post 1s2cc74\n[16:29:35] Skipping cached post 1s27wog\n[16:29:35] Skipping cached post 1s261av\n[16:29:35] ===== EXIT r/legaladvice =====\n[16:29:35] ============================================================\n[16:29:35] SCRAPING COMPLETE\n[16:29:35] Total posts: 0\n[16:29:35] Total comments: 0\n[16:29:35] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": " 9612/9666 - 1kw5qr1\n[CACHE HIT] 1kw5qr1\nAnnotating 9613/9666 - 1nf4ooa\n[CACHE HIT] 1nf4ooa\nAnnotating 9614/9666 - 1pzclf6\n[CACHE HIT] 1pzclf6\nAnnotating 9615/9666 - 1ij1fvf\n[CACHE HIT] 1ij1fvf\nAnnotating 9616/9666 - 1lalu3f\n[CACHE HIT] 1lalu3f\nAnnotating 9617/9666 - 1os4crl\n[CACHE HIT] 1os4crl\nAnnotating 9618/9666 - 1qenkba\n[CACHE HIT] 1qenkba\nAnnotating 9619/9666 - 1r19lap\n[CACHE HIT] 1r19lap\nAnnotating 9620/9666 - 1lkv7fr\n[CACHE HIT] 1lkv7fr\nAnnotating 9621/9666 - 1l2pcfm\n[CACHE HIT] 1l2pcfm\nAnnotating 9622/9666 - 1pk7sw6\n[CACHE HIT] 1pk7sw6\nAnnotating 9623/9666 - 1qmko5q\n[CACHE HIT] 1qmko5q\nAnnotating 9624/9666 - 1o4hli0\n[CACHE HIT] 1o4hli0\nAnnotating 9625/9666 - 1qsinws\n[CACHE HIT] 1qsinws\nAnnotating 9626/9666 - 1oyh6rj\n[CACHE HIT] 1oyh6rj\nAnnotating 9627/9666 - 1r3wmce\n[CACHE HIT] 1r3wmce\nAnnotating 9628/9666 - 1mh23wj\n[CACHE HIT] 1mh23wj\nAnnotating 9629/9666 - 1q7hc81\n[CACHE HIT] 1q7hc81\nAnnotating 9630/9666 - 1qz9ol1\n[CACHE HIT] 1qz9ol1\nAnnotating 9631/9666 - 1qnjkxi\n[CACHE HIT] 1qnjkxi\nAnnotating 9632/9666 - 1pcg2nv\n[CACHE HIT] 1pcg2nv\nAnnotating 9633/9666 - 1kbj0a7\n[CACHE HIT] 1kbj0a7\nAnnotating 9634/9666 - 1ov7dgm\n[CACHE HIT] 1ov7dgm\nAnnotating 9635/9666 - 1j4nrzd\n[CACHE HIT] 1j4nrzd\nAnnotating 9636/9666 - 1f5osxe\n[CACHE HIT] 1f5osxe\nAnnotating 9637/9666 - 1jcowk8\n[CACHE HIT] 1jcowk8\nAnnotating 9638/9666 - 1jxh6de\n[CACHE HIT] 1jxh6de\nAnnotating 9639/9666 - 1m02u8c\n[CACHE HIT] 1m02u8c\nAnnotating 9640/9666 - 1kk2n7t\n[CACHE HIT] 1kk2n7t\nAnnotating 9641/9666 - 1fy288o\n[CACHE HIT] 1fy288o\nAnnotating 9642/9666 - 1k8o3de\n[CACHE HIT] 1k8o3de\nAnnotating 9643/9666 - 1r12qxv\n[CACHE HIT] 1r12qxv\nAnnotating 9644/9666 - 1lietvt\n[CACHE HIT] 1lietvt\nAnnotating 9645/9666 - 1kwt1es\n[CACHE HIT] 1kwt1es\nAnnotating 9646/9666 - 1o77qze\n[CACHE HIT] 1o77qze\nAnnotating 9647/9666 - 1m9x2hp\n[CACHE HIT] 1m9x2hp\nAnnotating 9648/9666 - 1oog247\n[CACHE HIT] 1oog247\nAnnotating 9649/9666 - 1htzr52\n[CACHE HIT] 1htzr52\nAnnotating 9650/9666 - 1jddvgk\n[CACHE HIT] 1jddvgk\nAnnotating 9651/9666 - 1qrc2it\n[CACHE HIT] 1qrc2it\nAnnotating 9652/9666 - 1qok85l\n[CACHE HIT] 1qok85l\nAnnotating 9653/9666 - 1mnp6zf\n[CACHE HIT] 1mnp6zf\nAnnotating 9654/9666 - 1r2hk7p\n[CACHE HIT] 1r2hk7p\nAnnotating 9655/9666 - daf72a\n[CACHE HIT] daf72a\nAnnotating 9656/9666 - 1quuprk\n[CACHE HIT] 1quuprk\nAnnotating 9657/9666 - 1p2bx67\n[CACHE HIT] 1p2bx67\nAnnotating 9658/9666 - 1lkvqmr\n[CACHE HIT] 1lkvqmr\nAnnotating 9659/9666 - 1ey9yfc\n[CACHE HIT] 1ey9yfc\nAnnotating 9660/9666 - ev28pn\n[CACHE HIT] ev28pn\nAnnotating 9661/9666 - 1p1z6er\n[CACHE HIT] 1p1z6er\nAnnotating 9662/9666 - 1qowr4v\n[CACHE HIT] 1qowr4v\nAnnotating 9663/9666 - 1qwpia4\n[CACHE HIT] 1qwpia4\nAnnotating 9664/9666 - 1o2tv7e\n[CACHE HIT] 1o2tv7e\nAnnotating 9665/9666 - 1loi99h\n[CACHE HIT] 1loi99h\nAnnotating 9666/9666 - 1loh4va\n[CACHE HIT] 1loh4va\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "task_scam": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (41,42,43,44,45,47,67,68,72,73,74,75,76,77,79,82) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 25080,
+        "test_rows": 6445
+      },
+      "profile": {
+        "train_rows": 25080,
+        "test_rows": 6445,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9531100478468899,
+          "0": 0.04688995215311005
+        },
+        "class_balance_test": {
+          "1": 0.9464701318851824,
+          "0": 0.05352986811481769
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.98,
+          "0": 0.02
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T11:20:48.469416+00:00"
+    },
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3131,
+        "posts_after": 3131,
+        "new_posts_detected": 0,
+        "comments_after": 19116,
+        "stdout_tail": "r/India - Reached posts older than 7 days, stopping\n[16:57:08] Skipping cached post 1s255c2\n[16:57:08] Skipping cached post 1s1ib2d\n[16:57:08] Skipping cached post 1s1dzro\n[16:57:08] Skipping cached post 1s0fzbj\n[16:57:08] ===== EXIT r/India =====\n[16:57:09] r/LegalAdviceIndia - Fetching page 6 (yielded: 89)\n[16:57:09] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[16:57:09] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[16:57:09] Skipping cached post 1s3hudp\n[16:57:09] Skipping cached post 1s3exp4\n[16:57:09] Skipping cached post 1s3c6vm\n[16:57:09] Skipping cached post 1s316vj\n[16:57:09] Skipping cached post 1s2yzph\n[16:57:09] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[16:57:09] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[16:57:09] Sleeping 2.50s (r/legaladvice post pagination)\n[16:57:11] Skipping cached post 1s00shy\n[16:57:11] Skipping cached post 1rzv2vt\n[16:57:11] Skipping cached post 1rzu7ah\n[16:57:11] Skipping cached post 1rztds8\n[16:57:11] Skipping cached post 1rzpgne\n[16:57:11] r/LegalAdviceIndia - Accepted post 1rzpgne (age 6.0 days)\n[16:57:11] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[16:57:11] ===== EXIT r/LegalAdviceIndia =====\n[16:57:12] r/legaladvice - Fetching page 9 (yielded: 51)\n[16:57:13] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[16:57:13] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[16:57:13] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[16:57:13] Sleeping 1.71s (r/legaladvice post pagination)\n[16:57:15] r/legaladvice - Fetching page 10 (yielded: 54)\n[16:57:17] Skipping cached post 1s2xi3m\n[16:57:17] Skipping cached post 1s2verh\n[16:57:17] Skipping cached post 1s2rqzb\n[16:57:17] Skipping cached post 1s2ojnv\n[16:57:17] Skipping cached post 1s2k8eq\n[16:57:17] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[16:57:17] Skipping cached post 1s2i01u\n[16:57:17] Skipping cached post 1s2hfzv\n[16:57:17] Skipping cached post 1s2erw0\n[16:57:17] Skipping cached post 1s2fhsn\n[16:57:17] Skipping cached post 1s2dqir\n[16:57:17] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[16:57:17] r/legaladvice - Pagination cursor exhausted\n[16:57:17] Skipping cached post 1s2cc74\n[16:57:17] Skipping cached post 1s27wog\n[16:57:17] Skipping cached post 1s261av\n[16:57:17] ===== EXIT r/legaladvice =====\n[16:57:17] ============================================================\n[16:57:17] SCRAPING COMPLETE\n[16:57:17] Total posts: 0\n[16:57:17] Total comments: 0\n[16:57:17] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": "612/9666 - 1goj45y\n[CACHE HIT] 1goj45y\nAnnotating 9613/9666 - 177qmkt\n[CACHE HIT] 177qmkt\nAnnotating 9614/9666 - 1oamj2m\n[CACHE HIT] 1oamj2m\nAnnotating 9615/9666 - 1bpzwsq\n[CACHE HIT] 1bpzwsq\nAnnotating 9616/9666 - 1h46oqo\n[CACHE HIT] 1h46oqo\nAnnotating 9617/9666 - 1qpw9m7\n[CACHE HIT] 1qpw9m7\nAnnotating 9618/9666 - 1qtoq0i\n[CACHE HIT] 1qtoq0i\nAnnotating 9619/9666 - 1hg4vdd\n[CACHE HIT] 1hg4vdd\nAnnotating 9620/9666 - 1qy1sx3\n[CACHE HIT] 1qy1sx3\nAnnotating 9621/9666 - 1jgbnr0\n[CACHE HIT] 1jgbnr0\nAnnotating 9622/9666 - 1k7xkrk\n[CACHE HIT] 1k7xkrk\nAnnotating 9623/9666 - 1r31gab\n[CACHE HIT] 1r31gab\nAnnotating 9624/9666 - 1qlxnei\n[CACHE HIT] 1qlxnei\nAnnotating 9625/9666 - 1mp547w\n[CACHE HIT] 1mp547w\nAnnotating 9626/9666 - 1dhq9i5\n[CACHE HIT] 1dhq9i5\nAnnotating 9627/9666 - 1qkxt9o\n[CACHE HIT] 1qkxt9o\nAnnotating 9628/9666 - 1dcnyqx\n[CACHE HIT] 1dcnyqx\nAnnotating 9629/9666 - hhmhlb\n[CACHE HIT] hhmhlb\nAnnotating 9630/9666 - 1egt02m\n[CACHE HIT] 1egt02m\nAnnotating 9631/9666 - 1qv4arh\n[CACHE HIT] 1qv4arh\nAnnotating 9632/9666 - 1ph6f9i\n[CACHE HIT] 1ph6f9i\nAnnotating 9633/9666 - 1kasjw0\n[CACHE HIT] 1kasjw0\nAnnotating 9634/9666 - 1kfqkbe\n[CACHE HIT] 1kfqkbe\nAnnotating 9635/9666 - 1mel1hu\n[CACHE HIT] 1mel1hu\nAnnotating 9636/9666 - 1qrx5pd\n[CACHE HIT] 1qrx5pd\nAnnotating 9637/9666 - 1oqryxq\n[CACHE HIT] 1oqryxq\nAnnotating 9638/9666 - 1pl3kxl\n[CACHE HIT] 1pl3kxl\nAnnotating 9639/9666 - 1p2yvpk\n[CACHE HIT] 1p2yvpk\nAnnotating 9640/9666 - 1r4alg4\n[CACHE HIT] 1r4alg4\nAnnotating 9641/9666 - 1gf76em\n[CACHE HIT] 1gf76em\nAnnotating 9642/9666 - 1ju4jxi\n[CACHE HIT] 1ju4jxi\nAnnotating 9643/9666 - 1qycwhz\n[CACHE HIT] 1qycwhz\nAnnotating 9644/9666 - 1p1ti4h\n[CACHE HIT] 1p1ti4h\nAnnotating 9645/9666 - 1ilh19l\n[CACHE HIT] 1ilh19l\nAnnotating 9646/9666 - 1iqx5lh\n[CACHE HIT] 1iqx5lh\nAnnotating 9647/9666 - 1px27g7\n[CACHE HIT] 1px27g7\nAnnotating 9648/9666 - 1mgimwy\n[CACHE HIT] 1mgimwy\nAnnotating 9649/9666 - 1kha9sn\n[CACHE HIT] 1kha9sn\nAnnotating 9650/9666 - 11tqkjd\n[CACHE HIT] 11tqkjd\nAnnotating 9651/9666 - 1l1029c\n[CACHE HIT] 1l1029c\nAnnotating 9652/9666 - 1qdrvn5\n[CACHE HIT] 1qdrvn5\nAnnotating 9653/9666 - 1pdhqwj\n[CACHE HIT] 1pdhqwj\nAnnotating 9654/9666 - 1qzzx8e\n[CACHE HIT] 1qzzx8e\nAnnotating 9655/9666 - 1qdkfyv\n[CACHE HIT] 1qdkfyv\nAnnotating 9656/9666 - 1d66had\n[CACHE HIT] 1d66had\nAnnotating 9657/9666 - 1l45s9w\n[CACHE HIT] 1l45s9w\nAnnotating 9658/9666 - 1kkrlri\n[CACHE HIT] 1kkrlri\nAnnotating 9659/9666 - 1fs5tut\n[CACHE HIT] 1fs5tut\nAnnotating 9660/9666 - 1j9v436\n[CACHE HIT] 1j9v436\nAnnotating 9661/9666 - 1d8akd9\n[CACHE HIT] 1d8akd9\nAnnotating 9662/9666 - 1it5xjv\n[CACHE HIT] 1it5xjv\nAnnotating 9663/9666 - 1k685nw\n[CACHE HIT] 1k685nw\nAnnotating 9664/9666 - 1kare65\n[CACHE HIT] 1kare65\nAnnotating 9665/9666 - 1qdzaot\n[CACHE HIT] 1qdzaot\nAnnotating 9666/9666 - 1jryq8u\n[CACHE HIT] 1jryq8u\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "identity_theft": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (41,42,43,44,45,47,67,68,72,74,75,76,77,78,80,82) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 29616,
+        "test_rows": 7614
+      },
+      "profile": {
+        "train_rows": 29616,
+        "test_rows": 7614,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9528295515937332,
+          "0": 0.047170448406266885
+        },
+        "class_balance_test": {
+          "1": 0.9477278697136853,
+          "0": 0.05227213028631468
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.94,
+          "0": 0.06
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T11:48:29.141336+00:00"
+    },
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3136,
+        "posts_after": 3137,
+        "new_posts_detected": 1,
+        "comments_after": 19120,
+        "stdout_tail": "ched posts older than 7 days, stopping\n[18:28:39] Skipping cached post 1s00shy\n[18:28:39] Skipping cached post 1rzv2vt\n[18:28:39] Skipping cached post 1rzu7ah\n[18:28:39] Skipping cached post 1rztds8\n[18:28:39] ===== EXIT r/LegalAdviceIndia =====\n[18:28:39] Skipping cached post 1s296r5\n[18:28:39] Skipping cached post 1s255c2\n[18:28:39] Skipping cached post 1s1ib2d\n[18:28:39] Skipping cached post 1s1dzro\n[18:28:39] Skipping cached post 1s0fzbj\n[18:28:39] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[18:28:39] r/India - Reached posts older than 7 days, stopping\n[18:28:39] ===== EXIT r/India =====\n[18:28:39] r/legaladvice - Fetching page 8 (yielded: 48)\n[18:28:41] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[18:28:41] Skipping cached post 1s3k53a\n[18:28:41] Skipping cached post 1s3hudp\n[18:28:41] Skipping cached post 1s3exp4\n[18:28:41] Skipping cached post 1s3c6vm\n[18:28:41] Skipping cached post 1s316vj\n[18:28:41] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[18:28:41] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[18:28:41] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[18:28:41] Sleeping 2.76s (r/legaladvice post pagination)\n[18:28:44] r/legaladvice - Fetching page 9 (yielded: 52)\n[18:28:46] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[18:28:46] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[18:28:46] Skipping cached post 1s2yzph\n[18:28:46] Skipping cached post 1s2xi3m\n[18:28:46] Skipping cached post 1s2verh\n[18:28:46] Skipping cached post 1s2rqzb\n[18:28:46] Skipping cached post 1s2ojnv\n[18:28:46] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[18:28:46] Sleeping 2.58s (r/legaladvice post pagination)\n[18:28:48] r/legaladvice - Fetching page 10 (yielded: 55)\n[18:28:50] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[18:28:50] Skipping cached post 1s2k8eq\n[18:28:50] Skipping cached post 1s2i01u\n[18:28:50] Skipping cached post 1s2erw0\n[18:28:50] Skipping cached post 1s2hfzv\n[18:28:50] Skipping cached post 1s2fhsn\n[18:28:50] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2cc74 (age 4.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[18:28:50] r/legaladvice - Pagination cursor exhausted\n[18:28:50] Skipping cached post 1s2dqir\n[18:28:50] Skipping cached post 1s2cc74\n[18:28:50] Skipping cached post 1s27wog\n[18:28:50] Skipping cached post 1s261av\n[18:28:50] ===== EXIT r/legaladvice =====\n[18:28:50] ============================================================\n[18:28:50] SCRAPING COMPLETE\n[18:28:50] Total posts: 1\n[18:28:50] Total comments: 1\n[18:28:50] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": "HE HIT] 1kwt1es\nAnnotating 9620/9666 - 1jj89ot\n[CACHE HIT] 1jj89ot\nAnnotating 9621/9666 - 1r0kwzd\n[CACHE HIT] 1r0kwzd\nAnnotating 9622/9666 - 1qu40gk\n[CACHE HIT] 1qu40gk\nAnnotating 9623/9666 - 1gsj3x6\n[CACHE HIT] 1gsj3x6\nAnnotating 9624/9666 - 1ptypd5\n[CACHE HIT] 1ptypd5\nAnnotating 9625/9666 - 1r3qkj2\n[CACHE HIT] 1r3qkj2\nAnnotating 9626/9666 - 1opk22a\n[CACHE HIT] 1opk22a\nAnnotating 9627/9666 - 1gmc0g1\n[CACHE HIT] 1gmc0g1\nAnnotating 9628/9666 - 1qy4098\n[CACHE HIT] 1qy4098\nAnnotating 9629/9666 - 1loi0c8\n[CACHE HIT] 1loi0c8\nAnnotating 9630/9666 - 1lckzo1\n[CACHE HIT] 1lckzo1\nAnnotating 9631/9666 - 1j64onq\n[CACHE HIT] 1j64onq\nAnnotating 9632/9666 - 1qrooo6\n[CACHE HIT] 1qrooo6\nAnnotating 9633/9666 - 1on2fnl\n[CACHE HIT] 1on2fnl\nAnnotating 9634/9666 - 1qz2m9y\n[CACHE HIT] 1qz2m9y\nAnnotating 9635/9666 - 1k6v8u3\n[CACHE HIT] 1k6v8u3\nAnnotating 9636/9666 - aqylaa\n[CACHE HIT] aqylaa\nAnnotating 9637/9666 - 1jrceh7\n[CACHE HIT] 1jrceh7\nAnnotating 9638/9666 - 1d9ekgz\n[CACHE HIT] 1d9ekgz\nAnnotating 9639/9666 - 1ae785c\n[CACHE HIT] 1ae785c\nAnnotating 9640/9666 - 1d1pthj\n[WARN] Invalid response for post 1d1pthj (attempt 1). Saved to debug_failed_response.txt\n[WARN] Invalid response for post 1d1pthj (attempt 2). Saved to debug_failed_response.txt\n[WARN] Invalid response for post 1d1pthj (attempt 3). Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1d1pthj failed: Failed to get valid JSON for post 1d1pthj after retries. Skipping and logging to failed_posts.txt\nAnnotating 9641/9666 - 1mo7f3l\n[CACHE HIT] 1mo7f3l\nAnnotating 9642/9666 - 1r3davg\n[CACHE HIT] 1r3davg\nAnnotating 9643/9666 - 1pothsb\n[CACHE HIT] 1pothsb\nAnnotating 9644/9666 - 1n42qtc\n[CACHE HIT] 1n42qtc\nAnnotating 9645/9666 - 1qvuzh1\n[CACHE HIT] 1qvuzh1\nAnnotating 9646/9666 - 1r0cv1e\n[CACHE HIT] 1r0cv1e\nAnnotating 9647/9666 - 1qybd7g\n[CACHE HIT] 1qybd7g\nAnnotating 9648/9666 - 1jl6kdt\n[CACHE HIT] 1jl6kdt\nAnnotating 9649/9666 - 1qr5y43\n[CACHE HIT] 1qr5y43\nAnnotating 9650/9666 - 1r15k0x\n[CACHE HIT] 1r15k0x\nAnnotating 9651/9666 - 1hvrhxm\n[CACHE HIT] 1hvrhxm\nAnnotating 9652/9666 - 1r16f81\n[CACHE HIT] 1r16f81\nAnnotating 9653/9666 - 1h9rib3\n[CACHE HIT] 1h9rib3\nAnnotating 9654/9666 - 1o2klhr\n[CACHE HIT] 1o2klhr\nAnnotating 9655/9666 - 1lohg6d\n[CACHE HIT] 1lohg6d\nAnnotating 9656/9666 - 1lqa62f\n[CACHE HIT] 1lqa62f\nAnnotating 9657/9666 - 1d4nk73\n[CACHE HIT] 1d4nk73\nAnnotating 9658/9666 - 1otlunn\n[CACHE HIT] 1otlunn\nAnnotating 9659/9666 - 1kr4gb9\n[CACHE HIT] 1kr4gb9\nAnnotating 9660/9666 - 1elspfa\n[CACHE HIT] 1elspfa\nAnnotating 9661/9666 - 18u4qiz\n[CACHE HIT] 18u4qiz\nAnnotating 9662/9666 - 1mr5c3t\n[CACHE HIT] 1mr5c3t\nAnnotating 9663/9666 - 1ipfaro\n[CACHE HIT] 1ipfaro\nAnnotating 9664/9666 - 1n3qepn\n[CACHE HIT] 1n3qepn\nAnnotating 9665/9666 - 1qy4lu7\n[CACHE HIT] 1qy4lu7\nAnnotating 9666/9666 - 1k3jtsb\n[CACHE HIT] 1k3jtsb\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "task_scam": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (59,60,61,62,63,65,80,81) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 34152,
+        "test_rows": 8783
+      },
+      "profile": {
+        "train_rows": 34152,
+        "test_rows": 8783,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9524185992035605,
+          "0": 0.047581400796439445
+        },
+        "class_balance_test": {
+          "1": 0.949447796880337,
+          "0": 0.050552203119662985
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.94,
+          "0": 0.06
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T13:21:09.166789+00:00"
+    },
+    {
+      "stage": "ingestion_agent",
+      "scrape": {
+        "returncode": 0,
+        "posts_before": 3137,
+        "posts_after": 3138,
+        "new_posts_detected": 1,
+        "comments_after": 19121,
+        "stdout_tail": "older than 7 days, stopping\n[18:51:51] Skipping cached post 1s00shy\n[18:51:51] Skipping cached post 1rzv2vt\n[18:51:51] Skipping cached post 1rztds8\n[18:51:51] Skipping cached post 1rzu7ah\n[18:51:51] ===== EXIT r/LegalAdviceIndia =====\n[18:51:51] r/legaladvice - Fetching page 8 (yielded: 48)\n[18:51:51] r/India - Fetching page 4 (yielded: 13)\n[18:51:52] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[18:51:52] Skipping cached post 1s3k53a\n[18:51:52] Skipping cached post 1s3hudp\n[18:51:52] Skipping cached post 1s3exp4\n[18:51:52] Skipping cached post 1s3c6vm\n[18:51:52] Skipping cached post 1s316vj\n[18:51:52] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[18:51:52] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[18:51:52] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[18:51:52] Sleeping 2.39s (r/legaladvice post pagination)\n[18:51:53] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[18:51:53] r/India - Reached posts older than 7 days, stopping\n[18:51:53] Skipping cached post 1s255c2\n[18:51:53] Skipping cached post 1s1ib2d\n[18:51:53] Skipping cached post 1s1dzro\n[18:51:53] Skipping cached post 1s0fzbj\n[18:51:53] ===== EXIT r/India =====\n[18:51:55] r/legaladvice - Fetching page 9 (yielded: 52)\n[18:51:57] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[18:51:57] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[18:51:57] Skipping cached post 1s2yzph\n[18:51:57] Skipping cached post 1s2xi3m\n[18:51:57] Skipping cached post 1s2verh\n[18:51:57] Skipping cached post 1s2rqzb\n[18:51:57] Skipping cached post 1s2ojnv\n[18:51:57] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[18:51:57] Sleeping 1.90s (r/legaladvice post pagination)\n[18:51:59] r/legaladvice - Fetching page 10 (yielded: 55)\n[18:52:00] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[18:52:00] Skipping cached post 1s2k8eq\n[18:52:00] Skipping cached post 1s2i01u\n[18:52:00] Skipping cached post 1s2hfzv\n[18:52:00] Skipping cached post 1s2fhsn\n[18:52:00] Skipping cached post 1s2erw0\n[18:52:00] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2cc74 (age 4.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[18:52:00] r/legaladvice - Pagination cursor exhausted\n[18:52:00] Skipping cached post 1s2dqir\n[18:52:00] Skipping cached post 1s2cc74\n[18:52:00] Skipping cached post 1s27wog\n[18:52:00] Skipping cached post 1s261av\n[18:52:00] ===== EXIT r/legaladvice =====\n[18:52:00] ============================================================\n[18:52:00] SCRAPING COMPLETE\n[18:52:00] Total posts: 1\n[18:52:00] Total comments: 1\n[18:52:00] ============================================================\n",
+        "stderr_tail": ""
+      },
+      "label": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+        "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+        "stdout_tail": "ng 9612/9666 - 1kbavq5\n[CACHE HIT] 1kbavq5\nAnnotating 9613/9666 - 1ixay0z\n[CACHE HIT] 1ixay0z\nAnnotating 9614/9666 - 1mkehmd\n[CACHE HIT] 1mkehmd\nAnnotating 9615/9666 - 1mnge0n\n[CACHE HIT] 1mnge0n\nAnnotating 9616/9666 - ao6xm6\n[CACHE HIT] ao6xm6\nAnnotating 9617/9666 - 1bpz0s8\n[CACHE HIT] 1bpz0s8\nAnnotating 9618/9666 - 1qo717u\n[CACHE HIT] 1qo717u\nAnnotating 9619/9666 - 1qvsoga\n[CACHE HIT] 1qvsoga\nAnnotating 9620/9666 - 1qvo2bx\n[CACHE HIT] 1qvo2bx\nAnnotating 9621/9666 - 1du8jru\n[CACHE HIT] 1du8jru\nAnnotating 9622/9666 - 1kzq3h7\n[CACHE HIT] 1kzq3h7\nAnnotating 9623/9666 - 1mbwg6q\n[CACHE HIT] 1mbwg6q\nAnnotating 9624/9666 - 1qy6vd1\n[CACHE HIT] 1qy6vd1\nAnnotating 9625/9666 - 1jljhhb\n[CACHE HIT] 1jljhhb\nAnnotating 9626/9666 - 1qtlq0n\n[CACHE HIT] 1qtlq0n\nAnnotating 9627/9666 - 1ju6qun\n[CACHE HIT] 1ju6qun\nAnnotating 9628/9666 - 1gknpdu\n[CACHE HIT] 1gknpdu\nAnnotating 9629/9666 - uusseq\n[CACHE HIT] uusseq\nAnnotating 9630/9666 - 1pr50sx\n[CACHE HIT] 1pr50sx\nAnnotating 9631/9666 - 1qgvpn0\n[CACHE HIT] 1qgvpn0\nAnnotating 9632/9666 - 1m9q8qv\n[CACHE HIT] 1m9q8qv\nAnnotating 9633/9666 - 1p6dams\n[CACHE HIT] 1p6dams\nAnnotating 9634/9666 - 1p8jp8v\n[CACHE HIT] 1p8jp8v\nAnnotating 9635/9666 - 17zkbkl\n[CACHE HIT] 17zkbkl\nAnnotating 9636/9666 - 1ih8fdt\n[CACHE HIT] 1ih8fdt\nAnnotating 9637/9666 - 1962us0\n[CACHE HIT] 1962us0\nAnnotating 9638/9666 - 1mjpsgw\n[CACHE HIT] 1mjpsgw\nAnnotating 9639/9666 - gbjj2t\n[CACHE HIT] gbjj2t\nAnnotating 9640/9666 - 1pt4ydp\n[CACHE HIT] 1pt4ydp\nAnnotating 9641/9666 - 1r0h455\n[CACHE HIT] 1r0h455\nAnnotating 9642/9666 - 1j39vjp\n[CACHE HIT] 1j39vjp\nAnnotating 9643/9666 - 1qlpitv\n[CACHE HIT] 1qlpitv\nAnnotating 9644/9666 - 1qyl3es\n[CACHE HIT] 1qyl3es\nAnnotating 9645/9666 - 1qy60v8\n[CACHE HIT] 1qy60v8\nAnnotating 9646/9666 - 1qe8gcg\n[CACHE HIT] 1qe8gcg\nAnnotating 9647/9666 - 1qrafpy\n[CACHE HIT] 1qrafpy\nAnnotating 9648/9666 - 1m9krtm\n[CACHE HIT] 1m9krtm\nAnnotating 9649/9666 - 1g7hciv\n[CACHE HIT] 1g7hciv\nAnnotating 9650/9666 - 1r19wss\n[CACHE HIT] 1r19wss\nAnnotating 9651/9666 - 1jpp4v9\n[CACHE HIT] 1jpp4v9\nAnnotating 9652/9666 - 1r0clup\n[CACHE HIT] 1r0clup\nAnnotating 9653/9666 - 1q7990d\n[CACHE HIT] 1q7990d\nAnnotating 9654/9666 - 1oi3sn4\n[CACHE HIT] 1oi3sn4\nAnnotating 9655/9666 - 1pkuqxc\n[CACHE HIT] 1pkuqxc\nAnnotating 9656/9666 - 1qxa55j\n[CACHE HIT] 1qxa55j\nAnnotating 9657/9666 - 1jh3cfj\n[CACHE HIT] 1jh3cfj\nAnnotating 9658/9666 - 1ouvdg4\n[CACHE HIT] 1ouvdg4\nAnnotating 9659/9666 - 1pboyrt\n[CACHE HIT] 1pboyrt\nAnnotating 9660/9666 - 1ql48cg\n[CACHE HIT] 1ql48cg\nAnnotating 9661/9666 - 1o4ox7p\n[CACHE HIT] 1o4ox7p\nAnnotating 9662/9666 - 1gac2ph\n[CACHE HIT] 1gac2ph\nAnnotating 9663/9666 - 1ommwn7\n[CACHE HIT] 1ommwn7\nAnnotating 9664/9666 - 1n7oak7\n[CACHE HIT] 1n7oak7\nAnnotating 9665/9666 - 1qqzbil\n[CACHE HIT] 1qqzbil\nAnnotating 9666/9666 - 1ne1gan\n[CACHE HIT] 1ne1gan\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+        "stderr_tail": ""
+      },
+      "post_process": {
+        "returncode": 0,
+        "rows": 9631,
+        "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+        "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+        "summary": {
+          "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+          "raw_shape": [
+            9631,
+            87
+          ],
+          "processed_shape": [
+            9631,
+            89
+          ],
+          "dropped_trailing_columns": 0,
+          "is_fraud_distribution": {
+            "-1": 3902,
+            "0": 294,
+            "1": 5435
+          },
+          "fraud_type_top_10": {
+            "none": 4199,
+            "transaction": 3719,
+            "commerce": 796,
+            "social_engineering": 767,
+            "meta": 45,
+            "credential": 35,
+            "advanced": 22,
+            "pig_butchering": 11,
+            "task": 5,
+            "task_scam": 4
+          },
+          "currencies_top_10": {
+            "unknown": 7612,
+            "USD": 1168,
+            "INR": 586,
+            "EUR": 78,
+            "GBP": 45,
+            "USDT": 27,
+            "CAD": 24,
+            "BTC": 18,
+            "ETH": 12,
+            "SOL": 9
+          },
+          "parsed_amount_count": 2513
+        },
+        "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+        "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (44,74,79,80,81,82,83,85) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+      },
+      "append": {
+        "sync_result": {
+          "new_rows_added": 5705,
+          "train_rows_added": 4536,
+          "test_rows_added": 1169,
+          "class_balance_new_rows": {
+            "1": 0.9519719544259422,
+            "0": 0.04802804557405784
+          }
+        },
+        "train_rows": 38688,
+        "test_rows": 9952
+      },
+      "profile": {
+        "train_rows": 38688,
+        "test_rows": 9952,
+        "target_column": "annotation.is_fraud",
+        "class_balance_train": {
+          "1": 0.9524141852770885,
+          "0": 0.0475858147229115
+        },
+        "class_balance_test": {
+          "1": 0.9495578778135049,
+          "0": 0.05044212218649518
+        },
+        "label_noise_score": 0.0,
+        "slang_drift_score": 0.0,
+        "top_train_tokens": [],
+        "top_test_tokens": [],
+        "prepared_dataset_exists": true
+      },
+      "review": {
+        "sample_size": 50,
+        "ambiguous_rows": 50,
+        "ambiguous_ratio": 1.0,
+        "target_distribution": {
+          "1": 0.9,
+          "0": 0.1
+        },
+        "recommendation": "relabel"
+      },
+      "recorded_at": "2026-03-28T13:43:16.464319+00:00"
+    }
+  ],
+  "decisions": [
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "IngestionAgent returned non-JSON content; fallback applied.",
+        "action": "retry_ingestion",
+        "confidence": 0.4,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3125,
+            "posts_after": 3125,
+            "new_posts_detected": 0,
+            "comments_after": 19116,
+            "stdout_tail": ":45] r/LegalAdviceIndia - Fetching page 6 (yielded: 87)\n[15:16:46] r/legaladvice - Fetching page 8 (yielded: 47)\n[15:16:46] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[15:16:46] r/India - Reached posts older than 7 days, stopping\n[15:16:46] Skipping cached post 1s1ib2d\n[15:16:46] Skipping cached post 1s1dzro\n[15:16:46] Skipping cached post 1s0fzbj\n[15:16:46] ===== EXIT r/India =====\n[15:16:47] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[15:16:47] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[15:16:47] Skipping cached post 1s3hudp\n[15:16:47] Skipping cached post 1s3exp4\n[15:16:47] Skipping cached post 1s3c6vm\n[15:16:47] Skipping cached post 1s316vj\n[15:16:47] Skipping cached post 1s2yzph\n[15:16:47] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[15:16:47] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[15:16:47] Sleeping 2.65s (r/legaladvice post pagination)\n[15:16:47] r/LegalAdviceIndia - Accepted post 1rznzrj (age 6.0 days)\n[15:16:47] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[15:16:47] Skipping cached post 1rzpgne\n[15:16:47] Skipping cached post 1rzokl9\n[15:16:47] Skipping cached post 1rznzrj\n[15:16:47] ===== EXIT r/LegalAdviceIndia =====\n[15:16:50] r/legaladvice - Fetching page 9 (yielded: 51)\n[15:16:51] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[15:16:51] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[15:16:51] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[15:16:51] Sleeping 2.10s (r/legaladvice post pagination)\n[15:16:53] r/legaladvice - Fetching page 10 (yielded: 54)\n[15:16:55] Skipping cached post 1s2xi3m\n[15:16:55] Skipping cached post 1s2verh\n[15:16:55] Skipping cached post 1s2rqzb\n[15:16:55] Skipping cached post 1s2ojnv\n[15:16:55] Skipping cached post 1s2k8eq\n[15:16:55] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[15:16:55] Skipping cached post 1s2i01u\n[15:16:55] Skipping cached post 1s2hfzv\n[15:16:55] Skipping cached post 1s2erw0\n[15:16:55] Skipping cached post 1s2fhsn\n[15:16:55] Skipping cached post 1s2dqir\n[15:16:55] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[15:16:55] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[15:16:55] r/legaladvice - Pagination cursor exhausted\n[15:16:55] Skipping cached post 1s2cc74\n[15:16:55] Skipping cached post 1s27wog\n[15:16:55] Skipping cached post 1s261av\n[15:16:55] ===== EXIT r/legaladvice =====\n[15:16:55] ============================================================\n[15:16:55] SCRAPING COMPLETE\n[15:16:55] Total posts: 0\n[15:16:55] Total comments: 0\n[15:16:55] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": " 9612/9666 - 1r3m9lx\n[CACHE HIT] 1r3m9lx\nAnnotating 9613/9666 - 1nejowy\n[CACHE HIT] 1nejowy\nAnnotating 9614/9666 - 1qdx7bi\n[CACHE HIT] 1qdx7bi\nAnnotating 9615/9666 - 1nhqtmd\n[CACHE HIT] 1nhqtmd\nAnnotating 9616/9666 - 16z3qmy\n[CACHE HIT] 16z3qmy\nAnnotating 9617/9666 - 1qjoa4v\n[CACHE HIT] 1qjoa4v\nAnnotating 9618/9666 - 1o3l2c9\n[CACHE HIT] 1o3l2c9\nAnnotating 9619/9666 - 1okohl9\n[CACHE HIT] 1okohl9\nAnnotating 9620/9666 - 1nujg69\n[CACHE HIT] 1nujg69\nAnnotating 9621/9666 - 1mbdnlu\n[CACHE HIT] 1mbdnlu\nAnnotating 9622/9666 - 1q1f5fb\n[CACHE HIT] 1q1f5fb\nAnnotating 9623/9666 - 1qyl5q7\n[CACHE HIT] 1qyl5q7\nAnnotating 9624/9666 - 1ow3ut2\n[CACHE HIT] 1ow3ut2\nAnnotating 9625/9666 - 1l26rge\n[CACHE HIT] 1l26rge\nAnnotating 9626/9666 - 1nk2sz0\n[CACHE HIT] 1nk2sz0\nAnnotating 9627/9666 - 1llegpj\n[CACHE HIT] 1llegpj\nAnnotating 9628/9666 - 1o8lei4\n[CACHE HIT] 1o8lei4\nAnnotating 9629/9666 - 1lxbbmf\n[CACHE HIT] 1lxbbmf\nAnnotating 9630/9666 - 1pwtt1g\n[CACHE HIT] 1pwtt1g\nAnnotating 9631/9666 - 1b760ws\n[CACHE HIT] 1b760ws\nAnnotating 9632/9666 - 1r0yhga\n[CACHE HIT] 1r0yhga\nAnnotating 9633/9666 - 1ob0gzo\n[CACHE HIT] 1ob0gzo\nAnnotating 9634/9666 - 1ioyk57\n[CACHE HIT] 1ioyk57\nAnnotating 9635/9666 - 1o6k9lx\n[CACHE HIT] 1o6k9lx\nAnnotating 9636/9666 - 1qw7lvt\n[CACHE HIT] 1qw7lvt\nAnnotating 9637/9666 - 1ntt8b8\n[CACHE HIT] 1ntt8b8\nAnnotating 9638/9666 - 1qknlew\n[CACHE HIT] 1qknlew\nAnnotating 9639/9666 - 161515u\n[CACHE HIT] 161515u\nAnnotating 9640/9666 - l3y8oe\n[CACHE HIT] l3y8oe\nAnnotating 9641/9666 - 1pplu00\n[CACHE HIT] 1pplu00\nAnnotating 9642/9666 - 1lohvmy\n[CACHE HIT] 1lohvmy\nAnnotating 9643/9666 - 1qichc9\n[CACHE HIT] 1qichc9\nAnnotating 9644/9666 - 1q24gkh\n[CACHE HIT] 1q24gkh\nAnnotating 9645/9666 - 1lohbip\n[CACHE HIT] 1lohbip\nAnnotating 9646/9666 - 1pqsz9g\n[CACHE HIT] 1pqsz9g\nAnnotating 9647/9666 - 18ie5jb\n[CACHE HIT] 18ie5jb\nAnnotating 9648/9666 - 1qzbsb4\n[CACHE HIT] 1qzbsb4\nAnnotating 9649/9666 - 1ikfgyq\n[CACHE HIT] 1ikfgyq\nAnnotating 9650/9666 - 1mw6j4e\n[CACHE HIT] 1mw6j4e\nAnnotating 9651/9666 - 1qd9m7q\n[CACHE HIT] 1qd9m7q\nAnnotating 9652/9666 - 1qmir6q\n[CACHE HIT] 1qmir6q\nAnnotating 9653/9666 - 1k8512u\n[CACHE HIT] 1k8512u\nAnnotating 9654/9666 - 1pzhfpt\n[CACHE HIT] 1pzhfpt\nAnnotating 9655/9666 - 1bxmefx\n[CACHE HIT] 1bxmefx\nAnnotating 9656/9666 - 9g5tt9\n[CACHE HIT] 9g5tt9\nAnnotating 9657/9666 - 1lbhijs\n[CACHE HIT] 1lbhijs\nAnnotating 9658/9666 - 1e04r43\n[CACHE HIT] 1e04r43\nAnnotating 9659/9666 - 1ngq4ty\n[CACHE HIT] 1ngq4ty\nAnnotating 9660/9666 - 1r0rgqd\n[CACHE HIT] 1r0rgqd\nAnnotating 9661/9666 - 1qvwznd\n[CACHE HIT] 1qvwznd\nAnnotating 9662/9666 - 1nlihmb\n[CACHE HIT] 1nlihmb\nAnnotating 9663/9666 - 1h5rpbe\n[CACHE HIT] 1h5rpbe\nAnnotating 9664/9666 - 1d5h4sx\n[CACHE HIT] 1d5h4sx\nAnnotating 9665/9666 - 1qcapay\n[CACHE HIT] 1qcapay\nAnnotating 9666/9666 - 1qcsfxr\n[CACHE HIT] 1qcsfxr\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "identity_theft": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (75,76,77,78,79,81,83) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 16008,
+            "test_rows": 4107
+          },
+          "profile": {
+            "train_rows": 16008,
+            "test_rows": 4107,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9530859570214892,
+              "0": 0.04691404297851075
+            },
+            "class_balance_test": {
+              "1": 0.9459459459459459,
+              "0": 0.05405405405405406
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.96,
+              "0": 0.04
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T10:09:33.975828+00:00"
+    },
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "IngestionAgent returned non-JSON content; fallback applied.",
+        "action": "retry_ingestion",
+        "confidence": 0.4,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3128,
+            "posts_after": 3130,
+            "new_posts_detected": 2,
+            "comments_after": 19116,
+            "stdout_tail": "7 days, stopping\n[15:52:10] Skipping cached post 1s255c2\n[15:52:10] Skipping cached post 1s1ib2d\n[15:52:10] Skipping cached post 1s1dzro\n[15:52:10] Skipping cached post 1s0fzbj\n[15:52:10] ===== EXIT r/India =====\n[15:52:11] Skipping cached post 1rzv2vt\n[15:52:11] Skipping cached post 1rzu7ah\n[15:52:11] Skipping cached post 1rztds8\n[15:52:11] Skipping cached post 1rzpgne\n[15:52:11] Skipping cached post 1rzokl9\n[15:52:11] r/LegalAdviceIndia - Accepted post 1rzokl9 (age 6.0 days)\n[15:52:11] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[15:52:11] ===== EXIT r/LegalAdviceIndia =====\n[15:52:11] r/legaladvice - Fetching page 8 (yielded: 48)\n[15:52:13] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[15:52:13] Skipping cached post 1s3k53a\n[15:52:13] Skipping cached post 1s3hudp\n[15:52:13] Skipping cached post 1s3exp4\n[15:52:13] Skipping cached post 1s3c6vm\n[15:52:13] Skipping cached post 1s316vj\n[15:52:13] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[15:52:13] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[15:52:13] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[15:52:13] Sleeping 1.97s (r/legaladvice post pagination)\n[15:52:15] r/legaladvice - Fetching page 9 (yielded: 52)\n[15:52:17] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[15:52:17] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[15:52:17] Skipping cached post 1s2yzph\n[15:52:17] Skipping cached post 1s2xi3m\n[15:52:17] Skipping cached post 1s2verh\n[15:52:17] Skipping cached post 1s2rqzb\n[15:52:17] Skipping cached post 1s2ojnv\n[15:52:17] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[15:52:17] Sleeping 2.82s (r/legaladvice post pagination)\n[15:52:19] r/legaladvice - Fetching page 10 (yielded: 55)\n[15:52:21] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[15:52:21] Skipping cached post 1s2k8eq\n[15:52:21] Skipping cached post 1s2i01u\n[15:52:21] Skipping cached post 1s2hfzv\n[15:52:21] Skipping cached post 1s2fhsn\n[15:52:21] Skipping cached post 1s2erw0\n[15:52:21] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[15:52:21] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[15:52:21] r/legaladvice - Pagination cursor exhausted\n[15:52:21] Skipping cached post 1s2dqir\n[15:52:21] Skipping cached post 1s2cc74\n[15:52:21] Skipping cached post 1s27wog\n[15:52:21] Skipping cached post 1s261av\n[15:52:21] ===== EXIT r/legaladvice =====\n[15:52:21] ============================================================\n[15:52:21] SCRAPING COMPLETE\n[15:52:21] Total posts: 2\n[15:52:21] Total comments: 0\n[15:52:21] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": "2/9666 - 1pqyvf2\n[CACHE HIT] 1pqyvf2\nAnnotating 9613/9666 - 1ploo5l\n[CACHE HIT] 1ploo5l\nAnnotating 9614/9666 - 1o3zgl6\n[CACHE HIT] 1o3zgl6\nAnnotating 9615/9666 - 1j7ia2z\n[CACHE HIT] 1j7ia2z\nAnnotating 9616/9666 - 1mjzs3a\n[CACHE HIT] 1mjzs3a\nAnnotating 9617/9666 - 1ln5lwv\n[CACHE HIT] 1ln5lwv\nAnnotating 9618/9666 - 1kx69sd\n[CACHE HIT] 1kx69sd\nAnnotating 9619/9666 - 1qem9ct\n[CACHE HIT] 1qem9ct\nAnnotating 9620/9666 - 1qsyh6g\n[CACHE HIT] 1qsyh6g\nAnnotating 9621/9666 - 1oqf58r\n[CACHE HIT] 1oqf58r\nAnnotating 9622/9666 - 1m31cpv\n[CACHE HIT] 1m31cpv\nAnnotating 9623/9666 - 1qu4hob\n[CACHE HIT] 1qu4hob\nAnnotating 9624/9666 - 1qxja0s\n[CACHE HIT] 1qxja0s\nAnnotating 9625/9666 - 1m3d96z\n[CACHE HIT] 1m3d96z\nAnnotating 9626/9666 - 1pso70f\n[CACHE HIT] 1pso70f\nAnnotating 9627/9666 - 1onfq5q\n[CACHE HIT] 1onfq5q\nAnnotating 9628/9666 - 1pdgwno\n[CACHE HIT] 1pdgwno\nAnnotating 9629/9666 - 1r1sgbx\n[CACHE HIT] 1r1sgbx\nAnnotating 9630/9666 - 1p0auox\n[CACHE HIT] 1p0auox\nAnnotating 9631/9666 - 1besx9v\n[CACHE HIT] 1besx9v\nAnnotating 9632/9666 - 1p6o4vy\n[CACHE HIT] 1p6o4vy\nAnnotating 9633/9666 - 1naay2f\n[CACHE HIT] 1naay2f\nAnnotating 9634/9666 - 1hjts16\n[CACHE HIT] 1hjts16\nAnnotating 9635/9666 - 1g6q1aw\n[CACHE HIT] 1g6q1aw\nAnnotating 9636/9666 - 1jatvpz\n[CACHE HIT] 1jatvpz\nAnnotating 9637/9666 - 1led7g6\n[CACHE HIT] 1led7g6\nAnnotating 9638/9666 - 1qskn92\n[CACHE HIT] 1qskn92\nAnnotating 9639/9666 - 1i2y12r\n[CACHE HIT] 1i2y12r\nAnnotating 9640/9666 - 1lah9jr\n[CACHE HIT] 1lah9jr\nAnnotating 9641/9666 - 1m4pyxx\n[CACHE HIT] 1m4pyxx\nAnnotating 9642/9666 - 1jc8p3i\n[CACHE HIT] 1jc8p3i\nAnnotating 9643/9666 - 1r3au1l\n[CACHE HIT] 1r3au1l\nAnnotating 9644/9666 - 1ptx8d7\n[CACHE HIT] 1ptx8d7\nAnnotating 9645/9666 - 1kzyzz3\n[CACHE HIT] 1kzyzz3\nAnnotating 9646/9666 - 1qeaz42\n[CACHE HIT] 1qeaz42\nAnnotating 9647/9666 - 1lwruvx\n[CACHE HIT] 1lwruvx\nAnnotating 9648/9666 - 1r3amch\n[CACHE HIT] 1r3amch\nAnnotating 9649/9666 - 1qss3br\n[CACHE HIT] 1qss3br\nAnnotating 9650/9666 - 16z3qmy\n[CACHE HIT] 16z3qmy\nAnnotating 9651/9666 - 1j0uy2s\n[CACHE HIT] 1j0uy2s\nAnnotating 9652/9666 - 1qi6m0q\n[CACHE HIT] 1qi6m0q\nAnnotating 9653/9666 - 1cfqrk9\n[CACHE HIT] 1cfqrk9\nAnnotating 9654/9666 - 1lbyet8\n[CACHE HIT] 1lbyet8\nAnnotating 9655/9666 - 1qaqpbj\n[CACHE HIT] 1qaqpbj\nAnnotating 9656/9666 - 1qnz4u7\n[CACHE HIT] 1qnz4u7\nAnnotating 9657/9666 - 1qiznrp\n[CACHE HIT] 1qiznrp\nAnnotating 9658/9666 - 1jd9pr7\n[CACHE HIT] 1jd9pr7\nAnnotating 9659/9666 - 1ks3s9k\n[CACHE HIT] 1ks3s9k\nAnnotating 9660/9666 - 1eixxqb\n[CACHE HIT] 1eixxqb\nAnnotating 9661/9666 - 1gceho4\n[CACHE HIT] 1gceho4\nAnnotating 9662/9666 - 1f2fxek\n[CACHE HIT] 1f2fxek\nAnnotating 9663/9666 - 1og4sw3\n[CACHE HIT] 1og4sw3\nAnnotating 9664/9666 - 1n1gt4l\n[CACHE HIT] 1n1gt4l\nAnnotating 9665/9666 - 1pqv1ng\n[CACHE HIT] 1pqv1ng\nAnnotating 9666/9666 - 1pj6dwh\n[CACHE HIT] 1pj6dwh\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "identity_theft": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (35,55,56,57,58,59,61,63,64,65,66,67,69,79,80,83) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 20544,
+            "test_rows": 5276
+          },
+          "profile": {
+            "train_rows": 20544,
+            "test_rows": 5276,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9530276479750779,
+              "0": 0.046972352024922115
+            },
+            "class_balance_test": {
+              "1": 0.9465504169825626,
+              "0": 0.05344958301743745
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.92,
+              "0": 0.08
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T10:43:44.378947+00:00"
+    },
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "IngestionAgent returned non-JSON content; fallback applied.",
+        "action": "retry_ingestion",
+        "confidence": 0.4,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3131,
+            "posts_after": 3131,
+            "new_posts_detected": 0,
+            "comments_after": 19116,
+            "stdout_tail": ":24] Sleeping 2.03s (r/legaladvice post pagination)\n[16:29:25] r/LegalAdviceIndia - Fetching page 6 (yielded: 90)\n[16:29:26] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[16:29:26] ===== EXIT r/LegalAdviceIndia =====\n[16:29:27] r/legaladvice - Fetching page 8 (yielded: 48)\n[16:29:27] r/India - Fetching page 4 (yielded: 13)\n[16:29:28] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[16:29:28] Skipping cached post 1s3k53a\n[16:29:28] Skipping cached post 1s3hudp\n[16:29:28] Skipping cached post 1s3exp4\n[16:29:28] Skipping cached post 1s3c6vm\n[16:29:28] Skipping cached post 1s316vj\n[16:29:28] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[16:29:28] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[16:29:28] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[16:29:28] Sleeping 2.10s (r/legaladvice post pagination)\n[16:29:29] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[16:29:29] r/India - Reached posts older than 7 days, stopping\n[16:29:29] Skipping cached post 1s255c2\n[16:29:29] Skipping cached post 1s1ib2d\n[16:29:29] Skipping cached post 1s1dzro\n[16:29:29] Skipping cached post 1s0fzbj\n[16:29:29] ===== EXIT r/India =====\n[16:29:30] r/legaladvice - Fetching page 9 (yielded: 52)\n[16:29:32] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[16:29:32] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[16:29:32] Skipping cached post 1s2yzph\n[16:29:32] Skipping cached post 1s2xi3m\n[16:29:32] Skipping cached post 1s2verh\n[16:29:32] Skipping cached post 1s2rqzb\n[16:29:32] Skipping cached post 1s2ojnv\n[16:29:32] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[16:29:32] Sleeping 2.06s (r/legaladvice post pagination)\n[16:29:34] r/legaladvice - Fetching page 10 (yielded: 55)\n[16:29:35] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[16:29:35] Skipping cached post 1s2k8eq\n[16:29:35] Skipping cached post 1s2i01u\n[16:29:35] Skipping cached post 1s2hfzv\n[16:29:35] Skipping cached post 1s2fhsn\n[16:29:35] Skipping cached post 1s2erw0\n[16:29:35] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[16:29:35] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[16:29:35] r/legaladvice - Pagination cursor exhausted\n[16:29:35] Skipping cached post 1s2dqir\n[16:29:35] Skipping cached post 1s2cc74\n[16:29:35] Skipping cached post 1s27wog\n[16:29:35] Skipping cached post 1s261av\n[16:29:35] ===== EXIT r/legaladvice =====\n[16:29:35] ============================================================\n[16:29:35] SCRAPING COMPLETE\n[16:29:35] Total posts: 0\n[16:29:35] Total comments: 0\n[16:29:35] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": " 9612/9666 - 1kw5qr1\n[CACHE HIT] 1kw5qr1\nAnnotating 9613/9666 - 1nf4ooa\n[CACHE HIT] 1nf4ooa\nAnnotating 9614/9666 - 1pzclf6\n[CACHE HIT] 1pzclf6\nAnnotating 9615/9666 - 1ij1fvf\n[CACHE HIT] 1ij1fvf\nAnnotating 9616/9666 - 1lalu3f\n[CACHE HIT] 1lalu3f\nAnnotating 9617/9666 - 1os4crl\n[CACHE HIT] 1os4crl\nAnnotating 9618/9666 - 1qenkba\n[CACHE HIT] 1qenkba\nAnnotating 9619/9666 - 1r19lap\n[CACHE HIT] 1r19lap\nAnnotating 9620/9666 - 1lkv7fr\n[CACHE HIT] 1lkv7fr\nAnnotating 9621/9666 - 1l2pcfm\n[CACHE HIT] 1l2pcfm\nAnnotating 9622/9666 - 1pk7sw6\n[CACHE HIT] 1pk7sw6\nAnnotating 9623/9666 - 1qmko5q\n[CACHE HIT] 1qmko5q\nAnnotating 9624/9666 - 1o4hli0\n[CACHE HIT] 1o4hli0\nAnnotating 9625/9666 - 1qsinws\n[CACHE HIT] 1qsinws\nAnnotating 9626/9666 - 1oyh6rj\n[CACHE HIT] 1oyh6rj\nAnnotating 9627/9666 - 1r3wmce\n[CACHE HIT] 1r3wmce\nAnnotating 9628/9666 - 1mh23wj\n[CACHE HIT] 1mh23wj\nAnnotating 9629/9666 - 1q7hc81\n[CACHE HIT] 1q7hc81\nAnnotating 9630/9666 - 1qz9ol1\n[CACHE HIT] 1qz9ol1\nAnnotating 9631/9666 - 1qnjkxi\n[CACHE HIT] 1qnjkxi\nAnnotating 9632/9666 - 1pcg2nv\n[CACHE HIT] 1pcg2nv\nAnnotating 9633/9666 - 1kbj0a7\n[CACHE HIT] 1kbj0a7\nAnnotating 9634/9666 - 1ov7dgm\n[CACHE HIT] 1ov7dgm\nAnnotating 9635/9666 - 1j4nrzd\n[CACHE HIT] 1j4nrzd\nAnnotating 9636/9666 - 1f5osxe\n[CACHE HIT] 1f5osxe\nAnnotating 9637/9666 - 1jcowk8\n[CACHE HIT] 1jcowk8\nAnnotating 9638/9666 - 1jxh6de\n[CACHE HIT] 1jxh6de\nAnnotating 9639/9666 - 1m02u8c\n[CACHE HIT] 1m02u8c\nAnnotating 9640/9666 - 1kk2n7t\n[CACHE HIT] 1kk2n7t\nAnnotating 9641/9666 - 1fy288o\n[CACHE HIT] 1fy288o\nAnnotating 9642/9666 - 1k8o3de\n[CACHE HIT] 1k8o3de\nAnnotating 9643/9666 - 1r12qxv\n[CACHE HIT] 1r12qxv\nAnnotating 9644/9666 - 1lietvt\n[CACHE HIT] 1lietvt\nAnnotating 9645/9666 - 1kwt1es\n[CACHE HIT] 1kwt1es\nAnnotating 9646/9666 - 1o77qze\n[CACHE HIT] 1o77qze\nAnnotating 9647/9666 - 1m9x2hp\n[CACHE HIT] 1m9x2hp\nAnnotating 9648/9666 - 1oog247\n[CACHE HIT] 1oog247\nAnnotating 9649/9666 - 1htzr52\n[CACHE HIT] 1htzr52\nAnnotating 9650/9666 - 1jddvgk\n[CACHE HIT] 1jddvgk\nAnnotating 9651/9666 - 1qrc2it\n[CACHE HIT] 1qrc2it\nAnnotating 9652/9666 - 1qok85l\n[CACHE HIT] 1qok85l\nAnnotating 9653/9666 - 1mnp6zf\n[CACHE HIT] 1mnp6zf\nAnnotating 9654/9666 - 1r2hk7p\n[CACHE HIT] 1r2hk7p\nAnnotating 9655/9666 - daf72a\n[CACHE HIT] daf72a\nAnnotating 9656/9666 - 1quuprk\n[CACHE HIT] 1quuprk\nAnnotating 9657/9666 - 1p2bx67\n[CACHE HIT] 1p2bx67\nAnnotating 9658/9666 - 1lkvqmr\n[CACHE HIT] 1lkvqmr\nAnnotating 9659/9666 - 1ey9yfc\n[CACHE HIT] 1ey9yfc\nAnnotating 9660/9666 - ev28pn\n[CACHE HIT] ev28pn\nAnnotating 9661/9666 - 1p1z6er\n[CACHE HIT] 1p1z6er\nAnnotating 9662/9666 - 1qowr4v\n[CACHE HIT] 1qowr4v\nAnnotating 9663/9666 - 1qwpia4\n[CACHE HIT] 1qwpia4\nAnnotating 9664/9666 - 1o2tv7e\n[CACHE HIT] 1o2tv7e\nAnnotating 9665/9666 - 1loi99h\n[CACHE HIT] 1loi99h\nAnnotating 9666/9666 - 1loh4va\n[CACHE HIT] 1loh4va\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "task_scam": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (41,42,43,44,45,47,67,68,72,73,74,75,76,77,79,82) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 25080,
+            "test_rows": 6445
+          },
+          "profile": {
+            "train_rows": 25080,
+            "test_rows": 6445,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9531100478468899,
+              "0": 0.04688995215311005
+            },
+            "class_balance_test": {
+              "1": 0.9464701318851824,
+              "0": 0.05352986811481769
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.98,
+              "0": 0.02
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T11:20:48.470685+00:00"
+    },
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "Based on the log output, here is the analysis of the dataset processing pipeline and the specific findings regarding the fraud distribution and class balance. ### 1. Processing Summary * **Input File:** `/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations",
+        "action": "retry_ingestion",
+        "confidence": 0.6,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3131,
+            "posts_after": 3131,
+            "new_posts_detected": 0,
+            "comments_after": 19116,
+            "stdout_tail": "r/India - Reached posts older than 7 days, stopping\n[16:57:08] Skipping cached post 1s255c2\n[16:57:08] Skipping cached post 1s1ib2d\n[16:57:08] Skipping cached post 1s1dzro\n[16:57:08] Skipping cached post 1s0fzbj\n[16:57:08] ===== EXIT r/India =====\n[16:57:09] r/LegalAdviceIndia - Fetching page 6 (yielded: 89)\n[16:57:09] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[16:57:09] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[16:57:09] Skipping cached post 1s3hudp\n[16:57:09] Skipping cached post 1s3exp4\n[16:57:09] Skipping cached post 1s3c6vm\n[16:57:09] Skipping cached post 1s316vj\n[16:57:09] Skipping cached post 1s2yzph\n[16:57:09] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[16:57:09] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[16:57:09] Sleeping 2.50s (r/legaladvice post pagination)\n[16:57:11] Skipping cached post 1s00shy\n[16:57:11] Skipping cached post 1rzv2vt\n[16:57:11] Skipping cached post 1rzu7ah\n[16:57:11] Skipping cached post 1rztds8\n[16:57:11] Skipping cached post 1rzpgne\n[16:57:11] r/LegalAdviceIndia - Accepted post 1rzpgne (age 6.0 days)\n[16:57:11] r/LegalAdviceIndia - Reached posts older than 7 days, stopping\n[16:57:11] ===== EXIT r/LegalAdviceIndia =====\n[16:57:12] r/legaladvice - Fetching page 9 (yielded: 51)\n[16:57:13] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[16:57:13] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[16:57:13] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[16:57:13] Sleeping 1.71s (r/legaladvice post pagination)\n[16:57:15] r/legaladvice - Fetching page 10 (yielded: 54)\n[16:57:17] Skipping cached post 1s2xi3m\n[16:57:17] Skipping cached post 1s2verh\n[16:57:17] Skipping cached post 1s2rqzb\n[16:57:17] Skipping cached post 1s2ojnv\n[16:57:17] Skipping cached post 1s2k8eq\n[16:57:17] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[16:57:17] Skipping cached post 1s2i01u\n[16:57:17] Skipping cached post 1s2hfzv\n[16:57:17] Skipping cached post 1s2erw0\n[16:57:17] Skipping cached post 1s2fhsn\n[16:57:17] Skipping cached post 1s2dqir\n[16:57:17] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s2cc74 (age 3.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[16:57:17] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[16:57:17] r/legaladvice - Pagination cursor exhausted\n[16:57:17] Skipping cached post 1s2cc74\n[16:57:17] Skipping cached post 1s27wog\n[16:57:17] Skipping cached post 1s261av\n[16:57:17] ===== EXIT r/legaladvice =====\n[16:57:17] ============================================================\n[16:57:17] SCRAPING COMPLETE\n[16:57:17] Total posts: 0\n[16:57:17] Total comments: 0\n[16:57:17] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": "612/9666 - 1goj45y\n[CACHE HIT] 1goj45y\nAnnotating 9613/9666 - 177qmkt\n[CACHE HIT] 177qmkt\nAnnotating 9614/9666 - 1oamj2m\n[CACHE HIT] 1oamj2m\nAnnotating 9615/9666 - 1bpzwsq\n[CACHE HIT] 1bpzwsq\nAnnotating 9616/9666 - 1h46oqo\n[CACHE HIT] 1h46oqo\nAnnotating 9617/9666 - 1qpw9m7\n[CACHE HIT] 1qpw9m7\nAnnotating 9618/9666 - 1qtoq0i\n[CACHE HIT] 1qtoq0i\nAnnotating 9619/9666 - 1hg4vdd\n[CACHE HIT] 1hg4vdd\nAnnotating 9620/9666 - 1qy1sx3\n[CACHE HIT] 1qy1sx3\nAnnotating 9621/9666 - 1jgbnr0\n[CACHE HIT] 1jgbnr0\nAnnotating 9622/9666 - 1k7xkrk\n[CACHE HIT] 1k7xkrk\nAnnotating 9623/9666 - 1r31gab\n[CACHE HIT] 1r31gab\nAnnotating 9624/9666 - 1qlxnei\n[CACHE HIT] 1qlxnei\nAnnotating 9625/9666 - 1mp547w\n[CACHE HIT] 1mp547w\nAnnotating 9626/9666 - 1dhq9i5\n[CACHE HIT] 1dhq9i5\nAnnotating 9627/9666 - 1qkxt9o\n[CACHE HIT] 1qkxt9o\nAnnotating 9628/9666 - 1dcnyqx\n[CACHE HIT] 1dcnyqx\nAnnotating 9629/9666 - hhmhlb\n[CACHE HIT] hhmhlb\nAnnotating 9630/9666 - 1egt02m\n[CACHE HIT] 1egt02m\nAnnotating 9631/9666 - 1qv4arh\n[CACHE HIT] 1qv4arh\nAnnotating 9632/9666 - 1ph6f9i\n[CACHE HIT] 1ph6f9i\nAnnotating 9633/9666 - 1kasjw0\n[CACHE HIT] 1kasjw0\nAnnotating 9634/9666 - 1kfqkbe\n[CACHE HIT] 1kfqkbe\nAnnotating 9635/9666 - 1mel1hu\n[CACHE HIT] 1mel1hu\nAnnotating 9636/9666 - 1qrx5pd\n[CACHE HIT] 1qrx5pd\nAnnotating 9637/9666 - 1oqryxq\n[CACHE HIT] 1oqryxq\nAnnotating 9638/9666 - 1pl3kxl\n[CACHE HIT] 1pl3kxl\nAnnotating 9639/9666 - 1p2yvpk\n[CACHE HIT] 1p2yvpk\nAnnotating 9640/9666 - 1r4alg4\n[CACHE HIT] 1r4alg4\nAnnotating 9641/9666 - 1gf76em\n[CACHE HIT] 1gf76em\nAnnotating 9642/9666 - 1ju4jxi\n[CACHE HIT] 1ju4jxi\nAnnotating 9643/9666 - 1qycwhz\n[CACHE HIT] 1qycwhz\nAnnotating 9644/9666 - 1p1ti4h\n[CACHE HIT] 1p1ti4h\nAnnotating 9645/9666 - 1ilh19l\n[CACHE HIT] 1ilh19l\nAnnotating 9646/9666 - 1iqx5lh\n[CACHE HIT] 1iqx5lh\nAnnotating 9647/9666 - 1px27g7\n[CACHE HIT] 1px27g7\nAnnotating 9648/9666 - 1mgimwy\n[CACHE HIT] 1mgimwy\nAnnotating 9649/9666 - 1kha9sn\n[CACHE HIT] 1kha9sn\nAnnotating 9650/9666 - 11tqkjd\n[CACHE HIT] 11tqkjd\nAnnotating 9651/9666 - 1l1029c\n[CACHE HIT] 1l1029c\nAnnotating 9652/9666 - 1qdrvn5\n[CACHE HIT] 1qdrvn5\nAnnotating 9653/9666 - 1pdhqwj\n[CACHE HIT] 1pdhqwj\nAnnotating 9654/9666 - 1qzzx8e\n[CACHE HIT] 1qzzx8e\nAnnotating 9655/9666 - 1qdkfyv\n[CACHE HIT] 1qdkfyv\nAnnotating 9656/9666 - 1d66had\n[CACHE HIT] 1d66had\nAnnotating 9657/9666 - 1l45s9w\n[CACHE HIT] 1l45s9w\nAnnotating 9658/9666 - 1kkrlri\n[CACHE HIT] 1kkrlri\nAnnotating 9659/9666 - 1fs5tut\n[CACHE HIT] 1fs5tut\nAnnotating 9660/9666 - 1j9v436\n[CACHE HIT] 1j9v436\nAnnotating 9661/9666 - 1d8akd9\n[CACHE HIT] 1d8akd9\nAnnotating 9662/9666 - 1it5xjv\n[CACHE HIT] 1it5xjv\nAnnotating 9663/9666 - 1k685nw\n[CACHE HIT] 1k685nw\nAnnotating 9664/9666 - 1kare65\n[CACHE HIT] 1kare65\nAnnotating 9665/9666 - 1qdzaot\n[CACHE HIT] 1qdzaot\nAnnotating 9666/9666 - 1jryq8u\n[CACHE HIT] 1jryq8u\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "identity_theft": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"identity_theft\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (41,42,43,44,45,47,67,68,72,74,75,76,77,78,80,82) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 29616,
+            "test_rows": 7614
+          },
+          "profile": {
+            "train_rows": 29616,
+            "test_rows": 7614,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9528295515937332,
+              "0": 0.047170448406266885
+            },
+            "class_balance_test": {
+              "1": 0.9477278697136853,
+              "0": 0.05227213028631468
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.94,
+              "0": 0.06
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T11:48:29.143524+00:00"
+    },
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "Based on the log output provided, here is a summary of the data processing and labeling workflow: ### **Summary of Processing** * **Dataset**: Reddit-dataset (9k dataset) * **Task**: Fraud detection / Anomaly detection * **Input**: `scraped_annotations_latest.csv` (9631 rows) * *",
+        "action": "retry_ingestion",
+        "confidence": 0.6,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3136,
+            "posts_after": 3137,
+            "new_posts_detected": 1,
+            "comments_after": 19120,
+            "stdout_tail": "ched posts older than 7 days, stopping\n[18:28:39] Skipping cached post 1s00shy\n[18:28:39] Skipping cached post 1rzv2vt\n[18:28:39] Skipping cached post 1rzu7ah\n[18:28:39] Skipping cached post 1rztds8\n[18:28:39] ===== EXIT r/LegalAdviceIndia =====\n[18:28:39] Skipping cached post 1s296r5\n[18:28:39] Skipping cached post 1s255c2\n[18:28:39] Skipping cached post 1s1ib2d\n[18:28:39] Skipping cached post 1s1dzro\n[18:28:39] Skipping cached post 1s0fzbj\n[18:28:39] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[18:28:39] r/India - Reached posts older than 7 days, stopping\n[18:28:39] ===== EXIT r/India =====\n[18:28:39] r/legaladvice - Fetching page 8 (yielded: 48)\n[18:28:41] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[18:28:41] Skipping cached post 1s3k53a\n[18:28:41] Skipping cached post 1s3hudp\n[18:28:41] Skipping cached post 1s3exp4\n[18:28:41] Skipping cached post 1s3c6vm\n[18:28:41] Skipping cached post 1s316vj\n[18:28:41] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[18:28:41] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[18:28:41] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[18:28:41] Sleeping 2.76s (r/legaladvice post pagination)\n[18:28:44] r/legaladvice - Fetching page 9 (yielded: 52)\n[18:28:46] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[18:28:46] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[18:28:46] Skipping cached post 1s2yzph\n[18:28:46] Skipping cached post 1s2xi3m\n[18:28:46] Skipping cached post 1s2verh\n[18:28:46] Skipping cached post 1s2rqzb\n[18:28:46] Skipping cached post 1s2ojnv\n[18:28:46] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[18:28:46] Sleeping 2.58s (r/legaladvice post pagination)\n[18:28:48] r/legaladvice - Fetching page 10 (yielded: 55)\n[18:28:50] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[18:28:50] Skipping cached post 1s2k8eq\n[18:28:50] Skipping cached post 1s2i01u\n[18:28:50] Skipping cached post 1s2erw0\n[18:28:50] Skipping cached post 1s2hfzv\n[18:28:50] Skipping cached post 1s2fhsn\n[18:28:50] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s2cc74 (age 4.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[18:28:50] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[18:28:50] r/legaladvice - Pagination cursor exhausted\n[18:28:50] Skipping cached post 1s2dqir\n[18:28:50] Skipping cached post 1s2cc74\n[18:28:50] Skipping cached post 1s27wog\n[18:28:50] Skipping cached post 1s261av\n[18:28:50] ===== EXIT r/legaladvice =====\n[18:28:50] ============================================================\n[18:28:50] SCRAPING COMPLETE\n[18:28:50] Total posts: 1\n[18:28:50] Total comments: 1\n[18:28:50] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": "HE HIT] 1kwt1es\nAnnotating 9620/9666 - 1jj89ot\n[CACHE HIT] 1jj89ot\nAnnotating 9621/9666 - 1r0kwzd\n[CACHE HIT] 1r0kwzd\nAnnotating 9622/9666 - 1qu40gk\n[CACHE HIT] 1qu40gk\nAnnotating 9623/9666 - 1gsj3x6\n[CACHE HIT] 1gsj3x6\nAnnotating 9624/9666 - 1ptypd5\n[CACHE HIT] 1ptypd5\nAnnotating 9625/9666 - 1r3qkj2\n[CACHE HIT] 1r3qkj2\nAnnotating 9626/9666 - 1opk22a\n[CACHE HIT] 1opk22a\nAnnotating 9627/9666 - 1gmc0g1\n[CACHE HIT] 1gmc0g1\nAnnotating 9628/9666 - 1qy4098\n[CACHE HIT] 1qy4098\nAnnotating 9629/9666 - 1loi0c8\n[CACHE HIT] 1loi0c8\nAnnotating 9630/9666 - 1lckzo1\n[CACHE HIT] 1lckzo1\nAnnotating 9631/9666 - 1j64onq\n[CACHE HIT] 1j64onq\nAnnotating 9632/9666 - 1qrooo6\n[CACHE HIT] 1qrooo6\nAnnotating 9633/9666 - 1on2fnl\n[CACHE HIT] 1on2fnl\nAnnotating 9634/9666 - 1qz2m9y\n[CACHE HIT] 1qz2m9y\nAnnotating 9635/9666 - 1k6v8u3\n[CACHE HIT] 1k6v8u3\nAnnotating 9636/9666 - aqylaa\n[CACHE HIT] aqylaa\nAnnotating 9637/9666 - 1jrceh7\n[CACHE HIT] 1jrceh7\nAnnotating 9638/9666 - 1d9ekgz\n[CACHE HIT] 1d9ekgz\nAnnotating 9639/9666 - 1ae785c\n[CACHE HIT] 1ae785c\nAnnotating 9640/9666 - 1d1pthj\n[WARN] Invalid response for post 1d1pthj (attempt 1). Saved to debug_failed_response.txt\n[WARN] Invalid response for post 1d1pthj (attempt 2). Saved to debug_failed_response.txt\n[WARN] Invalid response for post 1d1pthj (attempt 3). Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1d1pthj failed: Failed to get valid JSON for post 1d1pthj after retries. Skipping and logging to failed_posts.txt\nAnnotating 9641/9666 - 1mo7f3l\n[CACHE HIT] 1mo7f3l\nAnnotating 9642/9666 - 1r3davg\n[CACHE HIT] 1r3davg\nAnnotating 9643/9666 - 1pothsb\n[CACHE HIT] 1pothsb\nAnnotating 9644/9666 - 1n42qtc\n[CACHE HIT] 1n42qtc\nAnnotating 9645/9666 - 1qvuzh1\n[CACHE HIT] 1qvuzh1\nAnnotating 9646/9666 - 1r0cv1e\n[CACHE HIT] 1r0cv1e\nAnnotating 9647/9666 - 1qybd7g\n[CACHE HIT] 1qybd7g\nAnnotating 9648/9666 - 1jl6kdt\n[CACHE HIT] 1jl6kdt\nAnnotating 9649/9666 - 1qr5y43\n[CACHE HIT] 1qr5y43\nAnnotating 9650/9666 - 1r15k0x\n[CACHE HIT] 1r15k0x\nAnnotating 9651/9666 - 1hvrhxm\n[CACHE HIT] 1hvrhxm\nAnnotating 9652/9666 - 1r16f81\n[CACHE HIT] 1r16f81\nAnnotating 9653/9666 - 1h9rib3\n[CACHE HIT] 1h9rib3\nAnnotating 9654/9666 - 1o2klhr\n[CACHE HIT] 1o2klhr\nAnnotating 9655/9666 - 1lohg6d\n[CACHE HIT] 1lohg6d\nAnnotating 9656/9666 - 1lqa62f\n[CACHE HIT] 1lqa62f\nAnnotating 9657/9666 - 1d4nk73\n[CACHE HIT] 1d4nk73\nAnnotating 9658/9666 - 1otlunn\n[CACHE HIT] 1otlunn\nAnnotating 9659/9666 - 1kr4gb9\n[CACHE HIT] 1kr4gb9\nAnnotating 9660/9666 - 1elspfa\n[CACHE HIT] 1elspfa\nAnnotating 9661/9666 - 18u4qiz\n[CACHE HIT] 18u4qiz\nAnnotating 9662/9666 - 1mr5c3t\n[CACHE HIT] 1mr5c3t\nAnnotating 9663/9666 - 1ipfaro\n[CACHE HIT] 1ipfaro\nAnnotating 9664/9666 - 1n3qepn\n[CACHE HIT] 1n3qepn\nAnnotating 9665/9666 - 1qy4lu7\n[CACHE HIT] 1qy4lu7\nAnnotating 9666/9666 - 1k3jtsb\n[CACHE HIT] 1k3jtsb\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "task_scam": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (59,60,61,62,63,65,80,81) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 34152,
+            "test_rows": 8783
+          },
+          "profile": {
+            "train_rows": 34152,
+            "test_rows": 8783,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9524185992035605,
+              "0": 0.047581400796439445
+            },
+            "class_balance_test": {
+              "1": 0.949447796880337,
+              "0": 0.050552203119662985
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.94,
+              "0": 0.06
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T13:21:09.169381+00:00"
+    },
+    {
+      "agent": "ingestion_agent",
+      "decision": {
+        "agent": "ingestion_agent",
+        "summary": "Based on the log output, here is the analysis and the next steps to proceed with your dataset processing: ### **Analysis Summary** 1. **Dataset Status**: The dataset is successfully processed. * **Input**: 9631 rows (9651 original - 18 dropped). * **Output**: 9631 rows (9631 proc",
+        "action": "retry_ingestion",
+        "confidence": 0.6,
+        "metadata": {
+          "scrape": {
+            "returncode": 0,
+            "posts_before": 3137,
+            "posts_after": 3138,
+            "new_posts_detected": 1,
+            "comments_after": 19121,
+            "stdout_tail": "older than 7 days, stopping\n[18:51:51] Skipping cached post 1s00shy\n[18:51:51] Skipping cached post 1rzv2vt\n[18:51:51] Skipping cached post 1rztds8\n[18:51:51] Skipping cached post 1rzu7ah\n[18:51:51] ===== EXIT r/LegalAdviceIndia =====\n[18:51:51] r/legaladvice - Fetching page 8 (yielded: 48)\n[18:51:51] r/India - Fetching page 4 (yielded: 13)\n[18:51:52] r/legaladvice - Accepted post 1s3c6vm (age 2.0 days)\n[18:51:52] Skipping cached post 1s3k53a\n[18:51:52] Skipping cached post 1s3hudp\n[18:51:52] Skipping cached post 1s3exp4\n[18:51:52] Skipping cached post 1s3c6vm\n[18:51:52] Skipping cached post 1s316vj\n[18:51:52] r/legaladvice - Accepted post 1s316vj (age 3.0 days)\n[18:51:52] r/legaladvice - Accepted post 1s2yzph (age 3.0 days)\n[18:51:52] r/legaladvice - Accepted post 1s2xi3m (age 3.0 days)\n[18:51:52] Sleeping 2.39s (r/legaladvice post pagination)\n[18:51:53] r/India - Accepted post 1s0fzbj (age 6.0 days)\n[18:51:53] r/India - Reached posts older than 7 days, stopping\n[18:51:53] Skipping cached post 1s255c2\n[18:51:53] Skipping cached post 1s1ib2d\n[18:51:53] Skipping cached post 1s1dzro\n[18:51:53] Skipping cached post 1s0fzbj\n[18:51:53] ===== EXIT r/India =====\n[18:51:55] r/legaladvice - Fetching page 9 (yielded: 52)\n[18:51:57] r/legaladvice - Accepted post 1s2verh (age 3.0 days)\n[18:51:57] r/legaladvice - Accepted post 1s2rqzb (age 3.0 days)\n[18:51:57] Skipping cached post 1s2yzph\n[18:51:57] Skipping cached post 1s2xi3m\n[18:51:57] Skipping cached post 1s2verh\n[18:51:57] Skipping cached post 1s2rqzb\n[18:51:57] Skipping cached post 1s2ojnv\n[18:51:57] r/legaladvice - Accepted post 1s2ojnv (age 3.0 days)\n[18:51:57] Sleeping 1.90s (r/legaladvice post pagination)\n[18:51:59] r/legaladvice - Fetching page 10 (yielded: 55)\n[18:52:00] r/legaladvice - Accepted post 1s2k8eq (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2i01u (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2hfzv (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2fhsn (age 3.0 days)\n[18:52:00] Skipping cached post 1s2k8eq\n[18:52:00] Skipping cached post 1s2i01u\n[18:52:00] Skipping cached post 1s2hfzv\n[18:52:00] Skipping cached post 1s2fhsn\n[18:52:00] Skipping cached post 1s2erw0\n[18:52:00] r/legaladvice - Accepted post 1s2erw0 (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2dqir (age 3.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s2cc74 (age 4.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s27wog (age 4.0 days)\n[18:52:00] r/legaladvice - Accepted post 1s261av (age 4.0 days)\n[18:52:00] r/legaladvice - Pagination cursor exhausted\n[18:52:00] Skipping cached post 1s2dqir\n[18:52:00] Skipping cached post 1s2cc74\n[18:52:00] Skipping cached post 1s27wog\n[18:52:00] Skipping cached post 1s261av\n[18:52:00] ===== EXIT r/legaladvice =====\n[18:52:00] ============================================================\n[18:52:00] SCRAPING COMPLETE\n[18:52:00] Total posts: 1\n[18:52:00] Total comments: 1\n[18:52:00] ============================================================\n",
+            "stderr_tail": ""
+          },
+          "label": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+            "output_json": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+            "stdout_tail": "ng 9612/9666 - 1kbavq5\n[CACHE HIT] 1kbavq5\nAnnotating 9613/9666 - 1ixay0z\n[CACHE HIT] 1ixay0z\nAnnotating 9614/9666 - 1mkehmd\n[CACHE HIT] 1mkehmd\nAnnotating 9615/9666 - 1mnge0n\n[CACHE HIT] 1mnge0n\nAnnotating 9616/9666 - ao6xm6\n[CACHE HIT] ao6xm6\nAnnotating 9617/9666 - 1bpz0s8\n[CACHE HIT] 1bpz0s8\nAnnotating 9618/9666 - 1qo717u\n[CACHE HIT] 1qo717u\nAnnotating 9619/9666 - 1qvsoga\n[CACHE HIT] 1qvsoga\nAnnotating 9620/9666 - 1qvo2bx\n[CACHE HIT] 1qvo2bx\nAnnotating 9621/9666 - 1du8jru\n[CACHE HIT] 1du8jru\nAnnotating 9622/9666 - 1kzq3h7\n[CACHE HIT] 1kzq3h7\nAnnotating 9623/9666 - 1mbwg6q\n[CACHE HIT] 1mbwg6q\nAnnotating 9624/9666 - 1qy6vd1\n[CACHE HIT] 1qy6vd1\nAnnotating 9625/9666 - 1jljhhb\n[CACHE HIT] 1jljhhb\nAnnotating 9626/9666 - 1qtlq0n\n[CACHE HIT] 1qtlq0n\nAnnotating 9627/9666 - 1ju6qun\n[CACHE HIT] 1ju6qun\nAnnotating 9628/9666 - 1gknpdu\n[CACHE HIT] 1gknpdu\nAnnotating 9629/9666 - uusseq\n[CACHE HIT] uusseq\nAnnotating 9630/9666 - 1pr50sx\n[CACHE HIT] 1pr50sx\nAnnotating 9631/9666 - 1qgvpn0\n[CACHE HIT] 1qgvpn0\nAnnotating 9632/9666 - 1m9q8qv\n[CACHE HIT] 1m9q8qv\nAnnotating 9633/9666 - 1p6dams\n[CACHE HIT] 1p6dams\nAnnotating 9634/9666 - 1p8jp8v\n[CACHE HIT] 1p8jp8v\nAnnotating 9635/9666 - 17zkbkl\n[CACHE HIT] 17zkbkl\nAnnotating 9636/9666 - 1ih8fdt\n[CACHE HIT] 1ih8fdt\nAnnotating 9637/9666 - 1962us0\n[CACHE HIT] 1962us0\nAnnotating 9638/9666 - 1mjpsgw\n[CACHE HIT] 1mjpsgw\nAnnotating 9639/9666 - gbjj2t\n[CACHE HIT] gbjj2t\nAnnotating 9640/9666 - 1pt4ydp\n[CACHE HIT] 1pt4ydp\nAnnotating 9641/9666 - 1r0h455\n[CACHE HIT] 1r0h455\nAnnotating 9642/9666 - 1j39vjp\n[CACHE HIT] 1j39vjp\nAnnotating 9643/9666 - 1qlpitv\n[CACHE HIT] 1qlpitv\nAnnotating 9644/9666 - 1qyl3es\n[CACHE HIT] 1qyl3es\nAnnotating 9645/9666 - 1qy60v8\n[CACHE HIT] 1qy60v8\nAnnotating 9646/9666 - 1qe8gcg\n[CACHE HIT] 1qe8gcg\nAnnotating 9647/9666 - 1qrafpy\n[CACHE HIT] 1qrafpy\nAnnotating 9648/9666 - 1m9krtm\n[CACHE HIT] 1m9krtm\nAnnotating 9649/9666 - 1g7hciv\n[CACHE HIT] 1g7hciv\nAnnotating 9650/9666 - 1r19wss\n[CACHE HIT] 1r19wss\nAnnotating 9651/9666 - 1jpp4v9\n[CACHE HIT] 1jpp4v9\nAnnotating 9652/9666 - 1r0clup\n[CACHE HIT] 1r0clup\nAnnotating 9653/9666 - 1q7990d\n[CACHE HIT] 1q7990d\nAnnotating 9654/9666 - 1oi3sn4\n[CACHE HIT] 1oi3sn4\nAnnotating 9655/9666 - 1pkuqxc\n[CACHE HIT] 1pkuqxc\nAnnotating 9656/9666 - 1qxa55j\n[CACHE HIT] 1qxa55j\nAnnotating 9657/9666 - 1jh3cfj\n[CACHE HIT] 1jh3cfj\nAnnotating 9658/9666 - 1ouvdg4\n[CACHE HIT] 1ouvdg4\nAnnotating 9659/9666 - 1pboyrt\n[CACHE HIT] 1pboyrt\nAnnotating 9660/9666 - 1ql48cg\n[CACHE HIT] 1ql48cg\nAnnotating 9661/9666 - 1o4ox7p\n[CACHE HIT] 1o4ox7p\nAnnotating 9662/9666 - 1gac2ph\n[CACHE HIT] 1gac2ph\nAnnotating 9663/9666 - 1ommwn7\n[CACHE HIT] 1ommwn7\nAnnotating 9664/9666 - 1n7oak7\n[CACHE HIT] 1n7oak7\nAnnotating 9665/9666 - 1qqzbil\n[CACHE HIT] 1qqzbil\nAnnotating 9666/9666 - 1ne1gan\n[CACHE HIT] 1ne1gan\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.json\nCSV : /home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\n",
+            "stderr_tail": ""
+          },
+          "post_process": {
+            "returncode": 0,
+            "rows": 9631,
+            "output_csv": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+            "summary_path": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed_summary.json",
+            "summary": {
+              "input_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+              "output_file": "/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv",
+              "raw_shape": [
+                9631,
+                87
+              ],
+              "processed_shape": [
+                9631,
+                89
+              ],
+              "dropped_trailing_columns": 0,
+              "is_fraud_distribution": {
+                "-1": 3902,
+                "0": 294,
+                "1": 5435
+              },
+              "fraud_type_top_10": {
+                "none": 4199,
+                "transaction": 3719,
+                "commerce": 796,
+                "social_engineering": 767,
+                "meta": 45,
+                "credential": 35,
+                "advanced": 22,
+                "pig_butchering": 11,
+                "task": 5,
+                "task_scam": 4
+              },
+              "currencies_top_10": {
+                "unknown": 7612,
+                "USD": 1168,
+                "INR": 586,
+                "EUR": 78,
+                "GBP": 45,
+                "USDT": 27,
+                "CAD": 24,
+                "BTC": 18,
+                "ETH": 12,
+                "SOL": 9
+              },
+              "parsed_amount_count": 2513
+            },
+            "stdout_tail": "{\n  \"input_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_latest.csv\",\n  \"output_file\": \"/home/norm/Projects/Reddit-dataset/Data labeling/outputs/scraped_annotations_preprocessed.csv\",\n  \"raw_shape\": [\n    9631,\n    87\n  ],\n  \"processed_shape\": [\n    9631,\n    89\n  ],\n  \"dropped_trailing_columns\": 0,\n  \"is_fraud_distribution\": {\n    \"-1\": 3902,\n    \"0\": 294,\n    \"1\": 5435\n  },\n  \"fraud_type_top_10\": {\n    \"none\": 4199,\n    \"transaction\": 3719,\n    \"commerce\": 796,\n    \"social_engineering\": 767,\n    \"meta\": 45,\n    \"credential\": 35,\n    \"advanced\": 22,\n    \"pig_butchering\": 11,\n    \"task\": 5,\n    \"task_scam\": 4\n  },\n  \"currencies_top_10\": {\n    \"unknown\": 7612,\n    \"USD\": 1168,\n    \"INR\": 586,\n    \"EUR\": 78,\n    \"GBP\": 45,\n    \"USDT\": 27,\n    \"CAD\": 24,\n    \"BTC\": 18,\n    \"ETH\": 12,\n    \"SOL\": 9\n  },\n  \"parsed_amount_count\": 2513\n}\n",
+            "stderr_tail": "/home/norm/Projects/Reddit-dataset/9k-dataset/scripts/data_prep/preprocess_dataset.py:260: DtypeWarning: Columns (44,74,79,80,81,82,83,85) have mixed types. Specify dtype option on import or set low_memory=False.\n  df = pd.read_csv(input_file)\n"
+          },
+          "append": {
+            "sync_result": {
+              "new_rows_added": 5705,
+              "train_rows_added": 4536,
+              "test_rows_added": 1169,
+              "class_balance_new_rows": {
+                "1": 0.9519719544259422,
+                "0": 0.04802804557405784
+              }
+            },
+            "train_rows": 38688,
+            "test_rows": 9952
+          },
+          "profile": {
+            "train_rows": 38688,
+            "test_rows": 9952,
+            "target_column": "annotation.is_fraud",
+            "class_balance_train": {
+              "1": 0.9524141852770885,
+              "0": 0.0475858147229115
+            },
+            "class_balance_test": {
+              "1": 0.9495578778135049,
+              "0": 0.05044212218649518
+            },
+            "label_noise_score": 0.0,
+            "slang_drift_score": 0.0,
+            "top_train_tokens": [],
+            "top_test_tokens": [],
+            "prepared_dataset_exists": true
+          },
+          "review": {
+            "sample_size": 50,
+            "ambiguous_rows": 50,
+            "ambiguous_ratio": 1.0,
+            "target_distribution": {
+              "1": 0.9,
+              "0": 0.1
+            },
+            "recommendation": "relabel"
+          }
+        }
+      },
+      "recorded_at": "2026-03-28T13:43:16.466608+00:00"
+    }
+  ],
+  "artifacts": {},
+  "updated_at": "2026-03-28T13:43:16.466615+00:00"
+}

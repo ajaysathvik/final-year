@@ -1,0 +1,10 @@
+langgraph>=0.2
+langchain-core>=0.3
+scikit-learn>=1.5
+xgboost>=2.0
+lightgbm>=4.0
+ctgan>=0.7
+adversarial-robustness-toolbox>=1.17
+pandas>=2.2
+numpy>=1.26
+rich>=13.0
