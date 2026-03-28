@@ -1,6 +1,6 @@
 # Agentic Fraud Workflow
 
-This document describes the workflow implemented in `agent-new/`. The current system is a **LangGraph** pipeline with five executable agents plus a completion node. Each agent runs concrete tool wrappers, records state in memory, and uses a lightweight **DecisionEngine** to summarize results and choose the next transition.
+This document describes the workflow implemented in `agent-new/`. The current system is a **LangGraph** pipeline with five executable agents plus a completion node. Each agent runs concrete tool wrappers, records state in memory, and uses a lightweight **DecisionEngine** to summarize results and choose the next transition .
 
 ## Workflow Graph
 
