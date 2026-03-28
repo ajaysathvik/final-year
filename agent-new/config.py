@@ -9,6 +9,8 @@ REPO_ROOT = AGENT_ROOT.parent
 DATASET_PATH = REPO_ROOT / "Data labeling" / "outputs" / "main.csv"
 TRAIN_PATH = REPO_ROOT / "Data labeling" / "outputs" / "train_3k.csv"
 TEST_PATH = REPO_ROOT / "Data labeling" / "outputs" / "test_3k.csv"
+BOOTSTRAP_TRAIN_PATH = REPO_ROOT / "9k-dataset" / "1k data" / "xgb_ctgan_1k" / "augmented" / "train_augmented.csv"
+BOOTSTRAP_TEST_PATH = REPO_ROOT / "9k-dataset" / "1k data" / "xgb_ctgan_1k" / "augmented" / "test_predictions.csv"
 
 SCRAPER_WORKDIR = REPO_ROOT / "Reddit-dataset" / "Data Scrapping"
 SCRAPER_SCRIPT_PATH = SCRAPER_WORKDIR / "Scrapper.py"
@@ -42,6 +44,7 @@ MEMORY_PATH = MEMORY_DIR / "agent_memory.json"
 OUTPUT_DIR = AGENT_ROOT / "output"
 RUN_REPORT_PATH = OUTPUT_DIR / "run_report.json"
 EXECUTION_TRACE_PATH = OUTPUT_DIR / "execution_trace.jsonl"
+INGESTED_POST_IDS_PATH = OUTPUT_DIR / "ingested_post_ids.json"
 AUDIT_LOG_PATH = REPO_ROOT / "agent" / "audit_log.jsonl"
 
 OLLAMA_MODEL = "qwen3.5:0.8b"
@@ -55,3 +58,4 @@ MIN_JS_DIVERGENCE_ACCEPT = 0.20
 DEFAULT_RATIO_CANDIDATES = (10, 18, 20)
 TARGET_F1_THRESHOLD = 0.82
 TARGET_ROBUSTNESS_THRESHOLD = 0.70
+MIN_NEW_FRAUD_ROWS_TO_UPDATE = 10

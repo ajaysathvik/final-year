@@ -217,7 +217,15 @@ class FraudWorkflow:
             sync = result["sync_result"]
             summary["sync_result"] = {
                 key: sync[key]
-                for key in ("new_rows_added", "train_rows_added", "test_rows_added", "reason")
+                for key in (
+                    "new_rows_added",
+                    "new_fraud_rows_added",
+                    "train_rows_added",
+                    "test_rows_added",
+                    "bootstrap_used",
+                    "meets_update_threshold",
+                    "reason",
+                )
                 if key in sync
             }
         return summary or {"keys": sorted(result.keys())}
@@ -276,6 +284,9 @@ class FraudWorkflow:
 
         append_result = append.get("sync_result", {})
         new_rows_added = int(append_result.get("new_rows_added", 0))
+        new_fraud_rows_added = int(append_result.get("new_fraud_rows_added", 0))
+        bootstrap_used = bool(append_result.get("bootstrap_used", False))
+        meets_update_threshold = bool(append_result.get("meets_update_threshold", False))
         scrape_detected_new_posts = int(scrape.get("new_posts_detected", 0)) > 0
         labeling_failed = (
             scrape["returncode"] != 0
@@ -289,7 +300,9 @@ class FraudWorkflow:
             or review["recommendation"] == "relabel"
         )
         needs_relabel = labeling_failed or ingestion_gap or quality_failed
-        action = "retry_ingestion" if needs_relabel else "ready_for_balancing"
+        should_update_model = bootstrap_used or meets_update_threshold
+        skip_model_update = not needs_relabel and not should_update_model
+        action = "retry_ingestion" if needs_relabel else ("ready_for_balancing" if should_update_model else "skip_model_update")
         decision = AgentDecision(
             agent="ingestion_agent",
             summary=llm.get("summary", "IngestionAgent assessment completed."),
@@ -297,7 +310,7 @@ class FraudWorkflow:
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        next_step = "ingestion_agent" if needs_relabel else "balance_agent"
+        next_step = "ingestion_agent" if needs_relabel else ("balance_agent" if should_update_model else "complete")
         self.memory.add_snapshot({"stage": "ingestion_agent", **payload})
         self._record("ingestion_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -313,12 +326,18 @@ class FraudWorkflow:
                 "append": append,
                 "profile": profile,
                 "review": review,
+                "new_rows_added": new_rows_added,
+                "new_fraud_rows_added": new_fraud_rows_added,
+                "bootstrap_used": bootstrap_used,
+                "should_update_model": should_update_model,
+                "skip_model_update": skip_model_update,
                 "labeling_failed": labeling_failed,
                 "ingestion_gap": ingestion_gap,
                 "quality_failed": quality_failed,
                 "needs_relabel": needs_relabel,
             },
             "next_step": next_step,
+            "done": skip_model_update,
             "decisions": decisions,
         }
         print(f" ✅ IngestionAgent: {decision.summary}")
@@ -327,7 +346,13 @@ class FraudWorkflow:
             "ingestion_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": next_step, "needs_relabel": needs_relabel},
+            payload={
+                "next_step": next_step,
+                "needs_relabel": needs_relabel,
+                "new_fraud_rows_added": new_fraud_rows_added,
+                "bootstrap_used": bootstrap_used,
+                "skip_model_update": skip_model_update,
+            },
         )
         return res
 
@@ -568,7 +593,9 @@ class FraudWorkflow:
         target = state.get("evaluation_agent", {}).get("correction_target", "balance_agent")
         return "strategy_agent" if target == "strategy_agent" else "balance_agent"
 
-    def route_after_ingestion_agent(self, state: WorkflowState) -> Literal["balance_agent", "ingestion_agent"]:
+    def route_after_ingestion_agent(self, state: WorkflowState) -> Literal["balance_agent", "ingestion_agent", "complete"]:
+        if state.get("ingestion_agent", {}).get("skip_model_update", False):
+            return "complete"
         accepted = not state.get("ingestion_agent", {}).get("needs_relabel", False)
         iteration = int(state.get("iteration", 0))
         if accepted or iteration >= MAX_REVIEW_LOOPS:

@@ -19,13 +19,17 @@ from config import (
     ADVERSARIAL_SUMMARY_PATH,
     ADVERSARIAL_TRAINING_SCRIPT_PATH,
     ADV_CTGAN_SCRIPT_PATH,
+    BOOTSTRAP_TEST_PATH,
+    BOOTSTRAP_TRAIN_PATH,
     CLASSIFIER_RESULTS_PATH,
     CTGAN_SCRIPT_PATH,
     EVAL_SCRIPT_PATH,
     TRAINING_SCRIPT_PATH,
     FIN_FRAUD_ROOT,
+    INGESTED_POST_IDS_PATH,
     LABEL_SCRIPT_PATH,
     LABEL_WORKDIR,
+    MIN_NEW_FRAUD_ROWS_TO_UPDATE,
     PREPARED_DATASET_PATH,
     PREPROCESS_SCRIPT_PATH,
     PREPROCESSED_SCRAPED_CSV_PATH,
@@ -90,6 +94,10 @@ def _safe_float(value: Any) -> float | None:
         return None
 
 
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _target_column(df: pd.DataFrame) -> str:
     for column in TARGET_COLUMN_CANDIDATES:
         if column in df.columns:
@@ -126,22 +134,27 @@ def _append_new_rows_to_splits(
     labeled_path: Path,
     train_path: Path,
     test_path: Path,
+    ingested_ids_path: Path,
     test_fraction: float = 0.2,
 ) -> dict[str, Any]:
+    bootstrap_result = _ensure_bootstrap_splits(train_path, test_path)
+    known_ids = _load_ingested_post_ids(ingested_ids_path)
+    result: dict[str, Any] = {
+        "new_rows_added": 0,
+        "new_fraud_rows_added": 0,
+        "train_rows_added": 0,
+        "test_rows_added": 0,
+        "bootstrap_used": bootstrap_result["bootstrap_used"],
+        "bootstrap_sources": bootstrap_result["bootstrap_sources"],
+        "min_new_fraud_rows_to_update": MIN_NEW_FRAUD_ROWS_TO_UPDATE,
+    }
+
     if not labeled_path.exists():
-        return {
-            "new_rows_added": 0,
-            "train_rows_added": 0,
-            "test_rows_added": 0,
-        }
+        return result
 
     labeled_df = _load_csv(labeled_path)
     if labeled_df.empty:
-        return {
-            "new_rows_added": 0,
-            "train_rows_added": 0,
-            "test_rows_added": 0,
-        }
+        return result
 
     target_column = _target_column(labeled_df)
     labeled_df[target_column] = pd.to_numeric(labeled_df[target_column], errors="coerce")
@@ -163,21 +176,10 @@ def _append_new_rows_to_splits(
     labeled_df[post_id_col] = labeled_df[post_id_col].fillna("").astype(str).str.strip()
     labeled_df = labeled_df[labeled_df[post_id_col] != ""].copy()
 
-    existing_ids: set[str] = set()
-    if train_path.exists():
-        train_df = _load_csv(train_path)
-        existing_ids.update(train_df.get(post_id_col, pd.Series(dtype=str)).fillna("").astype(str).str.strip())
-    if test_path.exists():
-        test_df = _load_csv(test_path)
-        existing_ids.update(test_df.get(post_id_col, pd.Series(dtype=str)).fillna("").astype(str).str.strip())
-
-    new_rows = labeled_df[~labeled_df[post_id_col].isin(existing_ids)].copy()
+    new_rows = labeled_df[~labeled_df[post_id_col].isin(known_ids)].copy()
     if new_rows.empty:
-        return {
-            "new_rows_added": 0,
-            "train_rows_added": 0,
-            "test_rows_added": 0,
-        }
+        result["meets_update_threshold"] = False
+        return result
 
     random_values = np.random.RandomState(42).rand(len(new_rows))
     test_mask = random_values < test_fraction
@@ -197,11 +199,147 @@ def _append_new_rows_to_splits(
         test_df = pd.concat([test_df, test_rows.reindex(columns=test_columns)], ignore_index=True, sort=False)
         test_df.to_csv(test_path, index=False)
 
+    appended_ids = set(new_rows[post_id_col].astype(str))
+    _save_ingested_post_ids(ingested_ids_path, known_ids | appended_ids)
+    fraud_rows = new_rows[new_rows[target_column].astype(int) == 1]
+    result.update(
+        {
+            "new_rows_added": int(len(new_rows)),
+            "new_fraud_rows_added": int(len(fraud_rows)),
+            "train_rows_added": int(len(train_rows)),
+            "test_rows_added": int(len(test_rows)),
+            "class_balance_new_rows": _normalized_counts(new_rows[target_column].astype(int)),
+            "meets_update_threshold": int(len(fraud_rows)) >= MIN_NEW_FRAUD_ROWS_TO_UPDATE,
+        }
+    )
+    return result
+
+
+def _load_ingested_post_ids(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    if not isinstance(payload, list):
+        return set()
+    return {str(item).strip() for item in payload if str(item).strip()}
+
+
+def _save_ingested_post_ids(path: Path, post_ids: set[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    ordered_ids = sorted(post_ids)
+    path.write_text(json.dumps(ordered_ids, indent=2) + "\n", encoding="utf-8")
+
+
+def _normalize_bootstrap_test_predictions(path: Path) -> pd.DataFrame:
+    df = _load_csv(path)
+    if "y_true" not in df.columns:
+        raise KeyError(f"Missing y_true column in bootstrap test predictions: {path}")
+    df = df.copy()
+    df["annotation.is_fraud"] = pd.to_numeric(df["y_true"], errors="coerce")
+    ordered_columns = ["annotation.is_fraud"] + [column for column in df.columns if column != "annotation.is_fraud"]
+    return df.reindex(columns=ordered_columns)
+
+
+def _existing_labeled_post_ids(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    try:
+        df = _load_csv(path)
+    except Exception:
+        return set()
+    post_id_col = "post_metadata.post_id"
+    if post_id_col not in df.columns:
+        return set()
+    return set(df[post_id_col].fillna("").astype(str).str.strip()) - {""}
+
+
+def _prepare_incremental_posts_file(posts_path: Path, labeled_path: Path, output_path: Path) -> dict[str, Any]:
+    posts_df = _load_csv(posts_path)
+    posts_df.columns = posts_df.columns.str.lower().str.strip()
+    if "post_id" not in posts_df.columns:
+        raise KeyError(f"Missing post_id column in {posts_path}")
+    posts_df["post_id"] = posts_df["post_id"].fillna("").astype(str).str.strip()
+    known_ids = _existing_labeled_post_ids(labeled_path)
+    new_posts_df = posts_df[~posts_df["post_id"].isin(known_ids)].copy()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    new_posts_df.to_csv(output_path, index=False)
     return {
-        "new_rows_added": int(len(new_rows)),
-        "train_rows_added": int(len(train_rows)),
-        "test_rows_added": int(len(test_rows)),
-        "class_balance_new_rows": _normalized_counts(new_rows[target_column].astype(int)),
+        "total_posts_available": int(len(posts_df)),
+        "already_labeled_posts": int(len(posts_df) - len(new_posts_df)),
+        "new_posts_to_label": int(len(new_posts_df)),
+    }
+
+
+def _merge_labeled_csv(existing_path: Path, incremental_path: Path, output_path: Path) -> int:
+    frames: list[pd.DataFrame] = []
+    if existing_path.exists():
+        frames.append(_load_csv(existing_path))
+    if incremental_path.exists() and incremental_path.stat().st_size > 0:
+        frames.append(_load_csv(incremental_path))
+    if not frames:
+        pd.DataFrame().to_csv(output_path, index=False)
+        return 0
+
+    merged = pd.concat(frames, ignore_index=True, sort=False)
+    post_id_col = "post_metadata.post_id"
+    if post_id_col in merged.columns:
+        merged[post_id_col] = merged[post_id_col].fillna("").astype(str).str.strip()
+        merged = merged.drop_duplicates(subset=[post_id_col], keep="last")
+    merged.to_csv(output_path, index=False)
+    return int(len(merged))
+
+
+def _merge_labeled_json(existing_path: Path, incremental_path: Path, output_path: Path) -> int:
+    items: list[dict[str, Any]] = []
+    for path in (existing_path, incremental_path):
+        if not path.exists() or path.stat().st_size == 0:
+            continue
+        payload = _read_json(path)
+        if isinstance(payload, list):
+            items.extend(item for item in payload if isinstance(item, dict))
+
+    if not items:
+        output_path.write_text("[]\n", encoding="utf-8")
+        return 0
+
+    deduped: dict[str, dict[str, Any]] = {}
+    ordered_fallback: list[dict[str, Any]] = []
+    for item in items:
+        post_meta = item.get("post_metadata", {})
+        post_id = str(post_meta.get("post_id", "")).strip()
+        if post_id:
+            deduped[post_id] = item
+        else:
+            ordered_fallback.append(item)
+
+    merged = ordered_fallback + list(deduped.values())
+    output_path.write_text(json.dumps(merged, indent=2) + "\n", encoding="utf-8")
+    return int(len(merged))
+
+
+def _ensure_bootstrap_splits(train_path: Path, test_path: Path) -> dict[str, Any]:
+    train_exists = train_path.exists() and train_path.stat().st_size > 0
+    test_exists = test_path.exists() and test_path.stat().st_size > 0
+    if train_exists and test_exists:
+        return {"bootstrap_used": False, "bootstrap_sources": {}}
+
+    train_path.parent.mkdir(parents=True, exist_ok=True)
+    test_path.parent.mkdir(parents=True, exist_ok=True)
+
+    train_df = _load_csv(BOOTSTRAP_TRAIN_PATH)
+    test_df = _normalize_bootstrap_test_predictions(BOOTSTRAP_TEST_PATH)
+
+    train_df.to_csv(train_path, index=False)
+    test_df.to_csv(test_path, index=False)
+    return {
+        "bootstrap_used": True,
+        "bootstrap_sources": {
+            "train": str(BOOTSTRAP_TRAIN_PATH),
+            "test": str(BOOTSTRAP_TEST_PATH),
+        },
     }
 
 
@@ -314,30 +452,62 @@ class LabellerTool:
     name = "reddit_labeller"
 
     def run(self) -> dict[str, Any]:
+        posts_path = LABEL_WORKDIR / "posts.csv"
+        comments_path = LABEL_WORKDIR / "comments.csv"
+        temp_dir = LABEL_WORKDIR / "outputs" / "incremental"
+        temp_posts_path = temp_dir / "posts_to_label.csv"
+        temp_csv_path = temp_dir / "new_annotations.csv"
+        temp_json_path = temp_dir / "new_annotations.json"
+
+        incremental = _prepare_incremental_posts_file(posts_path, SCRAPED_LABELED_CSV_PATH, temp_posts_path)
+        if incremental["new_posts_to_label"] == 0:
+            rows = _csv_row_count(SCRAPED_LABELED_CSV_PATH)
+            return {
+                "returncode": 0,
+                "rows": rows,
+                "new_posts_to_label": 0,
+                "new_labels_created": 0,
+                "output_csv": str(SCRAPED_LABELED_CSV_PATH),
+                "output_json": str(SCRAPED_LABELED_JSON_PATH),
+                "stdout_tail": "No unseen scraped posts. Skipping labeling.",
+                "stderr_tail": "",
+                **incremental,
+            }
+
         result = subprocess.run(
             [
                 sys.executable,
                 str(LABEL_SCRIPT_PATH),
                 "--mode",
                 "full",
+                "--posts-file",
+                str(temp_posts_path),
+                "--comments-file",
+                str(comments_path),
                 "--output-csv",
-                str(SCRAPED_LABELED_CSV_PATH),
+                str(temp_csv_path),
                 "--output-json",
-                str(SCRAPED_LABELED_JSON_PATH),
+                str(temp_json_path),
             ],
             cwd=str(LABEL_WORKDIR),
             capture_output=True,
             text=True,
             env=os.environ.copy(),
         )
+        new_rows = _csv_row_count(temp_csv_path)
         rows = _csv_row_count(SCRAPED_LABELED_CSV_PATH)
+        if result.returncode == 0:
+            rows = _merge_labeled_csv(SCRAPED_LABELED_CSV_PATH, temp_csv_path, SCRAPED_LABELED_CSV_PATH)
+            _merge_labeled_json(SCRAPED_LABELED_JSON_PATH, temp_json_path, SCRAPED_LABELED_JSON_PATH)
         return {
             "returncode": result.returncode,
             "rows": rows,
+            "new_labels_created": new_rows,
             "output_csv": str(SCRAPED_LABELED_CSV_PATH),
             "output_json": str(SCRAPED_LABELED_JSON_PATH),
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
+            **incremental,
         }
 
 
@@ -384,6 +554,7 @@ class DatasetAppendTool:
             labeled_path=SCRAPED_LABELED_CSV_PATH,
             train_path=TRAIN_PATH,
             test_path=TEST_PATH,
+            ingested_ids_path=INGESTED_POST_IDS_PATH,
         )
         return {
             "sync_result": sync_result,
