@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -19,7 +21,9 @@ from config import (
     OUTPUT_DIR,
     RUN_REPORT_PATH,
     SLANG_DRIFT_THRESHOLD,
+    STOP_AFTER_INGESTION_IF_NO_UPDATE,
     TARGET_F1_THRESHOLD,
+    TARGET_NON_FRAUD_F1_THRESHOLD,
     TARGET_ROBUSTNESS_THRESHOLD,
 )
 from memory import AgentMemory
@@ -40,6 +44,7 @@ except ImportError:  # pragma: no cover
 
 class WorkflowState(TypedDict, total=False):
     iteration: int
+    agent_attempts: dict[str, int]
     next_step: str
     ingestion_agent: dict[str, Any]
     balance_agent: dict[str, Any]
@@ -73,6 +78,18 @@ class DecisionEngine:
                 num_predict=800,
                 reasoning=False,
             )
+
+    def _build_messages(self, role: str, objective: str, payload: dict[str, Any]) -> tuple[str, str]:
+        system_prompt = "You reason briefly. JSON is preferred but plain text is allowed."
+        user_prompt = (
+            f"Role: {role}\n"
+            f"Objective: {objective}\n"
+            "You are one specialized agent in an agentic fraud-detection workflow.\n"
+            "Return either a single JSON object with keys summary, action, confidence, metadata, "
+            "or a short plain-text summary if JSON is inconvenient.\n"
+            f"Payload:\n{json.dumps(payload, indent=2, default=str)}"
+        )
+        return system_prompt, user_prompt
 
     def _coerce_content_to_text(self, content: Any) -> str:
         if isinstance(content, str):
@@ -132,28 +149,72 @@ class DecisionEngine:
                 "summary": f"{role} used rule-based fallback because LangChain/Ollama is unavailable.",
                 "action": "continue",
                 "confidence": 0.5,
-                "metadata": payload,
+                "metadata": {
+                    "payload": payload,
+                    "decision_debug": {
+                        "model": self.model,
+                        "base_url": self.base_url,
+                        "system_prompt": None,
+                        "user_prompt": None,
+                        "raw_response": None,
+                        "fallback_reason": "LangChain/Ollama unavailable",
+                    },
+                },
             }
 
-        prompt = (
-            f"Role: {role}\n"
-            f"Objective: {objective}\n"
-            "You are one specialized agent in an agentic fraud-detection workflow.\n"
-            "Return either a single JSON object with keys summary, action, confidence, metadata, "
-            "or a short plain-text summary if JSON is inconvenient.\n"
-            f"Payload:\n{json.dumps(payload, indent=2, default=str)}"
-        )
-        response = self.client.invoke(
-            [
-                SystemMessage(content="You reason briefly. JSON is preferred but plain text is allowed."),
-                HumanMessage(content=prompt),
-            ]
-        )
+        system_prompt, user_prompt = self._build_messages(role, objective, payload)
+        try:
+            response = self.client.invoke(
+                [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ]
+            )
+        except Exception as exc:
+            return {
+                "summary": f"{role} used rule-based fallback because Ollama invocation failed: {exc}.",
+                "action": "continue",
+                "confidence": 0.5,
+                "metadata": {
+                    "payload": payload,
+                    "decision_debug": {
+                        "model": self.model,
+                        "base_url": self.base_url,
+                        "system_prompt": system_prompt,
+                        "user_prompt": user_prompt,
+                        "raw_response": None,
+                        "fallback_reason": f"Ollama invocation failed: {exc}",
+                    },
+                },
+            }
         content = self._coerce_content_to_text(getattr(response, "content", ""))
         parsed = self._extract_json_object(content)
         if parsed is not None:
+            metadata = parsed.get("metadata")
+            if not isinstance(metadata, dict):
+                metadata = {"value": metadata}
+            metadata["decision_debug"] = {
+                "model": self.model,
+                "base_url": self.base_url,
+                "system_prompt": system_prompt,
+                "user_prompt": user_prompt,
+                "raw_response": content,
+            }
+            parsed["metadata"] = metadata
             return parsed
-        return self._plain_text_decision(role, content, payload)
+        decision = self._plain_text_decision(role, content, payload)
+        metadata = decision.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {"value": metadata}
+        metadata["decision_debug"] = {
+            "model": self.model,
+            "base_url": self.base_url,
+            "system_prompt": system_prompt,
+            "user_prompt": user_prompt,
+            "raw_response": content,
+        }
+        decision["metadata"] = metadata
+        return decision
 
 
 class FraudWorkflow:
@@ -166,6 +227,65 @@ class FraudWorkflow:
         AUDIT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
         AUDIT_LOG_PATH.write_text("", encoding="utf-8")
         EXECUTION_TRACE_PATH.write_text("", encoding="utf-8")
+
+    def _normalize_action_value(self, value: Any) -> str:
+        cleaned = str(value or "").strip().lower()
+        cleaned = re.sub(r"[^a-z0-9_]+", "_", cleaned)
+        cleaned = re.sub(r"_+", "_", cleaned).strip("_")
+        return cleaned
+
+    def _select_action(self, llm_action: Any, fallback_action: str, allowed_actions: set[str]) -> tuple[str, str]:
+        normalized = self._normalize_action_value(llm_action)
+        if normalized in allowed_actions:
+            return normalized, "llm"
+        return fallback_action, "rules"
+
+    def _balance_summary(
+        self,
+        *,
+        accepted: bool,
+        ratio_search: dict[str, Any],
+        synthetic_quality: dict[str, Any],
+        ctgan_result: dict[str, Any],
+    ) -> str:
+        ratio = ratio_search.get("best_ratio")
+        jsd = synthetic_quality.get("mean_jsd")
+        threshold = MIN_JS_DIVERGENCE_ACCEPT
+        required = int(ratio_search.get("required_non_fraud_rows", 0))
+        if accepted:
+            if required == 0:
+                return f"BalanceAgent accepted the batch without CTGAN because no synthetic non-fraud rows were required. Best ratio={ratio}."
+            return f"BalanceAgent accepted CTGAN output. Best ratio={ratio}, mean JSD={jsd}, threshold={threshold}."
+        reason = "CTGAN output missing or failed."
+        if ctgan_result.get("returncode") == 0 and not ctgan_result.get("fresh_output", False):
+            reason = "CTGAN did not produce fresh output."
+        elif jsd is not None:
+            reason = f"mean JSD={jsd} exceeded threshold={threshold}."
+        return f"BalanceAgent rejected balancing output. Best ratio={ratio}. {reason}"
+
+    def _training_summary(self, *, passed: bool, training: dict[str, Any]) -> str:
+        best_f1 = training.get("best_f1")
+        threshold = round(TARGET_F1_THRESHOLD * 0.9, 4)
+        status = "passed" if passed else "failed"
+        return f"TrainingAgent {status} base-model validation. best_f1={best_f1}, required>={threshold}."
+
+    def _strategy_summary(self, *, accepted: bool, focus: str, adversarial: dict[str, Any]) -> str:
+        gain = adversarial.get("robustness_gain")
+        clean_f1 = adversarial.get("adversarial_clean_f1")
+        status = "accepted" if accepted else "rejected"
+        return f"StrategyAgent {status} adversarial training. focus={focus}, robustness_gain={gain}, adversarial_clean_f1={clean_f1}."
+
+    def _evaluation_summary(self, *, passed: bool, evaluation: dict[str, Any]) -> str:
+        best_f1 = evaluation.get("best_f1")
+        non_fraud_f1 = evaluation.get("non_fraud_f1")
+        robustness = evaluation.get("robustness_score")
+        status = "passed" if passed else "failed"
+        return (
+            f"EvaluationAgent {status} final validation. "
+            f"best_f1={best_f1} vs threshold={TARGET_F1_THRESHOLD}, "
+            f"non_fraud_f1={non_fraud_f1} vs threshold={TARGET_NON_FRAUD_F1_THRESHOLD}, "
+            f"robustness_score={robustness} vs threshold={TARGET_ROBUSTNESS_THRESHOLD}."
+        )
 
     def _trace_event(
         self,
@@ -196,6 +316,7 @@ class FraudWorkflow:
             "rows",
             "best_ratio",
             "best_f1",
+            "non_fraud_f1",
             "robustness_score",
             "mean_jsd",
             "accepted",
@@ -220,6 +341,7 @@ class FraudWorkflow:
                 for key in (
                     "new_rows_added",
                     "new_fraud_rows_added",
+                    "new_non_fraud_rows_added",
                     "train_rows_added",
                     "test_rows_added",
                     "bootstrap_used",
@@ -256,13 +378,114 @@ class FraudWorkflow:
     def _record(self, agent: str, decision: AgentDecision) -> None:
         self.memory.add_decision(agent, asdict(decision))
 
+    def _register_attempt(self, state: WorkflowState, agent: str) -> tuple[int, dict[str, int]]:
+        attempts = dict(state.get("agent_attempts", {}))
+        attempt = int(attempts.get(agent, 0)) + 1
+        attempts[agent] = attempt
+        return attempt, attempts
+
+    def _is_retry_exhausted(self, attempts: int) -> bool:
+        return attempts >= MAX_REVIEW_LOOPS
+
     def ingestion_agent(self, state: WorkflowState) -> WorkflowState:
         print("\n" + "="*60)
         print(" [ INGESTION AGENT ] Starting data ingestion...")
         print("="*60)
         iteration = int(state.get("iteration", 0)) + 1
+        attempt, agent_attempts = self._register_attempt(state, "ingestion_agent")
+        stub_downstream = str(os.getenv("AGENT_STUB_DOWNSTREAM", "0")).strip().lower() in {"1", "true", "yes", "on"}
+        if stub_downstream:
+            payload = {
+                "scrape": {"returncode": 0, "new_posts_detected": 0, "stubbed": True},
+                "label": {"returncode": 0, "rows": 0, "stubbed": True},
+                "post_process": {"returncode": 0, "rows": 0, "stubbed": True},
+                "append": {
+                    "sync_result": {
+                        "new_rows_added": 2,
+                        "new_fraud_rows_added": 2,
+                        "new_non_fraud_rows_added": 0,
+                        "train_rows_added": 2,
+                        "test_rows_added": 0,
+                        "bootstrap_used": True,
+                        "meets_update_threshold": True,
+                        "stubbed": True,
+                    }
+                },
+                "profile": {"label_noise_score": 0.0, "slang_drift_score": 0.0, "stubbed": True},
+                "review": {"recommendation": "keep", "stubbed": True},
+            }
+            decision = AgentDecision(
+                agent="ingestion_agent",
+                summary="IngestionAgent stubbed to hand off directly to downstream agents.",
+                action="ready_for_balancing",
+                confidence=1.0,
+                metadata=payload,
+            )
+            next_step = "balance_agent"
+            self.memory.add_snapshot({"stage": "ingestion_agent", **payload})
+            self._record("ingestion_agent", decision)
+            self._audit(decision, iteration, next_step)
+            decisions = list(state.get("decisions", []))
+            decisions.append(asdict(decision))
+            res = {
+                **state,
+                "iteration": iteration,
+                "agent_attempts": agent_attempts,
+                "ingestion_agent": {
+                    **payload,
+                    "new_rows_added": 2,
+                    "new_fraud_rows_added": 2,
+                    "new_non_fraud_rows_added": 0,
+                    "bootstrap_used": True,
+                    "should_update_model": True,
+                    "skip_model_update": False,
+                    "labeling_failed": False,
+                    "ingestion_gap": False,
+                    "quality_failed": False,
+                    "needs_relabel": False,
+                    "attempt": attempt,
+                    "retries_exhausted": False,
+                    "stubbed": True,
+                },
+                "next_step": next_step,
+                "decisions": decisions,
+            }
+            print(f" ✅ IngestionAgent: {decision.summary}")
+            print(f" -> Next step: {next_step}")
+            self._trace_event(
+                "ingestion_agent",
+                "agent_completed",
+                iteration=iteration,
+                payload={"next_step": next_step, "stubbed": True},
+            )
+            return res
+        skip_labeling = str(os.getenv("AGENT_SKIP_LABELING", "0")).strip().lower() in {"1", "true", "yes", "on"}
         self._trace_event("ingestion_agent", "agent_started", iteration=iteration)
-        scrape = self._run_tool("ingestion_agent", iteration, "reddit_scraper", self.tools["reddit_scraper"].run)
+        previous_ingestion = state.get("ingestion_agent", {})
+        previous_scrape = previous_ingestion.get("scrape", {})
+        retry_without_rescrape = (
+            attempt > 1
+            and isinstance(previous_scrape, dict)
+            and int(previous_scrape.get("returncode", 1)) == 0
+            and int(previous_scrape.get("new_posts_detected", 0)) > 0
+        )
+        if retry_without_rescrape:
+            scrape = {
+                **previous_scrape,
+                "reused_from_previous_attempt": True,
+                "reused_attempt": attempt - 1,
+                "stdout_tail": "Reused previous scrape output on ingestion retry.",
+            }
+            print(" -> ingestion_agent.reddit_scraper: skipped (reusing previous scrape output)")
+            self._trace_event(
+                "ingestion_agent",
+                "step_completed",
+                iteration=iteration,
+                step="reddit_scraper",
+                payload=self._summarize_result(scrape),
+            )
+        else:
+            scrape = self._run_tool("ingestion_agent", iteration, "reddit_scraper", self.tools["reddit_scraper"].run)
         label = self._run_tool("ingestion_agent", iteration, "reddit_labeller", self.tools["reddit_labeller"].run)
         post_process = self._run_tool("ingestion_agent", iteration, "post_processor", self.tools["post_processor"].run)
         append = self._run_tool("ingestion_agent", iteration, "dataset_append", self.tools["dataset_append"].run)
@@ -285,6 +508,7 @@ class FraudWorkflow:
         append_result = append.get("sync_result", {})
         new_rows_added = int(append_result.get("new_rows_added", 0))
         new_fraud_rows_added = int(append_result.get("new_fraud_rows_added", 0))
+        new_non_fraud_rows_added = int(append_result.get("new_non_fraud_rows_added", 0))
         bootstrap_used = bool(append_result.get("bootstrap_used", False))
         meets_update_threshold = bool(append_result.get("meets_update_threshold", False))
         scrape_detected_new_posts = int(scrape.get("new_posts_detected", 0)) > 0
@@ -293,16 +517,33 @@ class FraudWorkflow:
             or label["returncode"] != 0
             or post_process["returncode"] != 0
         )
-        ingestion_gap = scrape_detected_new_posts and new_rows_added == 0
+        labeler_had_posts = int(label.get("new_posts_to_label", 0)) > 0
+        labeler_produced_nothing = labeler_had_posts and int(label.get("new_labels_created", 0)) == 0
+        ingestion_gap = scrape_detected_new_posts and new_rows_added == 0 and not labeler_produced_nothing
+        if skip_labeling:
+            labeling_failed = scrape["returncode"] != 0
+            ingestion_gap = False
         quality_failed = (
             profile["label_noise_score"] > LABEL_NOISE_THRESHOLD
             or profile["slang_drift_score"] > SLANG_DRIFT_THRESHOLD
             or review["recommendation"] == "relabel"
         )
         needs_relabel = labeling_failed or ingestion_gap or quality_failed
-        should_update_model = bootstrap_used or meets_update_threshold
-        skip_model_update = not needs_relabel and not should_update_model
-        action = "retry_ingestion" if needs_relabel else ("ready_for_balancing" if should_update_model else "skip_model_update")
+        should_update_model = bootstrap_used or meets_update_threshold or skip_labeling
+        skip_model_update = (
+            STOP_AFTER_INGESTION_IF_NO_UPDATE
+            and not needs_relabel
+            and not should_update_model
+        )
+        retries_exhausted = needs_relabel and self._is_retry_exhausted(attempt)
+        fallback_action = "retry_ingestion" if needs_relabel else (
+            "ready_for_balancing" if (should_update_model or not STOP_AFTER_INGESTION_IF_NO_UPDATE) else "skip_model_update"
+        )
+        action, action_source = self._select_action(
+            llm.get("action"),
+            fallback_action,
+            {"retry_ingestion", "ready_for_balancing", "skip_model_update"},
+        )
         decision = AgentDecision(
             agent="ingestion_agent",
             summary=llm.get("summary", "IngestionAgent assessment completed."),
@@ -310,7 +551,14 @@ class FraudWorkflow:
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        next_step = "ingestion_agent" if needs_relabel else ("balance_agent" if should_update_model else "complete")
+        if retries_exhausted and action == "retry_ingestion":
+            next_step = "complete"
+        elif action == "retry_ingestion":
+            next_step = "ingestion_agent"
+        elif action == "ready_for_balancing":
+            next_step = "balance_agent"
+        else:
+            next_step = "complete"
         self.memory.add_snapshot({"stage": "ingestion_agent", **payload})
         self._record("ingestion_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -319,6 +567,7 @@ class FraudWorkflow:
         res = {
             **state,
             "iteration": iteration,
+            "agent_attempts": agent_attempts,
             "ingestion_agent": {
                 "scrape": scrape,
                 "label": label,
@@ -328,6 +577,7 @@ class FraudWorkflow:
                 "review": review,
                 "new_rows_added": new_rows_added,
                 "new_fraud_rows_added": new_fraud_rows_added,
+                "new_non_fraud_rows_added": new_non_fraud_rows_added,
                 "bootstrap_used": bootstrap_used,
                 "should_update_model": should_update_model,
                 "skip_model_update": skip_model_update,
@@ -335,9 +585,13 @@ class FraudWorkflow:
                 "ingestion_gap": ingestion_gap,
                 "quality_failed": quality_failed,
                 "needs_relabel": needs_relabel,
+                "retry_without_rescrape": retry_without_rescrape,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
             },
             "next_step": next_step,
-            "done": skip_model_update,
+            "done": action == "skip_model_update",
             "decisions": decisions,
         }
         print(f" ✅ IngestionAgent: {decision.summary}")
@@ -352,6 +606,10 @@ class FraudWorkflow:
                 "new_fraud_rows_added": new_fraud_rows_added,
                 "bootstrap_used": bootstrap_used,
                 "skip_model_update": skip_model_update,
+                "retry_without_rescrape": retry_without_rescrape,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
             },
         )
         return res
@@ -361,13 +619,35 @@ class FraudWorkflow:
         print(" [ BALANCE AGENT ] Balancing dataset...")
         print("="*60)
         iteration = int(state.get("iteration", 0)) + 1
+        attempt, agent_attempts = self._register_attempt(state, "balance_agent")
         self._trace_event("balance_agent", "agent_started", iteration=iteration)
+        ingestion_state = state.get("ingestion_agent", {})
+        batch_fraud_count = int(ingestion_state.get("new_fraud_rows_added", 0))
+        batch_non_fraud_count = int(ingestion_state.get("new_non_fraud_rows_added", 0))
+        # Use None (dataset-wide) when there is no new batch — avoids skipping
+        # balancing entirely just because the incremental batch was empty.
+        use_batch_counts = batch_fraud_count > 0 or batch_non_fraud_count > 0
         ratio_search = self._run_tool(
-            "balance_agent", iteration, "balance_search", self.tools["balance_search"].run, DEFAULT_RATIO_CANDIDATES
+            "balance_agent",
+            iteration,
+            "balance_search",
+            self.tools["balance_search"].run,
+            DEFAULT_RATIO_CANDIDATES,
+            batch_fraud_count if use_batch_counts else None,
+            batch_non_fraud_count if use_batch_counts else None,
         )
-        ctgan_result = self._run_tool("balance_agent", iteration, "ctgan_runner", self.tools["ctgan_runner"].run)
+        ctgan_result = self._run_tool(
+            "balance_agent",
+            iteration,
+            "ctgan_runner",
+            self.tools["ctgan_runner"].run,
+            ratio_search.get("best_ratio"),
+            fraud_count=batch_fraud_count,
+            non_fraud_count=batch_non_fraud_count,
+            required_non_fraud_rows=int(ratio_search.get("required_non_fraud_rows", 0)),
+        )
         synthetic_quality = {"mean_jsd": 1.0, "accepted": False}
-        if ctgan_result.get("exists"):
+        if ctgan_result.get("fresh_output"):
             synthetic_quality = self._run_tool(
                 "balance_agent",
                 iteration,
@@ -387,16 +667,36 @@ class FraudWorkflow:
             payload,
         )
 
-        accept = ctgan_result.get("returncode") == 0 and synthetic_quality["mean_jsd"] <= MIN_JS_DIVERGENCE_ACCEPT
-        action = "ready_for_strategy" if accept else "retry_balancing"
+        accept = ratio_search.get("required_non_fraud_rows", 0) == 0 or (
+            ctgan_result.get("returncode") == 0
+            and ctgan_result.get("fresh_output", False)
+            and synthetic_quality["mean_jsd"] <= MIN_JS_DIVERGENCE_ACCEPT
+        )
+        retries_exhausted = (not accept) and self._is_retry_exhausted(attempt)
+        fallback_action = "ready_for_strategy" if accept else "retry_balancing"
+        action, action_source = self._select_action(
+            llm.get("action"),
+            fallback_action,
+            {"ready_for_strategy", "retry_balancing"},
+        )
         decision = AgentDecision(
             agent="balance_agent",
-            summary=llm.get("summary", "BalanceAgent completed balancing review."),
+            summary=self._balance_summary(
+                accepted=accept,
+                ratio_search=ratio_search,
+                synthetic_quality=synthetic_quality,
+                ctgan_result=ctgan_result,
+            ),
             action=action,
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        next_step = "training_agent" if accept else "balance_agent"
+        if retries_exhausted and action == "retry_balancing":
+            next_step = "complete"
+        elif action == "retry_balancing":
+            next_step = "balance_agent"
+        else:
+            next_step = "training_agent"
         self.memory.add_snapshot({"stage": "balance_agent", **payload})
         self._record("balance_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -405,11 +705,15 @@ class FraudWorkflow:
         res = {
             **state,
             "iteration": iteration,
+            "agent_attempts": agent_attempts,
             "balance_agent": {
                 "ratio_search": ratio_search,
                 "ctgan_result": ctgan_result,
                 "synthetic_quality": synthetic_quality,
                 "accepted": accept,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
             },
             "next_step": next_step,
             "decisions": decisions,
@@ -420,7 +724,7 @@ class FraudWorkflow:
             "balance_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": next_step, "accepted": accept},
+            payload={"next_step": next_step, "accepted": accept, "attempt": attempt, "retries_exhausted": retries_exhausted},
         )
         return res
 
@@ -429,6 +733,7 @@ class FraudWorkflow:
         print(" [ TRAINING AGENT ] Training base models...")
         print("="*60)
         iteration = int(state.get("iteration", 0)) + 1
+        attempt, agent_attempts = self._register_attempt(state, "training_agent")
         self._trace_event("training_agent", "agent_started", iteration=iteration)
         training = self._run_tool("training_agent", iteration, "classifier_training", self.tools["classifier_training"].run)
         payload = {"training": training}
@@ -438,15 +743,26 @@ class FraudWorkflow:
             payload,
         )
         passed = training.get("returncode") == 0 and training["best_f1"] >= (TARGET_F1_THRESHOLD * 0.9)
-        action = "ready_for_strategy" if passed else "retry_training"
+        retries_exhausted = (not passed) and self._is_retry_exhausted(attempt)
+        fallback_action = "ready_for_strategy" if passed else "retry_training"
+        action, action_source = self._select_action(
+            llm.get("action"),
+            fallback_action,
+            {"ready_for_strategy", "retry_training"},
+        )
         decision = AgentDecision(
             agent="training_agent",
-            summary=llm.get("summary", "TrainingAgent completed base model training assessment."),
+            summary=self._training_summary(passed=passed, training=training),
             action=action,
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        next_step = "strategy_agent" if passed else "training_agent"
+        if retries_exhausted and action == "retry_training":
+            next_step = "complete"
+        elif action == "retry_training":
+            next_step = "training_agent"
+        else:
+            next_step = "strategy_agent"
         self.memory.add_snapshot({"stage": "training_agent", **payload})
         self._record("training_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -455,9 +771,13 @@ class FraudWorkflow:
         res = {
             **state,
             "iteration": iteration,
+            "agent_attempts": agent_attempts,
             "training_agent": {
                 "training": training,
                 "passed": passed,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
             },
             "next_step": next_step,
             "decisions": decisions,
@@ -468,7 +788,7 @@ class FraudWorkflow:
             "training_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": next_step, "passed": passed},
+            payload={"next_step": next_step, "passed": passed, "attempt": attempt, "retries_exhausted": retries_exhausted},
         )
         return res
 
@@ -477,6 +797,7 @@ class FraudWorkflow:
         print(" [ STRATEGY AGENT ] Running adversarial training...")
         print("="*60)
         iteration = int(state.get("iteration", 0)) + 1
+        attempt, agent_attempts = self._register_attempt(state, "strategy_agent")
         self._trace_event("strategy_agent", "agent_started", iteration=iteration)
         balance_state = state.get("balance_agent", {})
         synthetic_quality = balance_state.get("synthetic_quality", {})
@@ -497,15 +818,26 @@ class FraudWorkflow:
             payload,
         )
         accepted = adversarial.get("accepted", False)
-        action = "ready_for_evaluation" if accepted else "retry_strategy"
+        retries_exhausted = (not accepted) and self._is_retry_exhausted(attempt)
+        fallback_action = "ready_for_evaluation" if accepted else "retry_strategy"
+        action, action_source = self._select_action(
+            llm.get("action"),
+            fallback_action,
+            {"ready_for_evaluation", "retry_strategy"},
+        )
         decision = AgentDecision(
             agent="strategy_agent",
-            summary=llm.get("summary", "StrategyAgent executed adversarial training and robustness checks."),
+            summary=self._strategy_summary(accepted=accepted, focus=focus, adversarial=adversarial),
             action=action,
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        next_step = "evaluation_agent" if accepted else "strategy_agent"
+        if retries_exhausted and action == "retry_strategy":
+            next_step = "complete"
+        elif action == "retry_strategy":
+            next_step = "strategy_agent"
+        else:
+            next_step = "evaluation_agent"
         self.memory.add_snapshot({"stage": "strategy_agent", **payload})
         self._record("strategy_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -514,11 +846,15 @@ class FraudWorkflow:
         res = {
             **state,
             "iteration": iteration,
+            "agent_attempts": agent_attempts,
             "strategy_agent": {
                 "status": "executed",
                 "accepted": accepted,
                 "focus": focus,
                 "adversarial_training": adversarial,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
             },
             "next_step": next_step,
             "decisions": decisions,
@@ -529,7 +865,7 @@ class FraudWorkflow:
             "strategy_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": next_step, "accepted": accepted, "focus": focus},
+            payload={"next_step": next_step, "accepted": accepted, "focus": focus, "attempt": attempt, "retries_exhausted": retries_exhausted},
         )
         return res
 
@@ -538,6 +874,7 @@ class FraudWorkflow:
         print(" [ EVALUATION AGENT ] Running final validation...")
         print("="*60)
         iteration = int(state.get("iteration", 0)) + 1
+        attempt, agent_attempts = self._register_attempt(state, "evaluation_agent")
         self._trace_event("evaluation_agent", "agent_started", iteration=iteration)
         evaluation = self._run_tool("evaluation_agent", iteration, "evaluation_runner", self.tools["evaluation_runner"].run)
         payload = {"evaluation": evaluation}
@@ -546,19 +883,52 @@ class FraudWorkflow:
             "Approve deployment only if F1 and robustness satisfy thresholds; otherwise issue correction orders.",
             payload,
         )
+        non_fraud_f1 = evaluation.get("non_fraud_f1", 0.0)
         passed = (
             evaluation["best_f1"] >= TARGET_F1_THRESHOLD
+            and float(non_fraud_f1) >= TARGET_NON_FRAUD_F1_THRESHOLD
             and evaluation["robustness_score"] >= TARGET_ROBUSTNESS_THRESHOLD
             and evaluation["eval_returncode"] == 0
             and evaluation["robustness_returncode"] == 0
         )
-        action = "deploy" if passed else "correction_order"
         correction_target = "complete"
+        retries_exhausted = (not passed) and self._is_retry_exhausted(attempt)
         if not passed:
             correction_target = "balance_agent" if evaluation["best_f1"] < TARGET_F1_THRESHOLD else "strategy_agent"
+        fallback_action = "deploy" if passed else correction_target
+        action, action_source = self._select_action(
+            llm.get("action"),
+            fallback_action,
+            {"deploy", "balance_agent", "strategy_agent", "correction_order"},
+        )
+        if action in {"balance_agent", "strategy_agent"}:
+            correction_target = action
+        elif action == "correction_order":
+            action = correction_target
+        llm_metadata = llm.get("metadata") if isinstance(llm.get("metadata"), dict) else {}
+        self._write_stage_output(
+            "evaluation",
+            "decision_model_log.json",
+            {
+                "role": "EvaluationAgent",
+                "objective": "Approve deployment only if F1 and robustness satisfy thresholds; otherwise issue correction orders.",
+                "payload": payload,
+                "model_input": llm_metadata.get("decision_debug", {}),
+                "model_output": {
+                    "summary": llm.get("summary"),
+                    "action": llm.get("action"),
+                    "confidence": llm.get("confidence"),
+                    "metadata": llm_metadata,
+                },
+                "resolved_transition": {
+                    "action_after_normalization": action,
+                    "correction_target": correction_target,
+                },
+            },
+        )
         decision = AgentDecision(
             agent="evaluation_agent",
-            summary=llm.get("summary", "EvaluationAgent finished validation."),
+            summary=self._evaluation_summary(passed=passed, evaluation=evaluation),
             action=action,
             confidence=float(llm.get("confidence", 0.7)),
             metadata={**payload, "correction_target": correction_target},
@@ -567,14 +937,22 @@ class FraudWorkflow:
         self._record("evaluation_agent", decision)
         decisions = list(state.get("decisions", []))
         decisions.append(asdict(decision))
-        next_step = "complete" if passed else correction_target
+        next_step = "complete" if action == "deploy" or retries_exhausted else correction_target
         self._audit(decision, iteration, next_step)
         res = {
             **state,
             "iteration": iteration,
-            "evaluation_agent": {"evaluation": evaluation, "passed": passed, "correction_target": correction_target},
+            "agent_attempts": agent_attempts,
+            "evaluation_agent": {
+                "evaluation": evaluation,
+                "passed": passed,
+                "correction_target": correction_target,
+                "action_source": action_source,
+                "attempt": attempt,
+                "retries_exhausted": retries_exhausted,
+            },
             "next_step": next_step,
-            "done": passed,
+            "done": action == "deploy",
             "decisions": decisions,
         }
         print(f" 🏁 EvaluationAgent: {decision.summary}")
@@ -583,51 +961,251 @@ class FraudWorkflow:
             "evaluation_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": next_step, "passed": passed, "correction_target": correction_target},
+            payload={"next_step": next_step, "passed": passed, "correction_target": correction_target, "attempt": attempt, "retries_exhausted": retries_exhausted},
         )
         return res
 
     def route_after_evaluation_agent(self, state: WorkflowState) -> Literal["complete", "balance_agent", "strategy_agent"]:
+        next_step = state.get("next_step")
+        if next_step in {"complete", "balance_agent", "strategy_agent"}:
+            return next_step
         if state.get("done"):
+            return "complete"
+        if state.get("evaluation_agent", {}).get("retries_exhausted", False):
             return "complete"
         target = state.get("evaluation_agent", {}).get("correction_target", "balance_agent")
         return "strategy_agent" if target == "strategy_agent" else "balance_agent"
 
     def route_after_ingestion_agent(self, state: WorkflowState) -> Literal["balance_agent", "ingestion_agent", "complete"]:
+        next_step = state.get("next_step")
+        if next_step in {"balance_agent", "ingestion_agent", "complete"}:
+            return next_step
         if state.get("ingestion_agent", {}).get("skip_model_update", False):
             return "complete"
         accepted = not state.get("ingestion_agent", {}).get("needs_relabel", False)
-        iteration = int(state.get("iteration", 0))
-        if accepted or iteration >= MAX_REVIEW_LOOPS:
+        if accepted:
             return "balance_agent"
+        if state.get("ingestion_agent", {}).get("retries_exhausted", False):
+            return "complete"
         return "ingestion_agent"
 
-    def route_after_balance_agent(self, state: WorkflowState) -> Literal["training_agent", "balance_agent"]:
+    def route_after_balance_agent(self, state: WorkflowState) -> Literal["training_agent", "balance_agent", "complete"]:
+        next_step = state.get("next_step")
+        if next_step in {"training_agent", "balance_agent", "complete"}:
+            return next_step
         accepted = state.get("balance_agent", {}).get("accepted", False)
-        iteration = int(state.get("iteration", 0))
-        if accepted or iteration >= MAX_REVIEW_LOOPS:
+        if accepted:
             return "training_agent"
+        if state.get("balance_agent", {}).get("retries_exhausted", False):
+            return "complete"
         return "balance_agent"
 
-    def route_after_training_agent(self, state: WorkflowState) -> Literal["strategy_agent", "training_agent"]:
+    def route_after_training_agent(self, state: WorkflowState) -> Literal["strategy_agent", "training_agent", "complete"]:
+        next_step = state.get("next_step")
+        if next_step in {"strategy_agent", "training_agent", "complete"}:
+            return next_step
         passed = state.get("training_agent", {}).get("passed", False)
-        iteration = int(state.get("iteration", 0))
-        if passed or iteration >= MAX_REVIEW_LOOPS:
+        if passed:
             return "strategy_agent"
+        if state.get("training_agent", {}).get("retries_exhausted", False):
+            return "complete"
         return "training_agent"
 
-    def route_after_strategy_agent(self, state: WorkflowState) -> Literal["evaluation_agent", "strategy_agent"]:
+    def route_after_strategy_agent(self, state: WorkflowState) -> Literal["evaluation_agent", "strategy_agent", "complete"]:
+        next_step = state.get("next_step")
+        if next_step in {"evaluation_agent", "strategy_agent", "complete"}:
+            return next_step
         accepted = state.get("strategy_agent", {}).get("accepted", False)
-        iteration = int(state.get("iteration", 0))
-        if accepted or iteration >= MAX_REVIEW_LOOPS:
+        if accepted:
             return "evaluation_agent"
+        if state.get("strategy_agent", {}).get("retries_exhausted", False):
+            return "complete"
         return "strategy_agent"
+
+    def _write_stage_output(self, subdir: str, filename: str, data: Any) -> Path:
+        """Write a JSON file into output/<subdir>/<filename>."""
+        stage_dir = OUTPUT_DIR / subdir
+        stage_dir.mkdir(parents=True, exist_ok=True)
+        out_path = stage_dir / filename
+        out_path.write_text(json.dumps(data, indent=2, ensure_ascii=True, default=str) + "\n", encoding="utf-8")
+        return out_path
+
+    def _copy_adversarial_charts(self) -> list[str]:
+        """Copy adversarial result charts into output/adversarial/charts/."""
+        from config import ADVERSARIAL_RESULTS_DIR
+        charts_dir = OUTPUT_DIR / "adversarial" / "charts"
+        charts_dir.mkdir(parents=True, exist_ok=True)
+        copied: list[str] = []
+        if ADVERSARIAL_RESULTS_DIR.exists():
+            for src in sorted(ADVERSARIAL_RESULTS_DIR.glob("*.png")):
+                dst = charts_dir / src.name
+                shutil.copy2(src, dst)
+                copied.append(str(dst))
+        return copied
+
+    def _generate_run_summary(self, report: dict[str, Any]) -> str:
+        """Generate a human-readable Markdown summary of the pipeline run."""
+        lines: list[str] = []
+        status = report.get("status", "unknown").upper()
+        iteration = report.get("iteration", 0)
+        lines.append(f"# Agentic Fraud Pipeline — Run Summary")
+        lines.append(f"")
+        lines.append(f"**Status:** {status}  ")
+        lines.append(f"**Total iterations:** {iteration}  ")
+        lines.append(f"**Generated at:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}  ")
+        lines.append("")
+
+        # --- Scraping ---
+        ing = report.get("ingestion_agent", {})
+        scrape = ing.get("scrape", {})
+        lines.append("## 1. Scraping (Ingestion Agent)")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Posts before | {scrape.get('posts_before', 'N/A')} |")
+        lines.append(f"| Posts after | {scrape.get('posts_after', 'N/A')} |")
+        lines.append(f"| New posts detected | {scrape.get('new_posts_detected', 0)} |")
+        lines.append(f"| Comments after | {scrape.get('comments_after', 'N/A')} |")
+        lines.append(f"| Smoke test | {scrape.get('smoke_test', 'N/A')} |")
+        lines.append(f"| Return code | {scrape.get('returncode', 'N/A')} |")
+        lines.append("")
+
+        # --- Labeling ---
+        label = ing.get("label", {})
+        post_process = ing.get("post_process", {})
+        lines.append("## 2. Labeling & Post-Processing")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Labeling skipped | {label.get('skipped', False)} |")
+        lines.append(f"| New posts to label | {label.get('new_posts_to_label', 0)} |")
+        lines.append(f"| New labels created | {label.get('new_labels_created', 0)} |")
+        lines.append(f"| Post-processing skipped | {post_process.get('skipped', False)} |")
+        lines.append(f"| Processed rows | {post_process.get('rows', 'N/A')} |")
+        lines.append(f"| Label return code | {label.get('returncode', 'N/A')} |")
+        lines.append("")
+
+        # --- Dataset profile ---
+        profile = ing.get("profile", {})
+        review = ing.get("review", {})
+        lines.append("### Dataset Profile")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Train rows | {profile.get('train_rows', 'N/A')} |")
+        lines.append(f"| Test rows | {profile.get('test_rows', 'N/A')} |")
+        lines.append(f"| Label noise score | {profile.get('label_noise_score', 'N/A')} |")
+        lines.append(f"| Slang drift score | {profile.get('slang_drift_score', 'N/A')} |")
+        lines.append(f"| Label review recommendation | {review.get('recommendation', 'N/A')} |")
+        lines.append(f"| Ambiguous ratio | {review.get('ambiguous_ratio', 'N/A')} |")
+        lines.append("")
+
+        # --- Balance / CTGAN ---
+        bal = report.get("balance_agent", {})
+        sq = bal.get("synthetic_quality", {})
+        lines.append("## 3. Balancing (CTGAN)")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Best ratio | {bal.get('ratio_search', {}).get('best_ratio', 'N/A')} |")
+        lines.append(f"| CTGAN return code | {bal.get('ctgan_result', {}).get('returncode', 'N/A')} |")
+        lines.append(f"| Synthetic rows | {sq.get('synthetic_rows', 'N/A')} |")
+        lines.append(f"| Mean JSD | {sq.get('mean_jsd', 'N/A')} |")
+        lines.append(f"| Quality accepted | {sq.get('accepted', 'N/A')} |")
+        lines.append(f"| Balance accepted | {bal.get('accepted', 'N/A')} |")
+        lines.append("")
+
+        # --- Training ---
+        tr = report.get("training_agent", {})
+        tr_data = tr.get("training", {})
+        lines.append("## 4. Classifier Training")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Return code | {tr_data.get('returncode', 'N/A')} |")
+        lines.append(f"| Best F1 | {tr_data.get('best_f1', 'N/A')} |")
+        lines.append(f"| Passed | {tr.get('passed', 'N/A')} |")
+        lines.append("")
+
+        # --- Adversarial Training ---
+        strat = report.get("strategy_agent", {})
+        adv = strat.get("adversarial_training", {})
+        lines.append("## 5. Adversarial Training (Strategy Agent)")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Focus | {adv.get('focus', 'N/A')} |")
+        lines.append(f"| Recommended focus | {adv.get('recommended_focus', 'N/A')} |")
+        lines.append(f"| Training return code | {adv.get('training_returncode', 'N/A')} |")
+        lines.append(f"| Robustness return code | {adv.get('robustness_returncode', 'N/A')} |")
+        lines.append(f"| Baseline FGSM F1 | {adv.get('baseline_attack_f1', 'N/A')} |")
+        lines.append(f"| Adversarial FGSM F1 | {adv.get('adversarial_attack_f1', 'N/A')} |")
+        lines.append(f"| Adversarial Clean F1 | {adv.get('adversarial_clean_f1', 'N/A')} |")
+        lines.append(f"| Robustness gain (Δ) | {adv.get('robustness_gain', 'N/A')} |")
+        lines.append(f"| Accepted | {strat.get('accepted', 'N/A')} |")
+        lines.append("")
+
+        # Attack surface
+        attack = adv.get("attack_surface", {})
+        if attack:
+            lines.append("### Attack Surface")
+            lines.append("")
+            channels = attack.get("channel_counts", {})
+            if channels:
+                lines.append("| Fraud Channel | Count |")
+                lines.append("|---------------|-------|")
+                for ch, cnt in channels.items():
+                    lines.append(f"| {ch} | {cnt} |")
+                lines.append("")
+
+        # --- Evaluation ---
+        ev = report.get("evaluation_agent", {})
+        ev_data = ev.get("evaluation", {})
+        lines.append("## 6. Final Evaluation")
+        lines.append("")
+        lines.append(f"| Metric | Value |")
+        lines.append(f"|--------|-------|")
+        lines.append(f"| Eval return code | {ev_data.get('eval_returncode', 'N/A')} |")
+        lines.append(f"| Robustness return code | {ev_data.get('robustness_returncode', 'N/A')} |")
+        lines.append(f"| Best F1 | {ev_data.get('best_f1', 'N/A')} |")
+        lines.append(f"| Robustness score | {ev_data.get('robustness_score', 'N/A')} |")
+        lines.append(f"| Passed | {ev.get('passed', 'N/A')} |")
+        lines.append(f"| Correction target | {ev.get('correction_target', 'N/A')} |")
+        lines.append("")
+
+        # --- Agent decisions timeline ---
+        decisions = report.get("decisions", [])
+        if decisions:
+            lines.append("## Agent Decisions Timeline")
+            lines.append("")
+            lines.append("| # | Agent | Action | Confidence | Summary |")
+            lines.append("|---|-------|--------|------------|---------|")
+            for i, d in enumerate(decisions, 1):
+                summary = (d.get("summary", "") or "")[:120].replace("|", "\\|").replace("\n", " ")
+                lines.append(f"| {i} | {d.get('agent', '')} | {d.get('action', '')} | {d.get('confidence', '')} | {summary} |")
+            lines.append("")
+
+        # --- Charts ---
+        charts_dir = OUTPUT_DIR / "adversarial" / "charts"
+        if charts_dir.exists():
+            chart_files = sorted(charts_dir.glob("*.png"))
+            if chart_files:
+                lines.append("## Adversarial Training Charts")
+                lines.append("")
+                lines.append("Charts copied to `output/adversarial/charts/`:")
+                lines.append("")
+                for cf in chart_files:
+                    lines.append(f"- `{cf.name}`")
+                lines.append("")
+
+        return "\n".join(lines)
 
     def complete(self, state: WorkflowState) -> WorkflowState:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         report = {
             "status": "completed" if state.get("done") else "stopped",
             "iteration": state.get("iteration", 0),
+            "agent_attempts": state.get("agent_attempts", {}),
             "decisions": state.get("decisions", []),
             "ingestion_agent": state.get("ingestion_agent", {}),
             "balance_agent": state.get("balance_agent", {}),
@@ -636,10 +1214,46 @@ class FraudWorkflow:
             "evaluation_agent": state.get("evaluation_agent", {}),
         }
         RUN_REPORT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+
+        # ── Per-stage outputs ──────────────────────────────────────────
+        ing = state.get("ingestion_agent", {})
+        self._write_stage_output("scraping", "scraping_result.json", ing.get("scrape", {}))
+        self._write_stage_output("labeling", "labeling_result.json", ing.get("label", {}))
+        self._write_stage_output("labeling", "post_processing_result.json", ing.get("post_process", {}))
+        self._write_stage_output("labeling", "dataset_append_result.json", ing.get("append", {}))
+        self._write_stage_output("labeling", "dataset_profile.json", ing.get("profile", {}))
+        self._write_stage_output("labeling", "label_review.json", ing.get("review", {}))
+
+        bal = state.get("balance_agent", {})
+        self._write_stage_output("training", "balance_search.json", bal.get("ratio_search", {}))
+        self._write_stage_output("training", "ctgan_result.json", bal.get("ctgan_result", {}))
+        self._write_stage_output("training", "synthetic_quality.json", bal.get("synthetic_quality", {}))
+
+        tr = state.get("training_agent", {})
+        self._write_stage_output("training", "classifier_training.json", tr.get("training", {}))
+
+        strat = state.get("strategy_agent", {})
+        self._write_stage_output("adversarial", "adversarial_training.json", strat.get("adversarial_training", {}))
+
+        ev = state.get("evaluation_agent", {})
+        self._write_stage_output("evaluation", "evaluation_result.json", ev.get("evaluation", {}))
+
+        # ── Copy adversarial charts ────────────────────────────────────
+        chart_paths = self._copy_adversarial_charts()
+
+        # ── Run summary (human-readable) ──────────────────────────────
+        summary_md = self._generate_run_summary(report)
+        summary_path = OUTPUT_DIR / "run_summary.md"
+        summary_path.write_text(summary_md, encoding="utf-8")
+
         self.memory.record_run(report)
         self._trace_event("workflow", "run_completed", iteration=state.get("iteration", 0), payload=report)
         print("\n" + "="*60)
         print(f" [ WORKFLOW {report['status'].upper()} ] iteration: {report['iteration']}")
+        print(f" 📂 Outputs written to: {OUTPUT_DIR}")
+        print(f" 📝 Summary: {summary_path}")
+        if chart_paths:
+            print(f" 📊 Charts copied: {len(chart_paths)} files")
         print("="*60 + "\n")
         return {**state, "status": report["status"]}
 
@@ -669,5 +1283,5 @@ class FraudWorkflow:
 def run_workflow() -> dict[str, Any]:
     workflow = FraudWorkflow()
     app = workflow.build()
-    state: WorkflowState = {"iteration": 0, "decisions": [], "done": False, "status": "running"}
+    state: WorkflowState = {"iteration": 0, "agent_attempts": {}, "decisions": [], "done": False, "status": "running"}
     return app.invoke(state)

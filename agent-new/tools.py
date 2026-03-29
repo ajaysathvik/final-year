@@ -4,8 +4,10 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
+import time
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,13 +24,21 @@ from config import (
     BOOTSTRAP_TRAIN_PATH,
     CLASSIFIER_RESULTS_PATH,
     CTGAN_SCRIPT_PATH,
+    DATASET_PATH,
     TRAINING_SCRIPT_PATH,
     INGESTED_POST_IDS_PATH,
+    INCREMENTAL_LABELED_CSV_PATH,
+    INCREMENTAL_LABELED_JSON_PATH,
+    INCREMENTAL_POSTS_TO_LABEL_PATH,
     LABEL_SCRIPT_PATH,
     LABEL_WORKDIR,
+    LABELER_LABELED_RUN_MAX_POSTS,
     MIN_NEW_FRAUD_ROWS_TO_UPDATE,
+    OUTPUT_DIR,
     PREPARED_DATASET_PATH,
     PREPROCESS_SCRIPT_PATH,
+    PREPROCESSED_INCREMENTAL_CSV_PATH,
+    PREPROCESSED_INCREMENTAL_SUMMARY_PATH,
     PREPROCESSED_SCRAPED_CSV_PATH,
     PREPROCESSED_SCRAPED_SUMMARY_PATH,
     ROBUSTNESS_CURVE_SCRIPT_PATH,
@@ -38,6 +48,14 @@ from config import (
     SCRAPED_LABELED_JSON_PATH,
     SCRAPER_SCRIPT_PATH,
     SCRAPER_WORKDIR,
+    SCRAPER_DEFAULT_LOOKBACK_DAYS,
+    SCRAPER_LABELED_RUN_LOOKBACK_DAYS,
+    SCRAPER_LABELED_RUN_MAX_RESULTS,
+    SMOKE_TEST,
+    SMOKE_TEST_MAX_RESULTS,
+    SMOKE_TEST_SLEEP_TIME_SEC,
+    SMOKE_TEST_SUBREDDITS,
+    SMOKE_TEST_TOP_N_COMMENTS,
     TEST_PATH,
     TRAIN_PATH,
 )
@@ -75,13 +93,19 @@ class CommandResult:
 
 
 def _load_csv(path: Path) -> pd.DataFrame:
-    return pd.read_csv(path, low_memory=False)
+    try:
+        return pd.read_csv(path, low_memory=False)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
 
 
 def _csv_row_count(path: Path) -> int:
     if not path.exists():
         return 0
-    return int(len(_load_csv(path)))
+    try:
+        return int(len(_load_csv(path)))
+    except pd.errors.EmptyDataError:
+        return 0
 
 
 def _safe_float(value: Any) -> float | None:
@@ -132,8 +156,13 @@ def _is_truthy(value: Any) -> bool:
     return str(value).strip().lower() in {"true", "1", "yes"}
 
 
+def _stub_downstream_enabled() -> bool:
+    return _is_truthy(os.getenv("AGENT_STUB_DOWNSTREAM", "0"))
+
+
 def _append_new_rows_to_splits(
     labeled_path: Path,
+    dataset_path: Path,
     train_path: Path,
     test_path: Path,
     ingested_ids_path: Path,
@@ -144,6 +173,8 @@ def _append_new_rows_to_splits(
     result: dict[str, Any] = {
         "new_rows_added": 0,
         "new_fraud_rows_added": 0,
+        "new_non_fraud_rows_added": 0,
+        "dataset_rows_added": 0,
         "train_rows_added": 0,
         "test_rows_added": 0,
         "bootstrap_used": bootstrap_result["bootstrap_used"],
@@ -183,6 +214,24 @@ def _append_new_rows_to_splits(
         result["meets_update_threshold"] = False
         return result
 
+    dataset_rows_added = 0
+    if dataset_path.exists():
+        dataset_df = _load_csv(dataset_path)
+        dataset_columns = list(dataset_df.columns)
+        merged_dataset = pd.concat(
+            [dataset_df, new_rows.reindex(columns=dataset_columns)],
+            ignore_index=True,
+            sort=False,
+        )
+        merged_dataset[post_id_col] = merged_dataset[post_id_col].fillna("").astype(str).str.strip()
+        merged_dataset = merged_dataset.drop_duplicates(subset=[post_id_col], keep="last")
+        dataset_rows_added = max(int(len(merged_dataset) - len(dataset_df)), 0)
+        merged_dataset.to_csv(dataset_path, index=False)
+    else:
+        dataset_path.parent.mkdir(parents=True, exist_ok=True)
+        new_rows.to_csv(dataset_path, index=False)
+        dataset_rows_added = int(len(new_rows))
+
     random_values = np.random.RandomState(42).rand(len(new_rows))
     test_mask = random_values < test_fraction
     if len(new_rows) == 1:
@@ -204,10 +253,13 @@ def _append_new_rows_to_splits(
     appended_ids = set(new_rows[post_id_col].astype(str))
     _save_ingested_post_ids(ingested_ids_path, known_ids | appended_ids)
     fraud_rows = new_rows[new_rows[target_column].astype(int) == 1]
+    non_fraud_rows = new_rows[new_rows[target_column].astype(int) == 0]
     result.update(
         {
             "new_rows_added": int(len(new_rows)),
             "new_fraud_rows_added": int(len(fraud_rows)),
+            "new_non_fraud_rows_added": int(len(non_fraud_rows)),
+            "dataset_rows_added": dataset_rows_added,
             "train_rows_added": int(len(train_rows)),
             "test_rows_added": int(len(test_rows)),
             "class_balance_new_rows": _normalized_counts(new_rows[target_column].astype(int)),
@@ -235,6 +287,23 @@ def _save_ingested_post_ids(path: Path, post_ids: set[str]) -> None:
     path.write_text(json.dumps(ordered_ids, indent=2) + "\n", encoding="utf-8")
 
 
+def _sync_output_file(source: Path, destination: Path) -> str | None:
+    if not source.exists():
+        return None
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+    return str(destination)
+
+
+def _sync_model_outputs(mappings: dict[str, tuple[Path, Path]]) -> dict[str, str]:
+    synced: dict[str, str] = {}
+    for key, (source, destination) in mappings.items():
+        synced_path = _sync_output_file(source, destination)
+        if synced_path is not None:
+            synced[key] = synced_path
+    return synced
+
+
 def _normalize_bootstrap_test_predictions(path: Path) -> pd.DataFrame:
     df = _load_csv(path)
     if "y_true" not in df.columns:
@@ -245,33 +314,96 @@ def _normalize_bootstrap_test_predictions(path: Path) -> pd.DataFrame:
     return df.reindex(columns=ordered_columns)
 
 
-def _existing_labeled_post_ids(path: Path) -> set[str]:
-    if not path.exists():
+def _load_failed_post_ids(
+    failed_posts_path: Path,
+    *,
+    max_age_days: int = 7,
+) -> set[str]:
+    """Read failed_posts.txt and return post IDs that failed within *max_age_days*.
+
+    Each line has format: ``post_id - YYYY-MM-DD HH:MM:SS.ffffff - error_msg``
+    Posts older than *max_age_days* are eligible for retry.
+    """
+    if not failed_posts_path.exists():
         return set()
+
+    from datetime import datetime, timedelta
+
+    cutoff = datetime.now() - timedelta(days=max_age_days)
+    failed_ids: set[str] = set()
+
     try:
-        df = _load_csv(path)
+        for line in failed_posts_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(" - ", 2)
+            if len(parts) < 2:
+                continue
+            post_id = parts[0].strip()
+            try:
+                timestamp = datetime.strptime(parts[1].strip()[:26], "%Y-%m-%d %H:%M:%S.%f")
+                if timestamp >= cutoff:
+                    failed_ids.add(post_id)
+            except (ValueError, IndexError):
+                # Can't parse date — conservatively exclude it
+                failed_ids.add(post_id)
     except Exception:
-        return set()
+        pass
+
+    return failed_ids
+
+
+def _existing_labeled_post_ids(*paths: Path) -> set[str]:
+    known_ids: set[str] = set()
     post_id_col = "post_metadata.post_id"
-    if post_id_col not in df.columns:
-        return set()
-    return set(df[post_id_col].fillna("").astype(str).str.strip()) - {""}
+    for path in paths:
+        if not path.exists():
+            continue
+        try:
+            df = _load_csv(path)
+        except Exception:
+            continue
+        if post_id_col not in df.columns:
+            continue
+        ids = set(df[post_id_col].fillna("").astype(str).str.strip()) - {""}
+        known_ids.update(ids)
+    return known_ids
 
 
-def _prepare_incremental_posts_file(posts_path: Path, labeled_path: Path, output_path: Path) -> dict[str, Any]:
+def _prepare_incremental_posts_file(
+    posts_path: Path,
+    labeled_paths: tuple[Path, ...],
+    output_path: Path,
+    *,
+    max_posts: int | None = None,
+    exclude_ids: set[str] | None = None,
+) -> dict[str, Any]:
     posts_df = _load_csv(posts_path)
     posts_df.columns = posts_df.columns.str.lower().str.strip()
     if "post_id" not in posts_df.columns:
         raise KeyError(f"Missing post_id column in {posts_path}")
     posts_df["post_id"] = posts_df["post_id"].fillna("").astype(str).str.strip()
-    known_ids = _existing_labeled_post_ids(labeled_path)
+    known_ids = _existing_labeled_post_ids(*labeled_paths)
     new_posts_df = posts_df[~posts_df["post_id"].isin(known_ids)].copy()
+    total_new_posts = int(len(new_posts_df))
+    skipped_failed = 0
+    if exclude_ids:
+        before = len(new_posts_df)
+        new_posts_df = new_posts_df[~new_posts_df["post_id"].isin(exclude_ids)].copy()
+        skipped_failed = before - len(new_posts_df)
+    if max_posts is not None and max_posts > 0:
+        new_posts_df = new_posts_df.head(int(max_posts)).copy()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     new_posts_df.to_csv(output_path, index=False)
     return {
         "total_posts_available": int(len(posts_df)),
-        "already_labeled_posts": int(len(posts_df) - len(new_posts_df)),
+        "already_labeled_posts": int(len(posts_df) - total_new_posts),
+        "new_posts_available": total_new_posts,
         "new_posts_to_label": int(len(new_posts_df)),
+        "known_post_ids": int(len(known_ids)),
+        "skipped_failed_posts": skipped_failed,
+        "label_cap": int(max_posts) if max_posts else None,
     }
 
 
@@ -331,6 +463,30 @@ def _ensure_bootstrap_splits(train_path: Path, test_path: Path) -> dict[str, Any
     train_path.parent.mkdir(parents=True, exist_ok=True)
     test_path.parent.mkdir(parents=True, exist_ok=True)
 
+    bootstrap_sources: dict[str, str] = {}
+    if DATASET_PATH.exists():
+        dataset_df = _load_csv(DATASET_PATH)
+        target_column = _target_column(dataset_df)
+        dataset_df[target_column] = pd.to_numeric(dataset_df[target_column], errors="coerce")
+        dataset_df = dataset_df[dataset_df[target_column].isin([0, 1])].copy().reset_index(drop=True)
+        if not dataset_df.empty:
+            random_values = np.random.RandomState(42).rand(len(dataset_df))
+            test_mask = random_values < 0.2
+            if len(dataset_df) == 1:
+                test_mask[0] = False
+            train_df = dataset_df.loc[~test_mask].reset_index(drop=True)
+            test_df = dataset_df.loc[test_mask].reset_index(drop=True)
+            if test_df.empty and not train_df.empty:
+                test_df = train_df.tail(1).copy().reset_index(drop=True)
+                train_df = train_df.iloc[:-1].reset_index(drop=True)
+            train_df.to_csv(train_path, index=False)
+            test_df.to_csv(test_path, index=False)
+            bootstrap_sources = {"dataset": str(DATASET_PATH)}
+            return {
+                "bootstrap_used": True,
+                "bootstrap_sources": bootstrap_sources,
+            }
+
     train_df = _load_csv(BOOTSTRAP_TRAIN_PATH)
     test_df = _normalize_bootstrap_test_predictions(BOOTSTRAP_TEST_PATH)
 
@@ -370,19 +526,47 @@ def run_python_script(script_path: Path, cwd: Path, extra_env: dict[str, str] | 
     env = os.environ.copy()
     if extra_env:
         env.update(extra_env)
-    completed = subprocess.run(
-        [sys.executable, str(script_path)],
-        cwd=str(cwd),
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    return CommandResult(
-        command=[sys.executable, str(script_path)],
-        returncode=completed.returncode,
-        stdout=completed.stdout,
-        stderr=completed.stderr,
-    )
+    return run_python_script_with_options(script_path, cwd, extra_env=extra_env)
+
+
+def run_python_script_with_options(
+    script_path: Path,
+    cwd: Path,
+    *,
+    extra_env: dict[str, str] | None = None,
+    timeout: int | None = None,
+    stream_output: bool = False,
+) -> CommandResult:
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+
+    command = [sys.executable, str(script_path)]
+
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(cwd),
+            capture_output=not stream_output,
+            text=True,
+            env=env,
+            timeout=timeout,
+        )
+        return CommandResult(
+            command=command,
+            returncode=completed.returncode,
+            stdout="" if stream_output else completed.stdout,
+            stderr="" if stream_output else completed.stderr,
+        )
+    except subprocess.TimeoutExpired as exc:
+        stdout = exc.stdout or ""
+        stderr = exc.stderr or ""
+        return CommandResult(
+            command=command,
+            returncode=124,
+            stdout=stdout if isinstance(stdout, str) else stdout.decode(errors="replace"),
+            stderr=stderr if isinstance(stderr, str) else stderr.decode(errors="replace"),
+        )
 
 
 class DatasetProfilerTool:
@@ -436,7 +620,30 @@ class ScraperTool:
         comments_path = SCRAPER_WORKDIR / "comments.csv"
         if posts_path.exists():
             before_posts = _csv_row_count(posts_path)
-        result = run_python_script(SCRAPER_SCRIPT_PATH, SCRAPER_WORKDIR)
+        extra_env: dict[str, str] = {}
+        skip_labeling = _is_truthy(os.getenv("AGENT_SKIP_LABELING", "0"))
+        extra_env["SCRAPER_LOOKBACK_DAYS"] = str(
+            SCRAPER_DEFAULT_LOOKBACK_DAYS if skip_labeling else SCRAPER_LABELED_RUN_LOOKBACK_DAYS
+        )
+        if not skip_labeling:
+            extra_env["SCRAPER_MAX_RESULTS"] = str(SCRAPER_LABELED_RUN_MAX_RESULTS)
+        if SMOKE_TEST:
+            extra_env.update(
+                {
+                    "SCRAPER_SMOKE_TEST": "1",
+                    "SCRAPER_SMOKE_SUBREDDITS": ",".join(SMOKE_TEST_SUBREDDITS),
+                    "SCRAPER_SMOKE_MAX_RESULTS": str(SMOKE_TEST_MAX_RESULTS),
+                    "SCRAPER_SMOKE_TOP_N_COMMENTS": str(SMOKE_TEST_TOP_N_COMMENTS),
+                    "SCRAPER_SMOKE_SLEEP_TIME_SEC": str(SMOKE_TEST_SLEEP_TIME_SEC),
+                }
+            )
+        result = run_python_script_with_options(
+            SCRAPER_SCRIPT_PATH,
+            SCRAPER_WORKDIR,
+            extra_env=extra_env or None,
+            timeout=300,
+            stream_output=True,
+        )
         after_posts = _csv_row_count(posts_path) if posts_path.exists() else before_posts
         after_comments = _csv_row_count(comments_path)
         return {
@@ -445,8 +652,12 @@ class ScraperTool:
             "posts_after": after_posts,
             "new_posts_detected": max(after_posts - before_posts, 0),
             "comments_after": after_comments,
-            "stdout_tail": result.stdout[-3000:],
-            "stderr_tail": result.stderr[-3000:],
+            "stdout_tail": result.stdout[-3000:] if result.stdout else "",
+            "stderr_tail": result.stderr[-3000:] if result.stderr else "",
+            "timed_out": result.returncode == 124,
+            "smoke_test": SMOKE_TEST,
+            "lookback_days": int(extra_env["SCRAPER_LOOKBACK_DAYS"]),
+            "max_results": int(extra_env["SCRAPER_MAX_RESULTS"]) if "SCRAPER_MAX_RESULTS" in extra_env else None,
         }
 
 
@@ -454,14 +665,30 @@ class LabellerTool:
     name = "reddit_labeller"
 
     def run(self) -> dict[str, Any]:
-        posts_path = LABEL_WORKDIR / "posts.csv"
-        comments_path = LABEL_WORKDIR / "comments.csv"
-        temp_dir = LABEL_WORKDIR / "outputs" / "incremental"
-        temp_posts_path = temp_dir / "posts_to_label.csv"
-        temp_csv_path = temp_dir / "new_annotations.csv"
-        temp_json_path = temp_dir / "new_annotations.json"
-
-        incremental = _prepare_incremental_posts_file(posts_path, SCRAPED_LABELED_CSV_PATH, temp_posts_path)
+        if _is_truthy(os.getenv("AGENT_SKIP_LABELING", "0")):
+            return {
+                "returncode": 0,
+                "rows": 0,
+                "new_posts_to_label": 0,
+                "new_labels_created": 0,
+                "output_csv": str(SCRAPED_LABELED_CSV_PATH),
+                "output_json": str(SCRAPED_LABELED_JSON_PATH),
+                "stdout_tail": "Skipping labeling because AGENT_SKIP_LABELING is enabled.",
+                "stderr_tail": "",
+                "skipped": True,
+                "skip_reason": "AGENT_SKIP_LABELING",
+            }
+        posts_path = SCRAPER_WORKDIR / "posts.csv"
+        comments_path = SCRAPER_WORKDIR / "comments.csv"
+        failed_posts_path = LABEL_WORKDIR / "failed_posts.txt"
+        failed_ids = _load_failed_post_ids(failed_posts_path, max_age_days=7)
+        incremental = _prepare_incremental_posts_file(
+            posts_path,
+            (DATASET_PATH, SCRAPED_LABELED_CSV_PATH),
+            INCREMENTAL_POSTS_TO_LABEL_PATH,
+            max_posts=LABELER_LABELED_RUN_MAX_POSTS,
+            exclude_ids=failed_ids,
+        )
         if incremental["new_posts_to_label"] == 0:
             rows = _csv_row_count(SCRAPED_LABELED_CSV_PATH)
             return {
@@ -483,30 +710,40 @@ class LabellerTool:
                 "--mode",
                 "full",
                 "--posts-file",
-                str(temp_posts_path),
+                str(INCREMENTAL_POSTS_TO_LABEL_PATH),
                 "--comments-file",
                 str(comments_path),
                 "--output-csv",
-                str(temp_csv_path),
+                str(INCREMENTAL_LABELED_CSV_PATH),
                 "--output-json",
-                str(temp_json_path),
+                str(INCREMENTAL_LABELED_JSON_PATH),
             ],
             cwd=str(LABEL_WORKDIR),
             capture_output=True,
             text=True,
             env=os.environ.copy(),
         )
-        new_rows = _csv_row_count(temp_csv_path)
+        new_rows = _csv_row_count(INCREMENTAL_LABELED_CSV_PATH)
         rows = _csv_row_count(SCRAPED_LABELED_CSV_PATH)
         if result.returncode == 0:
-            rows = _merge_labeled_csv(SCRAPED_LABELED_CSV_PATH, temp_csv_path, SCRAPED_LABELED_CSV_PATH)
-            _merge_labeled_json(SCRAPED_LABELED_JSON_PATH, temp_json_path, SCRAPED_LABELED_JSON_PATH)
+            rows = _merge_labeled_csv(
+                SCRAPED_LABELED_CSV_PATH,
+                INCREMENTAL_LABELED_CSV_PATH,
+                SCRAPED_LABELED_CSV_PATH,
+            )
+            _merge_labeled_json(
+                SCRAPED_LABELED_JSON_PATH,
+                INCREMENTAL_LABELED_JSON_PATH,
+                SCRAPED_LABELED_JSON_PATH,
+            )
         return {
             "returncode": result.returncode,
             "rows": rows,
             "new_labels_created": new_rows,
             "output_csv": str(SCRAPED_LABELED_CSV_PATH),
             "output_json": str(SCRAPED_LABELED_JSON_PATH),
+            "incremental_output_csv": str(INCREMENTAL_LABELED_CSV_PATH),
+            "incremental_output_json": str(INCREMENTAL_LABELED_JSON_PATH),
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
             **incremental,
@@ -517,16 +754,46 @@ class PostProcessorTool:
     name = "post_processor"
 
     def run(self) -> dict[str, Any]:
+        if _is_truthy(os.getenv("AGENT_SKIP_LABELING", "0")):
+            return {
+                "returncode": 0,
+                "rows": 0,
+                "output_csv": str(PREPROCESSED_INCREMENTAL_CSV_PATH),
+                "summary_path": str(PREPROCESSED_INCREMENTAL_SUMMARY_PATH),
+                "summary": {},
+                "stdout_tail": "Skipping post-processing because AGENT_SKIP_LABELING is enabled.",
+                "stderr_tail": "",
+                "skipped": True,
+                "skip_reason": "AGENT_SKIP_LABELING",
+            }
+        incremental_rows = _csv_row_count(INCREMENTAL_LABELED_CSV_PATH)
+        if (
+            not INCREMENTAL_LABELED_CSV_PATH.exists()
+            or INCREMENTAL_LABELED_CSV_PATH.stat().st_size == 0
+            or incremental_rows == 0
+        ):
+            return {
+                "returncode": 0,
+                "rows": 0,
+                "output_csv": str(PREPROCESSED_INCREMENTAL_CSV_PATH),
+                "summary_path": str(PREPROCESSED_INCREMENTAL_SUMMARY_PATH),
+                "summary": {},
+                "stdout_tail": "No readable incremental labels to post-process.",
+                "stderr_tail": "",
+                "skipped": True,
+                "skip_reason": "NO_READABLE_INCREMENTAL_LABELS",
+            }
         result = subprocess.run(
             [
                 sys.executable,
                 str(PREPROCESS_SCRIPT_PATH),
                 "--input-file",
-                str(SCRAPED_LABELED_CSV_PATH),
+                str(INCREMENTAL_LABELED_CSV_PATH),
                 "--output-file",
-                str(PREPROCESSED_SCRAPED_CSV_PATH),
+                str(PREPROCESSED_INCREMENTAL_CSV_PATH),
                 "--summary-file",
-                str(PREPROCESSED_SCRAPED_SUMMARY_PATH),
+                str(PREPROCESSED_INCREMENTAL_SUMMARY_PATH),
+                "--keep-post-id",
             ],
             cwd=str(PREPROCESS_SCRIPT_PATH.parent),
             capture_output=True,
@@ -534,14 +801,14 @@ class PostProcessorTool:
             env=os.environ.copy(),
         )
         summary: dict[str, Any] = {}
-        if PREPROCESSED_SCRAPED_SUMMARY_PATH.exists():
-            summary = json.loads(PREPROCESSED_SCRAPED_SUMMARY_PATH.read_text(encoding="utf-8"))
-        rows = _csv_row_count(PREPROCESSED_SCRAPED_CSV_PATH)
+        if PREPROCESSED_INCREMENTAL_SUMMARY_PATH.exists():
+            summary = json.loads(PREPROCESSED_INCREMENTAL_SUMMARY_PATH.read_text(encoding="utf-8"))
+        rows = _csv_row_count(PREPROCESSED_INCREMENTAL_CSV_PATH)
         return {
             "returncode": result.returncode,
             "rows": rows,
-            "output_csv": str(PREPROCESSED_SCRAPED_CSV_PATH),
-            "summary_path": str(PREPROCESSED_SCRAPED_SUMMARY_PATH),
+            "output_csv": str(PREPROCESSED_INCREMENTAL_CSV_PATH),
+            "summary_path": str(PREPROCESSED_INCREMENTAL_SUMMARY_PATH),
             "summary": summary,
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
@@ -552,14 +819,33 @@ class DatasetAppendTool:
     name = "dataset_append"
 
     def run(self) -> dict[str, Any]:
+        if _is_truthy(os.getenv("AGENT_SKIP_LABELING", "0")):
+            return {
+                "sync_result": {
+                    "new_rows_added": 0,
+                    "new_fraud_rows_added": 0,
+                    "new_non_fraud_rows_added": 0,
+                    "train_rows_added": 0,
+                    "test_rows_added": 0,
+                    "bootstrap_used": False,
+                    "reason": "AGENT_SKIP_LABELING",
+                },
+                "dataset_rows": _csv_row_count(DATASET_PATH),
+                "train_rows": _csv_row_count(TRAIN_PATH),
+                "test_rows": _csv_row_count(TEST_PATH),
+                "skipped": True,
+                "skip_reason": "AGENT_SKIP_LABELING",
+            }
         sync_result = _append_new_rows_to_splits(
-            labeled_path=SCRAPED_LABELED_CSV_PATH,
+            labeled_path=PREPROCESSED_INCREMENTAL_CSV_PATH,
+            dataset_path=DATASET_PATH,
             train_path=TRAIN_PATH,
             test_path=TEST_PATH,
             ingested_ids_path=INGESTED_POST_IDS_PATH,
         )
         return {
             "sync_result": sync_result,
+            "dataset_rows": _csv_row_count(DATASET_PATH),
             "train_rows": _csv_row_count(TRAIN_PATH),
             "test_rows": _csv_row_count(TEST_PATH),
         }
@@ -587,36 +873,179 @@ class LabelReviewTool:
 class BalanceSearchTool:
     name = "balance_search"
 
-    def run(self, ratios: tuple[int, ...]) -> dict[str, Any]:
-        source = _load_csv(PREPARED_DATASET_PATH if PREPARED_DATASET_PATH.exists() else DATASET_PATH)
-        target = _target_column(source)
-        class_counts = pd.to_numeric(source[target], errors="coerce").fillna(0).astype(int).value_counts().to_dict()
-        fraud = int(class_counts.get(1, 0))
-        non_fraud = int(class_counts.get(0, 0))
-        if fraud == 0 or non_fraud == 0:
-            return {"best_ratio": None, "candidates": [], "reason": "dataset is single-class"}
+    def run(
+        self,
+        ratios: tuple[int, ...],
+        fraud_count: int | None = None,
+        non_fraud_count: int | None = None,
+    ) -> dict[str, Any]:
+        if _stub_downstream_enabled():
+            return {
+                "best_ratio": 10,
+                "current_ratio": 2.0,
+                "ratio_direction": "fraud_per_non_fraud",
+                "required_non_fraud_rows": 0,
+                "source_scope": "stub",
+                "candidates": [{"ratio": 10, "meaning": "1 non_fraud : 10 fraud", "estimated_false_positive_penalty": 0.0, "utility": 1.0}],
+                "stubbed": True,
+            }
+        source_scope = "scraped_batch"
+        if fraud_count is None or non_fraud_count is None:
+            source = _load_csv(PREPARED_DATASET_PATH if PREPARED_DATASET_PATH.exists() else DATASET_PATH)
+            target = _target_column(source)
+            class_counts = pd.to_numeric(source[target], errors="coerce").fillna(0).astype(int).value_counts().to_dict()
+            fraud = int(class_counts.get(1, 0))
+            non_fraud = int(class_counts.get(0, 0))
+            source_scope = "dataset"
+        else:
+            fraud = max(int(fraud_count), 0)
+            non_fraud = max(int(non_fraud_count), 0)
 
+        if fraud == 0:
+            return {
+                "best_ratio": None,
+                "current_ratio": 0.0,
+                "ratio_direction": "fraud_per_non_fraud",
+                "required_non_fraud_rows": 0,
+                "source_scope": source_scope,
+                "candidates": [],
+                "reason": "no fraud rows to balance",
+            }
+
+        current_ratio = float("inf") if non_fraud == 0 else fraud / non_fraud
         candidates: list[dict[str, Any]] = []
         for ratio in ratios:
-            expected_false_positive_penalty = abs((non_fraud / fraud) - ratio) / max(ratio, 1)
-            utility = 1.0 - expected_false_positive_penalty
+            required_non_fraud_rows = max(math.ceil(fraud / max(ratio, 1)) - non_fraud, 0)
+            expected_false_positive_penalty = 0.0 if non_fraud == 0 and ratio == max(ratios) else (
+                1.0 if non_fraud == 0 else abs(current_ratio - ratio) / max(ratio, 1)
+            )
             candidates.append(
                 {
                     "ratio": ratio,
+                    "meaning": "1 non_fraud : ratio fraud",
+                    "required_non_fraud_rows": required_non_fraud_rows,
                     "estimated_false_positive_penalty": round(expected_false_positive_penalty, 4),
-                    "utility": round(utility, 4),
                 }
             )
+
+        # If no synthetic rows are required for any candidate, validation metrics would be identical.
+        zero_aug_candidates = [item for item in candidates if item["required_non_fraud_rows"] == 0]
+        if len(zero_aug_candidates) == len(candidates):
+            best = min(
+                candidates,
+                key=lambda item: abs((0.0 if non_fraud == 0 else current_ratio) - item["ratio"]),
+            )
+            for item in candidates:
+                item["selection_method"] = "current_ratio_tie_break"
+                item["validation_score"] = None
+                item["macro_f1"] = None
+                item["non_fraud_f1"] = None
+                item["fraud_f1"] = None
+                item["returncode"] = 0
+            return {
+                "best_ratio": best["ratio"],
+                "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
+                "ratio_direction": "fraud_per_non_fraud",
+                "required_non_fraud_rows": 0,
+                "source_scope": source_scope,
+                "selection_method": "current_ratio_tie_break",
+                "candidates": candidates,
+                "reason": "all candidate ratios require zero synthetic rows",
+            }
+
+        successful_candidates: list[dict[str, Any]] = []
+        for item in candidates:
+            required_non_fraud_rows = int(item["required_non_fraud_rows"])
+            extra_env = {
+                "BALANCE_TARGET_FRAUD_PER_NON_FRAUD": str(item["ratio"]),
+                "BALANCE_BATCH_FRAUD_ROWS": str(fraud),
+                "BALANCE_BATCH_NON_FRAUD_ROWS": str(non_fraud),
+                "BALANCE_REQUIRED_SYNTHETIC_NON_FRAUD": str(required_non_fraud_rows),
+            }
+            result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent, extra_env=extra_env)
+            summary = _read_metrics_json(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else {}
+            augmented = summary.get("results", {}).get("augmented", {}) if isinstance(summary.get("results", {}), dict) else {}
+            macro_f1 = float(augmented.get("macro_f1", 0.0)) if isinstance(augmented, dict) else 0.0
+            non_fraud_f1 = float(augmented.get("non_fraud_f1", 0.0)) if isinstance(augmented, dict) else 0.0
+            fraud_f1 = float(augmented.get("f1", 0.0)) if isinstance(augmented, dict) else 0.0
+            validation_score = round((0.6 * macro_f1) + (0.3 * non_fraud_f1) + (0.1 * fraud_f1), 4)
+            item.update(
+                {
+                    "selection_method": "validation_metrics",
+                    "returncode": result.returncode,
+                    "validation_score": validation_score,
+                    "macro_f1": round(macro_f1, 4),
+                    "non_fraud_f1": round(non_fraud_f1, 4),
+                    "fraud_f1": round(fraud_f1, 4),
+                }
+            )
+            if result.returncode == 0:
+                successful_candidates.append(item)
+
+        if successful_candidates:
+            best = max(
+                successful_candidates,
+                key=lambda item: (
+                    item["validation_score"],
+                    item["non_fraud_f1"],
+                    item["fraud_f1"],
+                    -item["required_non_fraud_rows"],
+                ),
+            )
+            required_non_fraud_rows = int(best["required_non_fraud_rows"])
+            return {
+                "best_ratio": best["ratio"],
+                "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
+                "ratio_direction": "fraud_per_non_fraud",
+                "required_non_fraud_rows": required_non_fraud_rows,
+                "source_scope": source_scope,
+                "selection_method": "validation_metrics",
+                "selection_metric": "0.6*macro_f1 + 0.3*non_fraud_f1 + 0.1*fraud_f1",
+                "candidates": candidates,
+            }
+
+        # Fallback to the earlier heuristic if validation runs fail.
+        for item in candidates:
+            item["utility"] = round(1.0 - item["estimated_false_positive_penalty"], 4)
         best = max(candidates, key=lambda item: item["utility"])
-        return {"best_ratio": best["ratio"], "candidates": candidates}
+        required_non_fraud_rows = int(best["required_non_fraud_rows"])
+        return {
+            "best_ratio": best["ratio"],
+            "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
+            "ratio_direction": "fraud_per_non_fraud",
+            "required_non_fraud_rows": required_non_fraud_rows,
+            "source_scope": source_scope,
+            "selection_method": "heuristic_fallback",
+            "candidates": candidates,
+            "reason": "validation runs failed for all candidate ratios",
+        }
 
 
 class SyntheticQualityTool:
     name = "synthetic_quality"
 
     def run(self, synthetic_path: Path) -> dict[str, Any]:
+        if _stub_downstream_enabled():
+            return {
+                "synthetic_path": str(synthetic_path),
+                "reference_rows": 100,
+                "synthetic_rows": 100,
+                "reference_slice": "stub",
+                "mean_jsd": 0.05,
+                "column_jsd": {},
+                "accepted": True,
+                "stubbed": True,
+            }
         real_df = _load_csv(PREPARED_DATASET_PATH if PREPARED_DATASET_PATH.exists() else DATASET_PATH)
         synthetic_df = _load_csv(synthetic_path)
+        target = None
+        for candidate in TARGET_COLUMN_CANDIDATES:
+            if candidate in real_df.columns:
+                target = candidate
+                break
+        if target is not None:
+            real_target = pd.to_numeric(real_df[target], errors="coerce").fillna(0).astype(int)
+            real_df = real_df[real_target == 0].copy()
         scores: dict[str, float] = {}
         js_values: list[float] = []
         for column in real_df.columns:
@@ -629,6 +1058,9 @@ class SyntheticQualityTool:
         mean_jsd = float(np.mean(js_values)) if js_values else 1.0
         return {
             "synthetic_path": str(synthetic_path),
+            "reference_rows": int(len(real_df)),
+            "synthetic_rows": int(len(synthetic_df)),
+            "reference_slice": "non_fraud_only" if target is not None else "full_dataset",
             "mean_jsd": round(mean_jsd, 4),
             "column_jsd": scores,
             "accepted": mean_jsd <= 0.20,
@@ -638,18 +1070,86 @@ class SyntheticQualityTool:
 class CTGANTool:
     name = "ctgan_runner"
 
-    def run(self) -> dict[str, Any]:
-        result = run_python_script(CTGAN_SCRIPT_PATH, CTGAN_SCRIPT_PATH.parent)
+    def run(
+        self,
+        target_ratio: int | None = None,
+        *,
+        fraud_count: int = 0,
+        non_fraud_count: int = 0,
+        required_non_fraud_rows: int = 0,
+    ) -> dict[str, Any]:
         output_path = CLASSIFIER_RESULTS_PATH.parent / "augmented" / "synthetic_not_fraud.csv"
         summary_path = CLASSIFIER_RESULTS_PATH
+        if _stub_downstream_enabled():
+            return {
+                "returncode": 0,
+                "stdout_tail": "Stubbed CTGAN run.",
+                "stderr_tail": "",
+                "output_path": str(output_path),
+                "target_ratio": target_ratio,
+                "batch_fraud_count": fraud_count,
+                "batch_non_fraud_count": non_fraud_count,
+                "required_non_fraud_rows": required_non_fraud_rows,
+                "exists": True,
+                "fresh_output": True,
+                "output_mtime": time.time(),
+                "summary_path": str(summary_path),
+                "summary_exists": True,
+                "fresh_summary": True,
+                "summary_mtime": time.time(),
+                "stubbed": True,
+            }
+        if required_non_fraud_rows <= 0:
+            return {
+                "returncode": 0,
+                "stdout_tail": "",
+                "stderr_tail": "",
+                "output_path": str(output_path),
+                "target_ratio": target_ratio,
+                "batch_fraud_count": fraud_count,
+                "batch_non_fraud_count": non_fraud_count,
+                "required_non_fraud_rows": required_non_fraud_rows,
+                "exists": False,
+                "fresh_output": False,
+                "output_mtime": None,
+                "summary_path": str(summary_path),
+                "summary_exists": summary_path.exists(),
+                "fresh_summary": False,
+                "summary_mtime": summary_path.stat().st_mtime if summary_path.exists() else None,
+                "skipped": True,
+                "reason": "no synthetic non-fraud rows required for scraped batch",
+            }
+
+        started_at = time.time()
+        extra_env: dict[str, str] = {}
+        if target_ratio is not None:
+            extra_env["BALANCE_TARGET_FRAUD_PER_NON_FRAUD"] = str(target_ratio)
+        extra_env["BALANCE_BATCH_FRAUD_ROWS"] = str(max(int(fraud_count), 0))
+        extra_env["BALANCE_BATCH_NON_FRAUD_ROWS"] = str(max(int(non_fraud_count), 0))
+        extra_env["BALANCE_REQUIRED_SYNTHETIC_NON_FRAUD"] = str(max(int(required_non_fraud_rows), 0))
+        result = run_python_script(CTGAN_SCRIPT_PATH, CTGAN_SCRIPT_PATH.parent, extra_env=extra_env or None)
+        output_exists = output_path.exists()
+        summary_exists = summary_path.exists()
+        output_mtime = output_path.stat().st_mtime if output_exists else None
+        summary_mtime = summary_path.stat().st_mtime if summary_exists else None
+        fresh_output = bool(output_exists and output_mtime is not None and output_mtime >= (started_at - 1.0))
+        fresh_summary = bool(summary_exists and summary_mtime is not None and summary_mtime >= (started_at - 1.0))
         return {
             "returncode": result.returncode,
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
             "output_path": str(output_path),
-            "exists": output_path.exists(),
+            "target_ratio": target_ratio,
+            "batch_fraud_count": fraud_count,
+            "batch_non_fraud_count": non_fraud_count,
+            "required_non_fraud_rows": required_non_fraud_rows,
+            "exists": output_exists,
+            "fresh_output": fresh_output,
+            "output_mtime": output_mtime,
             "summary_path": str(summary_path),
-            "summary_exists": summary_path.exists(),
+            "summary_exists": summary_exists,
+            "fresh_summary": fresh_summary,
+            "summary_mtime": summary_mtime,
         }
 
 
@@ -657,6 +1157,33 @@ class AdversarialTrainerTool:
     name = "adversarial_trainer"
 
     def run(self, focus: str = "generic") -> dict[str, Any]:
+        if _stub_downstream_enabled():
+            attack_surface = {
+                "long_form_ratio": 0.12,
+                "recommended_focus": "transactional short-form fraud",
+                "channel_counts": {"website": 12, "email": 8},
+            }
+            return {
+                "focus": focus,
+                "recommended_focus": attack_surface["recommended_focus"],
+                "attack_surface": attack_surface,
+                "training_returncode": 0,
+                "robustness_returncode": 0,
+                "training_stdout_tail": "Stubbed adversarial training.",
+                "training_stderr_tail": "",
+                "robustness_stdout_tail": "Stubbed robustness curve generation.",
+                "robustness_stderr_tail": "",
+                "summary_path": str(ADVERSARIAL_SUMMARY_PATH),
+                "robustness_curve_path": str(ADVERSARIAL_ROBUSTNESS_CURVE_PATH),
+                "summary_exists": True,
+                "robustness_curve_exists": True,
+                "baseline_attack_f1": 0.91,
+                "adversarial_attack_f1": 0.94,
+                "adversarial_clean_f1": 0.95,
+                "robustness_gain": 0.03,
+                "accepted": True,
+                "stubbed": True,
+            }
         attack_surface = AttackSurfaceTool().run()
         env = {
             "ADV_CTGAN_FORCE_MODE": "novel_scam_fraud" if "fraud" in focus else "",
@@ -671,6 +1198,18 @@ class AdversarialTrainerTool:
             ROBUSTNESS_CURVE_SCRIPT_PATH,
             ROBUSTNESS_CURVE_SCRIPT_PATH.parent,
             extra_env=env,
+        )
+        synced_models = _sync_model_outputs(
+            {
+                "baseline_model": (
+                    ADVERSARIAL_SUMMARY_PATH.parent / "baseline_xgb.json",
+                    OUTPUT_DIR / "models" / "adversarial" / "baseline_xgb.json",
+                ),
+                "adversarial_model": (
+                    ADVERSARIAL_SUMMARY_PATH.parent / "adversarial_xgb.json",
+                    OUTPUT_DIR / "models" / "adversarial" / "adversarial_xgb.json",
+                ),
+            }
         )
 
         summary_df = _load_csv(ADVERSARIAL_SUMMARY_PATH) if ADVERSARIAL_SUMMARY_PATH.exists() else pd.DataFrame()
@@ -707,8 +1246,14 @@ class AdversarialTrainerTool:
             "robustness_stderr_tail": robustness_result.stderr[-3000:],
             "summary_path": str(ADVERSARIAL_SUMMARY_PATH),
             "robustness_curve_path": str(ADVERSARIAL_ROBUSTNESS_CURVE_PATH),
+            "baseline_model_path": str(ADVERSARIAL_SUMMARY_PATH.parent / "baseline_xgb.json"),
+            "adversarial_model_path": str(ADVERSARIAL_SUMMARY_PATH.parent / "adversarial_xgb.json"),
             "summary_exists": ADVERSARIAL_SUMMARY_PATH.exists(),
             "robustness_curve_exists": ADVERSARIAL_ROBUSTNESS_CURVE_PATH.exists(),
+            "baseline_model_exists": (ADVERSARIAL_SUMMARY_PATH.parent / "baseline_xgb.json").exists(),
+            "adversarial_model_exists": (ADVERSARIAL_SUMMARY_PATH.parent / "adversarial_xgb.json").exists(),
+            "output_baseline_model_path": synced_models.get("baseline_model"),
+            "output_adversarial_model_path": synced_models.get("adversarial_model"),
             "baseline_attack_f1": round(baseline_attack_f1, 4),
             "adversarial_attack_f1": round(adversarial_attack_f1, 4),
             "adversarial_clean_f1": round(clean_f1, 4),
@@ -721,8 +1266,32 @@ class ClassifierTrainingTool:
     name = "classifier_training"
 
     def run(self) -> dict[str, Any]:
+        if _stub_downstream_enabled():
+            return {
+                "returncode": 0,
+                "best_f1": 0.93,
+                "results_path": str(CLASSIFIER_RESULTS_PATH),
+                "summary_exists": True,
+                "baseline_model_path": str(CLASSIFIER_RESULTS_PATH.parent / "baseline" / "xgb_pipeline.joblib"),
+                "augmented_model_path": str(CLASSIFIER_RESULTS_PATH.parent / "augmented" / "xgb_pipeline.joblib"),
+                "stdout_tail": "Stubbed classifier training.",
+                "stderr_tail": "",
+                "stubbed": True,
+            }
         result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent)
         summary = _read_metrics_json(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else {}
+        synced_models = _sync_model_outputs(
+            {
+                "baseline_model": (
+                    CLASSIFIER_RESULTS_PATH.parent / "baseline" / "xgb_pipeline.joblib",
+                    OUTPUT_DIR / "models" / "classifier" / "baseline_xgb_pipeline.joblib",
+                ),
+                "augmented_model": (
+                    CLASSIFIER_RESULTS_PATH.parent / "augmented" / "xgb_pipeline.joblib",
+                    OUTPUT_DIR / "models" / "classifier" / "augmented_xgb_pipeline.joblib",
+                ),
+            }
+        )
 
         best_f1 = 0.0
         results = summary.get("results", {})
@@ -736,6 +1305,12 @@ class ClassifierTrainingTool:
             "best_f1": round(best_f1, 4),
             "results_path": str(CLASSIFIER_RESULTS_PATH),
             "summary_exists": CLASSIFIER_RESULTS_PATH.exists(),
+            "baseline_model_path": str(CLASSIFIER_RESULTS_PATH.parent / "baseline" / "xgb_pipeline.joblib"),
+            "augmented_model_path": str(CLASSIFIER_RESULTS_PATH.parent / "augmented" / "xgb_pipeline.joblib"),
+            "baseline_model_exists": (CLASSIFIER_RESULTS_PATH.parent / "baseline" / "xgb_pipeline.joblib").exists(),
+            "augmented_model_exists": (CLASSIFIER_RESULTS_PATH.parent / "augmented" / "xgb_pipeline.joblib").exists(),
+            "output_baseline_model_path": synced_models.get("baseline_model"),
+            "output_augmented_model_path": synced_models.get("augmented_model"),
             "stdout_tail": result.stdout[-3000:],
             "stderr_tail": result.stderr[-3000:],
         }
@@ -745,17 +1320,34 @@ class EvaluationTool:
     name = "evaluation_runner"
 
     def run(self) -> dict[str, Any]:
+        if _stub_downstream_enabled():
+            return {
+                "eval_returncode": 0,
+                "robustness_returncode": 0,
+                "best_f1": 0.93,
+                "non_fraud_f1": 0.72,
+                "robustness_score": 0.94,
+                "classifier_results_path": str(CLASSIFIER_RESULTS_PATH),
+                "robustness_results_path": str(ROBUSTNESS_RESULTS_PATH),
+                "eval_stdout_tail": "Stubbed evaluation.",
+                "robustness_stdout_tail": "Stubbed robustness evaluation.",
+                "stubbed": True,
+            }
         eval_result = run_python_script(TRAINING_SCRIPT_PATH, TRAINING_SCRIPT_PATH.parent)
         robustness_result = run_python_script(ROBUSTNESS_SCRIPT_PATH, ROBUSTNESS_SCRIPT_PATH.parent)
         summary = _read_metrics_json(CLASSIFIER_RESULTS_PATH) if CLASSIFIER_RESULTS_PATH.exists() else {}
         robustness_df = _load_csv(ROBUSTNESS_RESULTS_PATH) if ROBUSTNESS_RESULTS_PATH.exists() else pd.DataFrame()
 
         best_f1 = 0.0
+        non_fraud_f1 = 0.0
         results = summary.get("results", {})
         if isinstance(results, dict):
             for run_metrics in results.values():
                 if isinstance(run_metrics, dict):
-                    best_f1 = max(best_f1, float(run_metrics.get("f1", 0.0)))
+                    candidate_f1 = float(run_metrics.get("f1", 0.0))
+                    if candidate_f1 > best_f1:
+                        best_f1 = candidate_f1
+                        non_fraud_f1 = float(run_metrics.get("non_fraud_f1", 0.0))
 
         robustness = 0.0
         if not robustness_df.empty and {"Model", "Test Set", "F1"}.issubset(robustness_df.columns):
@@ -769,6 +1361,7 @@ class EvaluationTool:
             "eval_returncode": eval_result.returncode,
             "robustness_returncode": robustness_result.returncode,
             "best_f1": round(best_f1, 4),
+            "non_fraud_f1": round(non_fraud_f1, 4),
             "robustness_score": round(robustness, 4),
             "classifier_results_path": str(CLASSIFIER_RESULTS_PATH),
             "robustness_results_path": str(ROBUSTNESS_RESULTS_PATH),

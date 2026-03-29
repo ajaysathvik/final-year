@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 
@@ -7,7 +8,7 @@ AGENT_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = AGENT_ROOT.parent
 DATA_ROOT = REPO_ROOT / "9k-dataset"
 
-DATASET_PATH = DATA_ROOT / "processed" / "data_preprocessed.csv"
+DATASET_PATH = DATA_ROOT / "data.csv"
 TRAIN_PATH = DATA_ROOT / "Data labeling" / "outputs" / "train_3k.csv"
 TEST_PATH = DATA_ROOT / "Data labeling" / "outputs" / "test_3k.csv"
 BOOTSTRAP_TRAIN_PATH = DATA_ROOT / "1k data" / "xgb_ctgan_1k" / "augmented" / "train_augmented.csv"
@@ -19,12 +20,18 @@ LABEL_WORKDIR = DATA_ROOT / "Data labeling"
 LABEL_SCRIPT_PATH = LABEL_WORKDIR / "label.py"
 SCRAPED_LABELED_CSV_PATH = DATA_ROOT / "Data labeling" / "outputs" / "scraped_annotations_latest.csv"
 SCRAPED_LABELED_JSON_PATH = DATA_ROOT / "Data labeling" / "outputs" / "scraped_annotations_latest.json"
+INCREMENTAL_LABEL_DIR = DATA_ROOT / "Data labeling" / "outputs" / "incremental"
+INCREMENTAL_POSTS_TO_LABEL_PATH = INCREMENTAL_LABEL_DIR / "posts_to_label.csv"
+INCREMENTAL_LABELED_CSV_PATH = INCREMENTAL_LABEL_DIR / "new_annotations.csv"
+INCREMENTAL_LABELED_JSON_PATH = INCREMENTAL_LABEL_DIR / "new_annotations.json"
 PREPROCESS_SCRIPT_PATH = DATA_ROOT / "scripts" / "data_prep" / "preprocess_dataset.py"
 PREPROCESSED_SCRAPED_CSV_PATH = DATA_ROOT / "Data labeling" / "outputs" / "scraped_annotations_preprocessed.csv"
 PREPROCESSED_SCRAPED_SUMMARY_PATH = DATA_ROOT / "Data labeling" / "outputs" / "scraped_annotations_preprocessed_summary.json"
+PREPROCESSED_INCREMENTAL_CSV_PATH = INCREMENTAL_LABEL_DIR / "new_annotations_preprocessed.csv"
+PREPROCESSED_INCREMENTAL_SUMMARY_PATH = INCREMENTAL_LABEL_DIR / "new_annotations_preprocessed_summary.json"
 
 FIN_FRAUD_ROOT = DATA_ROOT
-PREPARED_DATASET_PATH = DATA_ROOT / "processed" / "data_preprocessed.csv"
+PREPARED_DATASET_PATH = DATASET_PATH
 CTGAN_SCRIPT_PATH = DATA_ROOT / "scripts" / "experiments" / "3k_data" / "run_xgb_ctgan_3k.py"
 ADV_CTGAN_SCRIPT_PATH = DATA_ROOT / "adversial" / "adversarial_training.py"
 EVAL_SCRIPT_PATH = DATA_ROOT / "scripts" / "experiments" / "3k_data" / "run_xgb_ctgan_3k.py"
@@ -51,12 +58,25 @@ AUDIT_LOG_PATH = REPO_ROOT / "agent" / "audit_log.jsonl"
 OLLAMA_MODEL = "qwen3.5:0.8b"
 OLLAMA_URL = "http://127.0.0.1:11434"
 
+SMOKE_TEST = os.getenv("AGENT_SMOKE_TEST", "0").strip().lower() in {"1", "true", "yes", "on"}
+STOP_AFTER_INGESTION_IF_NO_UPDATE = os.getenv("AGENT_STOP_AFTER_INGESTION_IF_NO_UPDATE", "0").strip().lower() in {"1", "true", "yes", "on"}
+SMOKE_TEST_SUBREDDITS = ("Scams",)
+SMOKE_TEST_MAX_RESULTS = 2
+SMOKE_TEST_TOP_N_COMMENTS = 5
+SMOKE_TEST_SLEEP_TIME_SEC = 0.2
+
 MAX_REVIEW_LOOPS = 6
 
 LABEL_NOISE_THRESHOLD = 0.18
 SLANG_DRIFT_THRESHOLD = 0.12
 MIN_JS_DIVERGENCE_ACCEPT = 0.20
-DEFAULT_RATIO_CANDIDATES = (10, 18, 20)
+DEFAULT_RATIO_CANDIDATES = (5, 10, 15)
 TARGET_F1_THRESHOLD = 0.82
+TARGET_NON_FRAUD_F1_THRESHOLD = 0.50  # Minimum acceptable F1 for the minority (non-fraud) class
 TARGET_ROBUSTNESS_THRESHOLD = 0.70
-MIN_NEW_FRAUD_ROWS_TO_UPDATE = 10
+MIN_NEW_FRAUD_ROWS_TO_UPDATE = 2
+SCRAPER_DEFAULT_LOOKBACK_DAYS = 90
+SCRAPER_LABELED_RUN_LOOKBACK_DAYS = 7
+LABELED_RUN_BATCH_SIZE = 10
+SCRAPER_LABELED_RUN_MAX_RESULTS = LABELED_RUN_BATCH_SIZE
+LABELER_LABELED_RUN_MAX_POSTS = LABELED_RUN_BATCH_SIZE
