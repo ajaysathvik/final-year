@@ -11,6 +11,7 @@ Author: Team D16
 import os
 import time
 import json
+import argparse
 import pandas as pd
 import re
 from datetime import datetime
@@ -33,7 +34,7 @@ MODEL_NAME = "qwen3.5:0.8b"
 REQUESTS_PER_MIN = 25
 MAX_TOKENS = 4096
 TEMPERATURE = 0
-MAX_RETRIES = 2
+MAX_RETRIES = 3
 
 CACHE_VERSION = "v4_currency_fix"
 CACHE_FILE = os.path.join(BASE_DIR, "post_annotation_cache.json")
@@ -353,6 +354,14 @@ def clean_text(text):
     text = text.replace('“', "'").replace('”', "'").replace('‘', "'").replace('’', "'").replace('"', "'")
     # Remove newlines and tabs from titles/subreddits to keep the schema injection clean
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    # Strip Reddit markdown escape sequences (e.g. \\_) that bloat token count
+    text = text.replace('\\_', '_')
+    text = text.replace('\\*', '*')
+    text = text.replace('\\#', '#')
+    # Collapse runs of underscores / special chars that waste tokens
+    text = re.sub(r'_{3,}', '___', text)
+    text = re.sub(r'\*{3,}', '***', text)
+    text = re.sub(r'\s{2,}', ' ', text)
     return text.strip()
 
 def annotate_post(post_row, comments_df):
@@ -391,7 +400,7 @@ def annotate_post(post_row, comments_df):
             "top_p": 0.8,
             "repeat_penalty": 1.1,
             "num_predict": MAX_TOKENS,
-            "num_ctx": 4096
+            "num_ctx": 8192
         }
     }
 
@@ -433,12 +442,12 @@ def annotate_post(post_row, comments_df):
 # RUN
 # ======================================================
 
-def run_annotation(limit=None):
+def run_annotation(limit=None, posts_file=POSTS_FILE, comments_file=COMMENTS_FILE, output_dir=OUTPUT_DIR, output_csv=None, output_json=None):
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
-    posts_df = pd.read_csv(POSTS_FILE)
-    comments_df = pd.read_csv(COMMENTS_FILE)
+    posts_df = pd.read_csv(posts_file)
+    comments_df = pd.read_csv(comments_file)
 
     # Normalize columns
     posts_df.columns = posts_df.columns.str.lower().str.strip()
@@ -469,12 +478,12 @@ def run_annotation(limit=None):
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    json_path = os.path.join(OUTPUT_DIR, f"annotations_{timestamp}.json")
+    json_path = output_json or os.path.join(output_dir, f"annotations_{timestamp}.json")
     with open(json_path, "w") as f:
         json.dump(results, f, indent=2)
 
     df = pd.json_normalize(results)
-    csv_path = os.path.join(OUTPUT_DIR, f"annotations_{timestamp}.csv")
+    csv_path = output_csv or os.path.join(output_dir, f"annotations_{timestamp}.csv")
     df.to_csv(csv_path, index=False)
 
     print("Annotation Complete")
@@ -486,6 +495,29 @@ def run_annotation(limit=None):
 # ======================================================
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument("--mode", choices=["full", "test5", "test20"], help="Run without the interactive prompt.")
+    parser.add_argument("--posts-file", default=POSTS_FILE)
+    parser.add_argument("--comments-file", default=COMMENTS_FILE)
+    parser.add_argument("--output-csv")
+    parser.add_argument("--output-json")
+    args = parser.parse_args()
+
+    if args.mode:
+        limit = None
+        if args.mode == "test5":
+            limit = 5
+        elif args.mode == "test20":
+            limit = 20
+        run_annotation(
+            limit=limit,
+            posts_file=args.posts_file,
+            comments_file=args.comments_file,
+            output_dir=OUTPUT_DIR,
+            output_csv=args.output_csv,
+            output_json=args.output_json,
+        )
+        raise SystemExit(0)
 
     print("Post-Only Fraud Annotation System")
     print("1. Test on 5 posts")

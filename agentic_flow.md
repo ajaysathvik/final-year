@@ -9,7 +9,8 @@ graph TD
     START((START)) --> IngestionAgent[Ingestion Agent]
 
     IngestionAgent -->|Retry: scrape/label/drift issue| IngestionAgent
-    IngestionAgent -->|Accepted or loop limit reached| BalanceAgent[Balance Agent]
+    IngestionAgent -->|Accepted: update model| BalanceAgent[Balance Agent]
+    IngestionAgent -->|Accepted: skip update or loop limit| COMPLETE
 
     BalanceAgent -->|Retry: CTGAN/JSD failure| BalanceAgent
     BalanceAgent -->|Accepted or loop limit reached| TrainingAgent[Training Agent]
@@ -41,10 +42,10 @@ graph TD
 
 **Implemented checks**
 - retries if scraping, labeling, or preprocessing returns a non-zero exit code
-- retries if no new rows are appended to the split files
 - retries if `label_noise_score > 0.18`
 - retries if `slang_drift_score > 0.12`
 - retries if label review returns `recommendation = "relabel"`
+- terminates early (`skip_model_update`) if quality passes but not enough new fraud rows are added (e.g. `< 2`) and bootstrap is not used.
 
 **Primary outputs**
 - scraped and labeled files under `Data labeling/outputs/`
@@ -162,6 +163,7 @@ The main workflow thresholds live in [`agent-new/config.py`](/home/norm/Projects
 - `MIN_JS_DIVERGENCE_ACCEPT = 0.20`
 - `TARGET_F1_THRESHOLD = 0.82`
 - `TARGET_ROBUSTNESS_THRESHOLD = 0.70`
+- `MIN_NEW_FRAUD_ROWS_TO_UPDATE = 2`
 
 If an agent keeps failing but the global iteration count reaches the loop cap, the graph advances to the next stage instead of retrying forever.
 

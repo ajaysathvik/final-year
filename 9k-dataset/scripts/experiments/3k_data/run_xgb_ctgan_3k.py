@@ -1,9 +1,8 @@
 import json
+import math
 import os
 from pathlib import Path
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import joblib
 import pandas as pd
 from ctgan import CTGAN
 from sklearn.compose import ColumnTransformer
@@ -22,6 +21,15 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from xgboost import XGBClassifier
 
+try:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    matplotlib = None
+    plt = None
+
 BASE_DIR = Path(__file__).resolve().parents[3]
 if BASE_DIR.name != "9k-dataset":
     BASE_DIR = Path(__file__).resolve().parents[2] # Fallback based on running dir
@@ -37,11 +45,17 @@ SUMMARY_FILE = ARTIFACT_DIR / "summary_metrics_3k.json"
 REPORT_FILE = BASE_DIR / "reports" / "XGB_CTGAN_3K_REPORT.md"
 MATRIX_REPORT = BASE_DIR / "reports" / "PERFORMANCE_MATRIX_3K.md"
 PLOT_FILE = ARTIFACT_DIR / "comparison_metrics_3k.png"
+BASELINE_MODEL_FILE = ARTIFACT_DIR / "baseline" / "xgb_pipeline.joblib"
+AUGMENTED_MODEL_FILE = ARTIFACT_DIR / "augmented" / "xgb_pipeline.joblib"
 
 TARGET = "annotation.is_fraud"
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
 LEARNING_RATE = 0.08
+TARGET_FRAUD_PER_NON_FRAUD = max(int(os.getenv("BALANCE_TARGET_FRAUD_PER_NON_FRAUD", "18")), 1)
+BATCH_FRAUD_ROWS = max(int(os.getenv("BALANCE_BATCH_FRAUD_ROWS", "0")), 0)
+BATCH_NON_FRAUD_ROWS = max(int(os.getenv("BALANCE_BATCH_NON_FRAUD_ROWS", "0")), 0)
+REQUIRED_SYNTHETIC_NON_FRAUD = max(int(os.getenv("BALANCE_REQUIRED_SYNTHETIC_NON_FRAUD", "0")), 0)
 CTGAN_CONFIG = {
     "epochs": 350,
     "batch_size": 16,
@@ -158,7 +172,7 @@ def evaluate_model(train_df: pd.DataFrame, test_df: pd.DataFrame):
         "fpr": fpr.tolist(),
         "tpr": tpr.tolist(),
     }
-    return metrics, predictions, curves
+    return metrics, predictions, curves, pipeline
 
 def train_ctgan(train_non_fraud_features: pd.DataFrame):
     prepared = train_non_fraud_features.copy()
@@ -181,7 +195,10 @@ def train_ctgan(train_non_fraud_features: pd.DataFrame):
     model.fit(prepared, discrete_columns=discrete_columns)
     return model
 
+
 def save_pr_curve(curves: dict, output_file: Path, title: str):
+    if plt is None:
+        return
     plt.figure(figsize=(6.5, 5))
     plt.plot(curves["recall"], curves["precision"], color="#2a9d8f", linewidth=2)
     plt.xlabel("Recall")
@@ -195,6 +212,8 @@ def save_pr_curve(curves: dict, output_file: Path, title: str):
     plt.close()
 
 def save_roc_curve(curves: dict, output_file: Path, title: str):
+    if plt is None:
+        return
     plt.figure(figsize=(6.5, 5))
     plt.plot(curves["fpr"], curves["tpr"], color="#264653", linewidth=2)
     plt.plot([0, 1], [0, 1], linestyle="--", linewidth=1)
@@ -224,7 +243,9 @@ def write_report(subset_df: pd.DataFrame, train_df: pd.DataFrame, test_df: pd.Da
         f"- Train split: `{int((train_df[TARGET] == 1).sum())} fraud`, `{int((train_df[TARGET] == 0).sum())} non_fraud`.",
         f"- Test split: `{int((test_df[TARGET] == 1).sum())} fraud`, `{int((test_df[TARGET] == 0).sum())} non_fraud`.",
         "- CTGAN trains only on the real minority rows from the train split.",
-        "- Augmentation rule: add one more minority block equal to the real minority count in training.",
+        f"- Scraped batch counts: `{BATCH_FRAUD_ROWS} fraud`, `{BATCH_NON_FRAUD_ROWS} non_fraud`.",
+        f"- Target balance: `1:{TARGET_FRAUD_PER_NON_FRAUD}` in `non_fraud:fraud` terms.",
+        f"- Synthetic non-fraud rows requested from scraped batch delta: `{REQUIRED_SYNTHETIC_NON_FRAUD}`.",
         "",
         "## Results",
         "",
@@ -267,6 +288,8 @@ def write_matrix_report(results: dict):
     MATRIX_REPORT.write_text("\n".join(lines), encoding="utf-8")
 
 def plot_comparison(results: dict):
+    if plt is None:
+        return
     labels = ["baseline", "augmented"]
     accuracy_values = [results["baseline"]["accuracy"], results["augmented"]["accuracy"]]
     macro_values = [results["baseline"]["macro_f1"], results["augmented"]["macro_f1"]]
@@ -301,10 +324,11 @@ def main():
 
     results = {}
 
-    baseline_metrics, baseline_predictions, baseline_curves = evaluate_model(train_df, test_df)
+    baseline_metrics, baseline_predictions, baseline_curves, baseline_pipeline = evaluate_model(train_df, test_df)
     results["baseline"] = baseline_metrics
     baseline_dir = ARTIFACT_DIR / "baseline"
     baseline_dir.mkdir(exist_ok=True)
+    joblib.dump(baseline_pipeline, BASELINE_MODEL_FILE)
     baseline_predictions.to_csv(baseline_dir / "test_predictions.csv", index=False)
     with (baseline_dir / "metrics.json").open("w", encoding="utf-8") as handle:
         json.dump(baseline_metrics, handle, indent=2)
@@ -315,22 +339,27 @@ def main():
     train_non_fraud_features = train_non_fraud.drop(columns=LEAKY_COLUMNS, errors="ignore")
     ctgan = train_ctgan(train_non_fraud_features)
 
-    synthetic_features = ctgan.sample(len(train_non_fraud)).reset_index(drop=True)
-    synthetic_df = synthetic_features.copy()
-    synthetic_df[TARGET] = 0
-    synthetic_df["annotation.fraud_type"] = "none"
-    synthetic_df["annotation.key_features.amount_mentioned"] = "synthetic"
-    for column in LEAKY_COLUMNS:
-        if column not in synthetic_df.columns:
-            synthetic_df[column] = 0
-    synthetic_df = synthetic_df.reindex(columns=train_df.columns)
+    synthetic_rows_needed = REQUIRED_SYNTHETIC_NON_FRAUD
+    if synthetic_rows_needed > 0:
+        synthetic_features = ctgan.sample(synthetic_rows_needed).reset_index(drop=True)
+        synthetic_df = synthetic_features.copy()
+        synthetic_df[TARGET] = 0
+        synthetic_df["annotation.fraud_type"] = "none"
+        synthetic_df["annotation.key_features.amount_mentioned"] = "synthetic"
+        for column in LEAKY_COLUMNS:
+            if column not in synthetic_df.columns:
+                synthetic_df[column] = 0
+        synthetic_df = synthetic_df.reindex(columns=train_df.columns)
+    else:
+        synthetic_df = train_df.head(0).copy()
 
     augmented_train = pd.concat([train_df, synthetic_df], ignore_index=True).reset_index(drop=True)
-    augmented_metrics, augmented_predictions, augmented_curves = evaluate_model(augmented_train, test_df)
+    augmented_metrics, augmented_predictions, augmented_curves, augmented_pipeline = evaluate_model(augmented_train, test_df)
     results["augmented"] = augmented_metrics
 
     augmented_dir = ARTIFACT_DIR / "augmented"
     augmented_dir.mkdir(exist_ok=True)
+    joblib.dump(augmented_pipeline, AUGMENTED_MODEL_FILE)
     synthetic_df.to_csv(augmented_dir / "synthetic_not_fraud.csv", index=False)
     augmented_train.to_csv(augmented_dir / "train_augmented.csv", index=False)
     augmented_predictions.to_csv(augmented_dir / "test_predictions.csv", index=False)
@@ -342,6 +371,15 @@ def main():
     summary = {
         "train_file": str(TRAIN_FILE),
         "test_file": str(TEST_FILE),
+        "target_fraud_per_non_fraud": TARGET_FRAUD_PER_NON_FRAUD,
+        "batch_fraud_rows": BATCH_FRAUD_ROWS,
+        "batch_non_fraud_rows": BATCH_NON_FRAUD_ROWS,
+        "required_synthetic_non_fraud": REQUIRED_SYNTHETIC_NON_FRAUD,
+        "synthetic_non_fraud_rows_added": int(len(synthetic_df)),
+        "model_paths": {
+            "baseline_pipeline": str(BASELINE_MODEL_FILE),
+            "augmented_pipeline": str(AUGMENTED_MODEL_FILE),
+        },
         "ctgan_config": CTGAN_CONFIG,
         "results": results,
     }

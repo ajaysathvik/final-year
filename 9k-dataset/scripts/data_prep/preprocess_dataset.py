@@ -256,9 +256,14 @@ def preprocess(
     input_file: Path = INPUT_FILE,
     output_file: Path = OUTPUT_FILE,
     summary_file: Path = SUMMARY_FILE,
+    keep_post_id: bool = False,
 ):
     df = pd.read_csv(input_file)
     raw_shape = df.shape
+    post_id_series = None
+
+    if keep_post_id and "post_metadata.post_id" in df.columns:
+        post_id_series = df["post_metadata.post_id"].copy()
 
     if set(REAL_COLUMNS).issubset(df.columns):
         df = df.copy()
@@ -309,12 +314,20 @@ def preprocess(
     df["annotation.key_features.amount_normalized"] = df["annotation.key_features.amount_mentioned"].map(parse_amount)
     df["annotation.key_features.has_amount"] = df["annotation.key_features.amount_normalized"].notna().astype("Int64")
 
+    if post_id_series is not None:
+        normalized_post_ids = post_id_series.fillna("").astype(str).str.strip()
+        if "post_metadata.post_id" in df.columns:
+            df["post_metadata.post_id"] = normalized_post_ids
+        else:
+            df.insert(0, "post_metadata.post_id", normalized_post_ids)
+
     summary = {
         "input_file": str(input_file),
         "output_file": str(output_file),
         "raw_shape": list(raw_shape),
         "processed_shape": list(df.shape),
         "dropped_trailing_columns": max(raw_shape[1] - len(df.columns), 0),
+        "keep_post_id": keep_post_id,
         "is_fraud_distribution": df["annotation.is_fraud"].value_counts(dropna=False).sort_index().to_dict(),
         "fraud_type_top_10": df["annotation.fraud_type"].value_counts().head(10).to_dict(),
         "currencies_top_10": df["annotation.key_features.currency"].value_counts().head(10).to_dict(),
@@ -335,6 +348,7 @@ def parse_args():
     parser.add_argument("--input-file", type=Path, default=INPUT_FILE)
     parser.add_argument("--output-file", type=Path, default=OUTPUT_FILE)
     parser.add_argument("--summary-file", type=Path, default=SUMMARY_FILE)
+    parser.add_argument("--keep-post-id", action="store_true")
     return parser.parse_args()
 
 
@@ -344,4 +358,5 @@ if __name__ == "__main__":
         input_file=args.input_file,
         output_file=args.output_file,
         summary_file=args.summary_file,
+        keep_post_id=args.keep_post_id,
     )

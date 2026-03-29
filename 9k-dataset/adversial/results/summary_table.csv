@@ -1,0 +1,5 @@
+Model,Test Set,Accuracy,Precision,Recall,F1,AUC
+Baseline XGB,Clean,0.9733,0.9843,0.9877,0.986,0.986
+Baseline XGB,FGSM Attack,0.9733,0.9843,0.9877,0.986,0.9851
+Adversarial XGB,Clean,0.975,0.9843,0.9895,0.9869,0.9832
+Adversarial XGB,FGSM Attack,0.9783,0.986,0.9912,0.9886,0.984

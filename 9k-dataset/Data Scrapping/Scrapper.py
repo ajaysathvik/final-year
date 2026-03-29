@@ -17,7 +17,18 @@ HEADERS = {
 }
 
 NOW_UTC = int(datetime.now(tz=timezone.utc).timestamp())
-THREE_MONTHS_SEC = 90 * 24 * 3600 * 4 * 2    # last 3 months
+DEFAULT_LOOKBACK_DAYS = 90
+
+def get_lookback_days():
+    raw = os.getenv("SCRAPER_LOOKBACK_DAYS", str(DEFAULT_LOOKBACK_DAYS)).strip()
+    try:
+        value = int(raw)
+    except ValueError:
+        value = DEFAULT_LOOKBACK_DAYS
+    return max(value, 1)
+
+LOOKBACK_DAYS = get_lookback_days()
+LOOKBACK_WINDOW_SEC = LOOKBACK_DAYS * 24 * 3600
 
 CHECKPOINT_EVERY = 10
 
@@ -68,6 +79,7 @@ def guarded_request(url, params=None, retries=3):
 # ================== CACHE FOR DUPLICATE AVOIDANCE ==================
 
 CACHE_FILE = "scrape_cache.json"
+
 cache_lock = Lock()
 CACHE_SET = set()
 
@@ -95,6 +107,59 @@ def save_cache():
         os.replace(tmp, CACHE_FILE)
     except Exception as e:
         log(f"Failed saving cache: {e}")
+
+
+def apply_smoke_test_overrides(config):
+    if os.getenv("SCRAPER_SMOKE_TEST", "").strip().lower() not in {"1", "true", "yes", "on"}:
+        return config
+
+    smoke_subreddits = [
+        item.strip()
+        for item in os.getenv("SCRAPER_SMOKE_SUBREDDITS", "Scams").split(",")
+        if item.strip()
+    ]
+
+    params = dict(config.get("collection_params", {}))
+    try:
+        params["max_results"] = int(os.getenv("SCRAPER_SMOKE_MAX_RESULTS", "1"))
+    except ValueError:
+        params["max_results"] = 1
+    try:
+        params["top_n_comments"] = int(os.getenv("SCRAPER_SMOKE_TOP_N_COMMENTS", "5"))
+    except ValueError:
+        params["top_n_comments"] = 5
+    try:
+        params["sleep_time_sec"] = float(os.getenv("SCRAPER_SMOKE_SLEEP_TIME_SEC", "0.2"))
+    except ValueError:
+        params["sleep_time_sec"] = 0.2
+
+    config["subreddits"] = {
+        "tier_1": smoke_subreddits[:1] or ["Scams"],
+        "tier_2": [],
+        "tier_3": [],
+    }
+    config["collection_params"] = params
+    log(
+        "Smoke test enabled: "
+        f"subreddits={config['subreddits']['tier_1']}, "
+        f"max_results={params['max_results']}, "
+        f"top_n_comments={params['top_n_comments']}, "
+        f"sleep_time_sec={params['sleep_time_sec']}"
+    )
+    return config
+
+
+def apply_env_overrides(config):
+    """Apply optional environment overrides for scraper params."""
+    params = dict(config.get("collection_params", {}))
+    raw_max = os.getenv("SCRAPER_MAX_RESULTS", "").strip()
+    if raw_max:
+        try:
+            params["max_results"] = int(raw_max)
+        except ValueError:
+            pass
+    config["collection_params"] = params
+    return config
 
 
 # ================== KEYWORD FILTERING ==================
@@ -174,9 +239,8 @@ def fetch_posts(subreddit, max_posts, sleep_time, post_keyword_set):
             d = item["data"]
             created = d["created_utc"]
 
-            # TIME WINDOW: LAST 3 MONTHS
-            if created < NOW_UTC - THREE_MONTHS_SEC:
-                log(f"r/{subreddit} - Reached posts older than 3 months, stopping")
+            if created < NOW_UTC - LOOKBACK_WINDOW_SEC:
+                log(f"r/{subreddit} - Reached posts older than {LOOKBACK_DAYS} days, stopping")
                 return
 
             title = d["title"]
@@ -403,6 +467,8 @@ def run(config_path="config.json"):
 
     with open(config_path) as f:
         config = json.load(f)
+    config = apply_smoke_test_overrides(config)
+    config = apply_env_overrides(config)
 
     subreddits = (
         config["subreddits"]["tier_1"] +
@@ -416,7 +482,7 @@ def run(config_path="config.json"):
     post_keyword_set = build_post_keyword_set(keywords)
 
     log(f"Loaded {len(post_keyword_set)} scam keywords")
-    log(f"Mode: LAST 3 MONTHS + KEYWORD FILTERING")
+    log(f"Mode: LAST {LOOKBACK_DAYS} DAYS + KEYWORD FILTERING")
     log(f"Concurrency: {MAX_SUBREDDIT_WORKERS} subreddits, {MAX_COMMENT_WORKERS} comment threads per subreddit")
 
     # Thread-safe writers
@@ -435,6 +501,8 @@ def run(config_path="config.json"):
 
     # Load cache of already-seen post ids
     load_cache()
+
+    log(f"Cache loaded: {len(CACHE_SET)} already-seen post IDs (will skip duplicates)")
 
     # Shared statistics
     stats = {

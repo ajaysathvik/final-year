@@ -29,6 +29,8 @@ warnings.filterwarnings("ignore")
 BASE_DIR = Path(__file__).resolve().parents[1]
 ARTIFACT_DIR = BASE_DIR / "artifacts" / "xgb_ctgan_3k"
 OUTPUT_DIR = Path(__file__).resolve().parent / "results"
+BASELINE_MODEL_PATH = OUTPUT_DIR / "baseline_xgb.json"
+ADVERSARIAL_MODEL_PATH = OUTPUT_DIR / "adversarial_xgb.json"
 
 TRAIN_PATH = ARTIFACT_DIR / "train_3k.csv"
 TEST_PATH = ARTIFACT_DIR / "test_3k.csv"
@@ -174,11 +176,13 @@ XGB_PARAMS = dict(
 print("\nTraining Baseline XGBoost (original data only)...")
 baseline_model = XGBClassifier(**XGB_PARAMS)
 baseline_model.fit(X_train, y_train)
+baseline_model.save_model(str(BASELINE_MODEL_PATH))
 print("  ✅ Baseline trained")
 
 print("Training Adversarial XGBoost (original + perturbed data)...")
 adv_model = XGBClassifier(**XGB_PARAMS)
 adv_model.fit(X_train_augmented, y_train_augmented)
+adv_model.save_model(str(ADVERSARIAL_MODEL_PATH))
 print("  ✅ Adversarial model trained")
 
 # ─────────────────────────────────────────────
@@ -245,6 +249,8 @@ import matplotlib.patches as mpatches
 out_path = OUTPUT_DIR / "summary_table.csv"
 results_df.to_csv(out_path, index=False)
 print(f"\n✅ Results saved to: {out_path}")
+print(f"✅ Baseline model saved to: {BASELINE_MODEL_PATH}")
+print(f"✅ Adversarial model saved to: {ADVERSARIAL_MODEL_PATH}")
 
 METRICS   = ["Accuracy", "Precision", "Recall", "F1", "AUC"]
 MODELS    = ["Baseline XGB", "Adversarial XGB"]
