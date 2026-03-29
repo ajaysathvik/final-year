@@ -3,7 +3,7 @@
   "reference_rows": 294,
   "synthetic_rows": 793,
   "reference_slice": "non_fraud_only",
-  "mean_jsd": 0.1249,
+  "mean_jsd": 0.1291,
   "column_jsd": {
     "annotation.is_fraud": 0.0,
     "annotation.fraud_labels.transaction_upi_fraud": 0.0,
@@ -16,12 +16,12 @@
     "annotation.fraud_labels.social_urgency_scam": 0.0,
     "annotation.fraud_labels.meta_victim_story": 0.0,
     "annotation.fraud_labels.meta_fraud_question": 0.0,
-    "annotation.key_features.urgency_level": 0.4465,
-    "annotation.psychological_tactics.urgency": 0.3177,
-    "annotation.psychological_tactics.fear": 0.4411,
-    "annotation.psychological_tactics.authority": 0.3803,
-    "annotation.psychological_tactics.reward": 0.4352,
-    "annotation.key_features.amount_normalized": 0.2277,
+    "annotation.key_features.urgency_level": 0.433,
+    "annotation.psychological_tactics.urgency": 0.3235,
+    "annotation.psychological_tactics.fear": 0.3952,
+    "annotation.psychological_tactics.authority": 0.4258,
+    "annotation.psychological_tactics.reward": 0.4489,
+    "annotation.key_features.amount_normalized": 0.298,
     "annotation.key_features.has_amount": 0.0
   },
   "accepted": true

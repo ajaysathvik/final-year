@@ -2,16 +2,16 @@
 
 **Status:** COMPLETED  
 **Total iterations:** 5  
-**Generated at:** 2026-03-29 10:23:50 UTC  
+**Generated at:** 2026-03-29 10:57:53 UTC  
 
 ## 1. Scraping (Ingestion Agent)
 
 | Metric | Value |
 |--------|-------|
-| Posts before | 3698 |
-| Posts after | 3699 |
-| New posts detected | 1 |
-| Comments after | 22935 |
+| Posts before | 3699 |
+| Posts after | 3703 |
+| New posts detected | 4 |
+| Comments after | 22941 |
 | Smoke test | False |
 | Return code | 0 |
 
@@ -44,7 +44,7 @@
 | Best ratio | 5 |
 | CTGAN return code | 0 |
 | Synthetic rows | 793 |
-| Mean JSD | 0.1249 |
+| Mean JSD | 0.1291 |
 | Quality accepted | True |
 | Balance accepted | True |
 
@@ -64,10 +64,10 @@
 | Recommended focus | transactional short-form fraud |
 | Training return code | 0 |
 | Robustness return code | 0 |
-| Baseline FGSM F1 | 0.986 |
-| Adversarial FGSM F1 | 0.9886 |
-| Adversarial Clean F1 | 0.9869 |
-| Robustness gain (Δ) | 0.0026 |
+| Baseline FGSM F1 | 0.9851 |
+| Adversarial FGSM F1 | 0.9878 |
+| Adversarial Clean F1 | 0.9878 |
+| Robustness gain (Δ) | 0.0027 |
 | Accepted | True |
 
 ### Attack Surface
@@ -92,7 +92,7 @@
 | Eval return code | 0 |
 | Robustness return code | 0 |
 | Best F1 | 0.9665 |
-| Robustness score | 0.9886 |
+| Robustness score | 0.9878 |
 | Passed | True |
 | Correction target | complete |
 
@@ -100,10 +100,10 @@
 
 | # | Agent | Action | Confidence | Summary |
 |---|-------|--------|------------|---------|
-| 1 | ingestion_agent | ready_for_balancing | 0.98 | IngestionAgent successfully ingested 3699 posts from Reddit, annotated 10 new fraud labels, and processed the dataset. T |
-| 2 | balance_agent | ready_for_strategy | 0.6 | BalanceAgent accepted CTGAN output. Best ratio=5, mean JSD=0.1249, threshold=0.2. |
+| 1 | ingestion_agent | ready_for_balancing | 0.95 | Ingestion completed successfully with 4 new posts scraped. Labeling phase encountered critical failures for 3 out of 10  |
+| 2 | balance_agent | ready_for_strategy | 0.6 | BalanceAgent accepted CTGAN output. Best ratio=5, mean JSD=0.1291, threshold=0.2. |
 | 3 | training_agent | ready_for_strategy | 0.6 | TrainingAgent passed base-model validation. best_f1=0.9665, required>=0.738. |
-| 4 | strategy_agent | ready_for_evaluation | 0.6 | StrategyAgent accepted adversarial training. focus=generic, robustness_gain=0.0026, adversarial_clean_f1=0.9869. |
+| 4 | strategy_agent | ready_for_evaluation | 0.99 | StrategyAgent accepted adversarial training. focus=generic, robustness_gain=0.0027, adversarial_clean_f1=0.9878. |
 | 5 | evaluation_agent | deploy | 0.99 | EvaluationAgent passed final validation. best_f1=0.9665 vs threshold=0.82, non_fraud_f1=0.6105 vs threshold=0.5, robustn |
 
 ## Adversarial Training Charts

@@ -1,9 +1,9 @@
 {
   "returncode": 0,
-  "posts_before": 3698,
-  "posts_after": 3699,
-  "new_posts_detected": 1,
-  "comments_after": 22935,
+  "posts_before": 3699,
+  "posts_after": 3703,
+  "new_posts_detected": 4,
+  "comments_after": 22941,
   "stdout_tail": "",
   "stderr_tail": "",
   "timed_out": false,

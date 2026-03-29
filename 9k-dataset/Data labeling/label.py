@@ -28,7 +28,7 @@ COMMENTS_FILE = os.path.join(BASE_DIR, "comments.csv")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "qwen3.5:0.8b"
+MODEL_NAME = "qwen3.5:4b"
 
 
 REQUESTS_PER_MIN = 25
@@ -341,6 +341,24 @@ DECISION RULES:
 - If fraud_type = meta → suitable_for_gan MUST be false.
 - usable_for_training = true ONLY if confidence_bucket = high AND is_fraud ≠ -1.
 
+EXAMPLE VALID RESPONSE:
+{
+  "post_metadata": {"post_id": "1abc", "subreddit": "Scams", "title": "Help!", "body": "I sent $50...", "num_comments": 2},
+  "annotation": {
+    "is_fraud": 1,
+    "fraud_confidence": 0.95,
+    "fraud_type": "transaction",
+    "fraud_labels": {"transaction_upi_fraud": 1, "transaction_card_fraud": 0, "transaction_bank_transfer": 0, "commerce_nondelivery": 0, "commerce_fake_seller": 0, "credential_phishing": 0, "social_authority_scam": 0, "social_urgency_scam": 0, "meta_victim_story": 0, "meta_fraud_question": 0},
+    "key_features": {"payment_method": "upi", "fraud_channel": "sms", "victim_action": "sent_money", "request_type": "payment", "impersonated_entity": "bank", "amount_mentioned": 50, "currency": "USD", "urgency_level": 0.8},
+    "psychological_tactics": {"urgency": 1, "fear": 0, "authority": 1, "reward": 0},
+    "community_signals": {"num_comments": 2, "scam_confirmations": 1, "not_scam_claims": 0, "advice_requests": 0},
+    "label_quality": {"confidence_bucket": "high", "usable_for_training": true},
+    "gan_quality": {"suitable_for_gan": true, "quality_score": 0.9},
+    "reasoning": {"primary_evidence": "User explicitly sent $50 via UPI after getting a fake bank SMS.", "uncertainty_notes": null}
+  }
+}
+
+FINAL REMINDER: YOU MUST RETURN ONLY THE JSON OBJECT. NO PREAMBLE. NO EXPLANATION.
 """
 
 # ======================================================
@@ -397,10 +415,10 @@ def annotate_post(post_row, comments_df):
         "format": "json",
         "options": {
             "temperature": 0,
-            "top_p": 0.8,
+            "top_p": 0.5,
             "repeat_penalty": 1.1,
             "num_predict": MAX_TOKENS,
-            "num_ctx": 8192
+            "num_ctx": 16384
         }
     }
 

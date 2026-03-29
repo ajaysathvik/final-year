@@ -55,7 +55,7 @@ EXECUTION_TRACE_PATH = OUTPUT_DIR / "execution_trace.jsonl"
 INGESTED_POST_IDS_PATH = OUTPUT_DIR / "ingested_post_ids.json"
 AUDIT_LOG_PATH = REPO_ROOT / "agent" / "audit_log.jsonl"
 
-OLLAMA_MODEL = "qwen3.5:0.8b"
+OLLAMA_MODEL = "qwen3.5:4b"
 OLLAMA_URL = "http://127.0.0.1:11434"
 
 SMOKE_TEST = os.getenv("AGENT_SMOKE_TEST", "0").strip().lower() in {"1", "true", "yes", "on"}
