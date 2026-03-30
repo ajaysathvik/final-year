@@ -2,6 +2,12 @@
 
 This document describes the workflow implemented in `agent-new/`. The current system is a LangGraph pipeline with ten executable agents plus a completion node. Each agent runs concrete tool wrappers, records state in memory, and uses a `DecisionEngine` to send a `Role` and `Objective` prompt to the LLM before selecting the next transition.
 
+## Overall Goal
+
+The goal of this agentic flow is to autonomously govern fraud-model updates by deciding when to ingest, rebalance, retrain, investigate, harden, evaluate, and approve deployment under explicit quality and robustness constraints.
+
+This is agentic because the workflow does not just execute a fixed linear pipeline. Each stage evaluates state, inspects tool outputs, chooses an action, and can retry, escalate, skip, or terminate based on the current evidence.
+
 ## Workflow Graph
 
 ```mermaid
