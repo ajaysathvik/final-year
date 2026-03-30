@@ -1,1 +1,13 @@
-{}
+{
+  "returncode": 0,
+  "posts_before": 3867,
+  "posts_after": 3982,
+  "new_posts_detected": 115,
+  "comments_after": 24203,
+  "stdout_tail": "",
+  "stderr_tail": "",
+  "timed_out": false,
+  "smoke_test": false,
+  "lookback_days": 7,
+  "max_results": 10
+}

@@ -1,10 +1,10 @@
 # Agentic Fraud Workflow
 
-This document describes the workflow implemented in `agent-new/`. The current system is a LangGraph pipeline with ten executable agents plus a completion node. Each agent runs concrete tool wrappers, records state in memory, and uses a `DecisionEngine` to send a `Role` and `Objective` prompt to the LLM before selecting the next transition.
+This document describes the workflow implemented in `agent-new/`. The current system is a LangGraph pipeline with eight executable agents plus a completion node. Each agent runs concrete tool wrappers, records state in memory, and uses a `DecisionEngine` to send a `Role` and `Objective` prompt to the LLM before selecting the next transition.
 
 ## Overall Goal
 
-The goal of this agentic flow is to autonomously govern fraud-model updates by deciding when to ingest, rebalance, retrain, investigate, harden, evaluate, and approve deployment under explicit quality and robustness constraints.
+The goal of this agentic flow is to autonomously govern fraud-model updates by deciding when to ingest, rebalance, retrain, review policy, harden, evaluate, and approve deployment under explicit quality and robustness constraints.
 
 This is agentic because the workflow does not just execute a fixed linear pipeline. Each stage evaluates state, inspects tool outputs, chooses an action, and can retry, escalate, skip, or terminate based on the current evidence.
 
@@ -15,11 +15,8 @@ graph TD
     START((START)) --> IngestionAgent[Ingestion Agent]
 
     IngestionAgent -->|retry_ingestion| IngestionAgent
-    IngestionAgent -->|ready_for_balancing| DriftAgent[Drift Agent]
+    IngestionAgent -->|ready_for_balancing| BalanceAgent[Balance Agent]
     IngestionAgent -->|skip_model_update| Complete[Complete]
-
-    DriftAgent -->|retry_ingestion| IngestionAgent
-    DriftAgent -->|continue_to_balance| BalanceAgent[Balance Agent]
 
     BalanceAgent -->|retry_balancing| BalanceAgent
     BalanceAgent -->|ready_for_strategy| TrainingAgent[Training Agent]
@@ -27,10 +24,9 @@ graph TD
     TrainingAgent -->|retry_training| TrainingAgent
     TrainingAgent -->|ready_for_strategy| SupervisorAgent[Supervisor Agent]
 
-    SupervisorAgent -->|investigation_agent| InvestigationAgent[Investigation Agent]
     SupervisorAgent -->|policy_agent| PolicyAgent[Policy Agent]
-
-    InvestigationAgent --> PolicyAgent
+    SupervisorAgent -->|abnormal data quality| IngestionAgent
+    SupervisorAgent -->|poor synthetic fidelity| BalanceAgent
     PolicyAgent -->|strategy_agent| StrategyAgent[Strategy Agent]
     PolicyAgent -->|complete| Complete
 
@@ -64,7 +60,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 
 **Role**: `IngestionAgent`
 
-**Objective**: ingest Reddit data through scraping, labeling, post-processing, train/test append, then assess label quality and slang drift.
+**Objective**: ingest Reddit data through scraping, labeling, post-processing, train/test append, then assess label quality.
 
 **Tools**
 - `reddit_scraper`
@@ -79,7 +75,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `reddit_labeller` runs the labeling script configured by `LABEL_SCRIPT_PATH`
 - `post_processor` runs the preprocessing script configured by `PREPROCESS_SCRIPT_PATH`
 - `dataset_append` appends processed rows into dataset/train/test splits
-- `dataset_profiler` computes class balance, label noise, and slang drift
+- `dataset_profiler` computes class balance and label noise
 - `label_review` samples rows and recommends `keep` or `relabel`
 
 **Routing**
@@ -87,23 +83,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `ready_for_balancing` when the batch is acceptable
 - `skip_model_update` when quality passes but update criteria are not met
 
-### 2. Drift Agent
-
-**Role**: `DriftAgent`
-
-**Objective**: assess dataset drift and label quality before balancing. Retry ingestion only when the dataset health is unacceptable.
-
-**Tools**
-- none directly
-
-**Consumes**
-- `profile` and `review` outputs produced by `IngestionAgent`
-
-**Routing**
-- `retry_ingestion`
-- `continue_to_balance`
-
-### 3. Balance Agent
+### 2. Balance Agent
 
 **Role**: `BalanceAgent`
 
@@ -126,7 +106,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `retry_balancing`
 - `ready_for_strategy`
 
-### 4. Training Agent
+### 3. Training Agent
 
 **Role**: `TrainingAgent`
 
@@ -145,49 +125,41 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `retry_training`
 - `ready_for_strategy`
 
-### 5. Supervisor Agent
+### 4. Supervisor Agent
 
 **Role**: `SupervisorAgent`
 
-**Objective**: route the workflow between direct policy review and deeper investigation based on model quality, drift, and synthetic-data fidelity.
+**Objective**: route the workflow based on model quality, dataset health, and synthetic-data fidelity. Send abnormal data back for correction before policy review.
 
 **Tools**
 - none directly
 
 **Consumes**
 - training pass/fail state
-- drift score
 - synthetic JSD
 
 **Routing**
+- `balance_agent` when synthetic JSD exceeds `MIN_JS_DIVERGENCE_ACCEPT`
 - `policy_agent`
-- `investigation_agent`
 
-### 6. Investigation Agent
+### 5. Policy Agent
 
-**Role**: `InvestigationAgent`
+**Role**: `PolicyAgent`
 
-**Objective**: review the attack surface and recommend whether policy should harden the model path or continue with standard review.
+**Objective**: review the attack surface, create a policy proposal for the next workflow step, and approve it when the proposal is internally consistent.
 
 **Tools**
 - `attack_surface`
 
 **Underlying execution**
 - `attack_surface` measures long-form text ratio and fraud-channel counts from the current dataset/test slice
-
-**Routing**
-- always returns to `policy_agent`
-
-### 7. Policy Agent
-
-**Role**: `PolicyAgent`
-
-**Objective**: create a policy proposal for the next workflow step and approve it when the proposal is internally consistent.
-
-**Tools**
-- none directly
+- the agent computes `escalation_score` from drift, synthetic JSD, and base-model F1 gap
+- it converts that evidence into `recommended_action`, `proposal`, and `approval`
 
 **Outputs**
+- `attack_surface`
+- `escalation_score`
+- `recommended_action`
 - `proposal`
 - `approval`
 
@@ -195,7 +167,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `strategy_agent`
 - `complete`
 
-### 8. Strategy Agent
+### 7. Strategy Agent
 
 **Role**: `StrategyAgent`
 
@@ -215,7 +187,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - `retry_strategy`
 - `ready_for_evaluation`
 
-### 9. Evaluation Agent
+### 8. Evaluation Agent
 
 **Role**: `EvaluationAgent`
 
@@ -239,7 +211,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - correction to `BalanceAgent` when F1 is below threshold
 - correction to `StrategyAgent` when robustness is the blocker
 
-### 10. Simulation Agent
+### 9. Simulation Agent
 
 **Role**: `SimulationAgent`
 
@@ -299,7 +271,6 @@ The main workflow thresholds live in [`agent-new/config.py`](/home/norm/Projects
 
 - `MAX_REVIEW_LOOPS`
 - `LABEL_NOISE_THRESHOLD`
-- `SLANG_DRIFT_THRESHOLD`
 - `MIN_JS_DIVERGENCE_ACCEPT`
 - `TARGET_F1_THRESHOLD`
 - `TARGET_NON_FRAUD_F1_THRESHOLD`

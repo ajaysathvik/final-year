@@ -1,303 +1,772 @@
 {
   "status": "stopped",
-  "iteration": 7,
+  "iteration": 8,
   "agent_attempts": {
+    "ingestion_agent": 1,
     "drift_agent": 1,
-    "balance_agent": 1,
-    "training_agent": 1,
-    "supervisor_agent": 1,
-    "policy_agent": 1,
-    "strategy_agent": 1,
-    "evaluation_agent": 1
+    "balance_agent": 6
   },
   "decisions": [
     {
-      "agent": "drift_agent",
-      "summary": "DriftAgent accepted dataset health. label_noise_score=0.04, slang_drift_score=0.03, recommendation=continue.",
-      "action": "continue_to_balance",
-      "confidence": 0.94,
+      "agent": "ingestion_agent",
+      "summary": "Ingestion completed successfully with 115 new Reddit posts scraped. Labeling phase encountered critical failures for 3 out of 10 target posts due to empty model responses, resulting in 0 new labels created. Post-processing was skipped due to lack of incremental labels. The dataset remains static with no new rows added to train/test splits. Class imbalance is severe (94.7% fraud in training), and label noise is high (69.7%). Slang drift is currently zero. Review recommends keeping the current dataset despite the labeling failure.",
+      "action": "ready_for_balancing",
+      "confidence": 0.95,
       "metadata": {
+        "scrape": {
+          "returncode": 0,
+          "posts_before": 3867,
+          "posts_after": 3982,
+          "new_posts_detected": 115,
+          "comments_after": 24203,
+          "stdout_tail": "",
+          "stderr_tail": "",
+          "timed_out": false,
+          "smoke_test": false,
+          "lookback_days": 7,
+          "max_results": 10
+        },
+        "label": {
+          "returncode": 0,
+          "rows": 0,
+          "new_labels_created": 0,
+          "output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+          "output_json": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+          "incremental_output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.csv",
+          "incremental_output_json": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.json",
+          "stdout_tail": " (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qyxytv (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qyxytv (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qyxytv failed: Failed to get valid JSON for post 1qyxytv after retries. Skipping and logging to failed_posts.txt\nAnnotating 7/10 - 1qx7sgt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qx7sgt failed: Failed to get valid JSON for post 1qx7sgt after retries. Skipping and logging to failed_posts.txt\nAnnotating 8/10 - 1s64tmh\n[WARN] Invalid JSON for post 1s64tmh (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1s64tmh failed: Failed to get valid JSON for post 1s64tmh after retries. Skipping and logging to failed_posts.txt\nAnnotating 9/10 - 1qpi66k\n[WARN] Invalid JSON for post 1qpi66k (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qpi66k failed: Failed to get valid JSON for post 1qpi66k after retries. Skipping and logging to failed_posts.txt\nAnnotating 10/10 - 1p2mvut\n[WARN] Invalid JSON for post 1p2mvut (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1p2mvut failed: Failed to get valid JSON for post 1p2mvut after retries. Skipping and logging to failed_posts.txt\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.json\nCSV : /home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.csv\n",
+          "stderr_tail": "",
+          "total_posts_available": 3982,
+          "already_labeled_posts": 2576,
+          "new_posts_available": 1406,
+          "new_posts_to_label": 10,
+          "known_post_ids": 9134,
+          "skipped_failed_posts": 1,
+          "label_cap": 10
+        },
+        "post_process": {
+          "returncode": 0,
+          "rows": 0,
+          "output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations_preprocessed.csv",
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations_preprocessed_summary.json",
+          "summary": {},
+          "stdout_tail": "No readable incremental labels to post-process.",
+          "stderr_tail": "",
+          "skipped": true,
+          "skip_reason": "NO_READABLE_INCREMENTAL_LABELS"
+        },
+        "append": {
+          "sync_result": {
+            "new_rows_added": 0,
+            "new_fraud_rows_added": 0,
+            "new_non_fraud_rows_added": 0,
+            "dataset_rows_added": 0,
+            "train_rows_added": 0,
+            "test_rows_added": 0,
+            "bootstrap_used": false,
+            "bootstrap_sources": {},
+            "min_new_fraud_rows_to_update": 2
+          },
+          "dataset_rows": 9628,
+          "train_rows": 4549,
+          "test_rows": 1177
+        },
         "profile": {
-          "train_rows": 3000,
-          "test_rows": 600,
-          "label_noise_score": 0.04,
-          "slang_drift_score": 0.03
+          "train_rows": 4549,
+          "test_rows": 1177,
+          "target_column": "annotation.is_fraud",
+          "class_balance_train": {
+            "1": 0.9470213233677731,
+            "0": 0.05297867663222686
+          },
+          "class_balance_test": {
+            "1": 0.9549702633814783,
+            "0": 0.045029736618521665
+          },
+          "label_noise_score": 0.0697,
+          "slang_drift_score": 0.0,
+          "top_train_tokens": [],
+          "top_test_tokens": [],
+          "prepared_dataset_exists": true
         },
         "review": {
-          "recommendation": "continue",
-          "ambiguous_ratio": 0.06
+          "sample_size": 50,
+          "ambiguous_rows": 2,
+          "ambiguous_ratio": 0.04,
+          "target_distribution": {
+            "1": 0.86,
+            "0": 0.14
+          },
+          "recommendation": "keep"
+        }
+      }
+    },
+    {
+      "agent": "drift_agent",
+      "summary": "DriftAgent accepted dataset health. label_noise_score=0.0697, slang_drift_score=0.0, recommendation=keep.",
+      "action": "continue_to_balance",
+      "confidence": 0.96,
+      "metadata": {
+        "profile": {
+          "train_rows": 4549,
+          "test_rows": 1177,
+          "target_column": "annotation.is_fraud",
+          "class_balance_train": {
+            "1": 0.9470213233677731,
+            "0": 0.05297867663222686
+          },
+          "class_balance_test": {
+            "1": 0.9549702633814783,
+            "0": 0.045029736618521665
+          },
+          "label_noise_score": 0.0697,
+          "slang_drift_score": 0.0,
+          "top_train_tokens": [],
+          "top_test_tokens": [],
+          "prepared_dataset_exists": true
+        },
+        "review": {
+          "sample_size": 50,
+          "ambiguous_rows": 2,
+          "ambiguous_ratio": 0.04,
+          "target_distribution": {
+            "1": 0.86,
+            "0": 0.14
+          },
+          "recommendation": "keep"
         },
         "accepted": true
       }
     },
     {
       "agent": "balance_agent",
-      "summary": "BalanceAgent accepted the batch without CTGAN because no synthetic non-fraud rows were required. Best ratio=10.",
-      "action": "ready_for_strategy",
-      "confidence": 0.85,
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.99,
       "metadata": {
-        "batch_fraud_count": 5,
-        "batch_non_fraud_count": 2,
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
         "ratio_search": {
-          "best_ratio": 10,
-          "current_ratio": 2.0,
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
           "ratio_direction": "fraud_per_non_fraud",
-          "required_non_fraud_rows": 0,
-          "fraud_count": 20,
-          "non_fraud_count": 10,
-          "source_scope": "stub",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
           "candidates": [
             {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
               "ratio": 10,
-              "meaning": "1 non_fraud : 10 fraud",
-              "estimated_false_positive_penalty": 0.0,
-              "utility": 1.0
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
             }
           ],
-          "stubbed": true
+          "reason": "validation runs failed for all candidate ratios"
         },
         "ctgan_result": {
-          "returncode": 0,
-          "stdout_tail": "Stubbed CTGAN run.",
-          "stderr_tail": "",
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
           "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-          "target_ratio": 10,
-          "batch_fraud_count": 20,
-          "batch_non_fraud_count": 10,
-          "required_non_fraud_rows": 0,
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
           "exists": true,
-          "fresh_output": true,
-          "output_mtime": 1774860608.6646926,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
           "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
           "summary_exists": true,
-          "fresh_summary": true,
-          "summary_mtime": 1774860608.6646948,
-          "stubbed": true
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
         },
         "synthetic_quality": {
-          "synthetic_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-          "reference_rows": 100,
-          "synthetic_rows": 100,
-          "reference_slice": "stub",
-          "mean_jsd": 0.05,
-          "column_jsd": {},
-          "accepted": true,
-          "stubbed": true
+          "mean_jsd": 1.0,
+          "accepted": false
         }
       }
     },
     {
-      "agent": "training_agent",
-      "summary": "TrainingAgent passed base-model validation. best_f1=0.93, required>=0.738.",
-      "action": "ready_for_strategy",
-      "confidence": 0.95,
+      "agent": "balance_agent",
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.99,
       "metadata": {
-        "training": {
-          "returncode": 0,
-          "best_f1": 0.93,
-          "results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-          "summary_exists": true,
-          "baseline_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/baseline/xgb_pipeline.joblib",
-          "augmented_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/xgb_pipeline.joblib",
-          "stdout_tail": "Stubbed classifier training.",
-          "stderr_tail": "",
-          "stubbed": true
-        }
-      }
-    },
-    {
-      "agent": "supervisor_agent",
-      "summary": "SupervisorAgent routed the workflow to policy_agent. base_model_f1=0.93, drift=0.03, synthetic_jsd=0.05.",
-      "action": "policy_agent",
-      "confidence": 0.98,
-      "metadata": {
-        "scores": {
-          "drift_score": 0.03,
-          "label_noise_score": 0.04,
-          "base_model_f1": 0.93,
-          "synthetic_jsd": 0.05
-        },
-        "training_passed": true,
-        "drift_agent": {
-          "profile": {
-            "train_rows": 3000,
-            "test_rows": 600,
-            "label_noise_score": 0.04,
-            "slang_drift_score": 0.03
-          },
-          "review": {
-            "recommendation": "continue",
-            "ambiguous_ratio": 0.06
-          },
-          "accepted": true,
-          "action_source": "rules",
-          "attempt": 1,
-          "retries_exhausted": false
-        },
-        "balance_agent": {
-          "ratio_search": {
-            "best_ratio": 10,
-            "current_ratio": 2.0,
-            "ratio_direction": "fraud_per_non_fraud",
-            "required_non_fraud_rows": 0,
-            "fraud_count": 20,
-            "non_fraud_count": 10,
-            "source_scope": "stub",
-            "candidates": [
-              {
-                "ratio": 10,
-                "meaning": "1 non_fraud : 10 fraud",
-                "estimated_false_positive_penalty": 0.0,
-                "utility": 1.0
-              }
-            ],
-            "stubbed": true
-          },
-          "ctgan_result": {
-            "returncode": 0,
-            "stdout_tail": "Stubbed CTGAN run.",
-            "stderr_tail": "",
-            "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-            "target_ratio": 10,
-            "batch_fraud_count": 20,
-            "batch_non_fraud_count": 10,
-            "required_non_fraud_rows": 0,
-            "exists": true,
-            "fresh_output": true,
-            "output_mtime": 1774860608.6646926,
-            "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-            "summary_exists": true,
-            "fresh_summary": true,
-            "summary_mtime": 1774860608.6646948,
-            "stubbed": true
-          },
-          "synthetic_quality": {
-            "synthetic_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-            "reference_rows": 100,
-            "synthetic_rows": 100,
-            "reference_slice": "stub",
-            "mean_jsd": 0.05,
-            "column_jsd": {},
-            "accepted": true,
-            "stubbed": true
-          },
-          "accepted": true,
-          "action_source": "rules",
-          "attempt": 1,
-          "retries_exhausted": false
-        }
-      }
-    },
-    {
-      "agent": "policy_agent",
-      "summary": "PolicyAgent approved proposal. action=advance_pipeline, mode=standard, needs_adversarial_training=False.",
-      "action": "strategy_agent",
-      "confidence": 0.98,
-      "metadata": {
-        "proposal": {
-          "action": "advance_pipeline",
-          "mode": "standard",
-          "needs_adversarial_training": false,
-          "reason": "standard_policy_review"
-        },
-        "approval": {
-          "approved": true,
-          "owner": "policy_agent",
-          "review_mode": "standard"
-        },
-        "scores": {
-          "drift_score": 0.03,
-          "label_noise_score": 0.04,
-          "base_model_f1": 0.93,
-          "synthetic_jsd": 0.05
-        }
-      }
-    },
-    {
-      "agent": "strategy_agent",
-      "summary": "StrategyAgent accepted adversarial training. focus=generic, robustness_gain=0.03, adversarial_clean_f1=0.95.",
-      "action": "ready_for_evaluation",
-      "confidence": 0.95,
-      "metadata": {
-        "status": "executed",
-        "focus": "generic",
-        "adversarial_training": {
-          "focus": "generic",
-          "recommended_focus": "transactional short-form fraud",
-          "attack_surface": {
-            "long_form_ratio": 0.12,
-            "recommended_focus": "transactional short-form fraud",
-            "channel_counts": {
-              "website": 12,
-              "email": 8
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
+        "ratio_search": {
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
+          "ratio_direction": "fraud_per_non_fraud",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
+          "candidates": [
+            {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
+              "ratio": 10,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
             }
-          },
-          "training_returncode": 0,
-          "robustness_returncode": 0,
-          "training_stdout_tail": "Stubbed adversarial training.",
-          "training_stderr_tail": "",
-          "robustness_stdout_tail": "Stubbed robustness curve generation.",
-          "robustness_stderr_tail": "",
-          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/summary_table.csv",
-          "robustness_curve_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/robustness_curve.png",
+          ],
+          "reason": "validation runs failed for all candidate ratios"
+        },
+        "ctgan_result": {
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
+          "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
+          "exists": true,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
           "summary_exists": true,
-          "robustness_curve_exists": true,
-          "baseline_attack_f1": 0.91,
-          "adversarial_attack_f1": 0.94,
-          "adversarial_clean_f1": 0.95,
-          "robustness_gain": 0.03,
-          "accepted": true,
-          "stubbed": true
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
+        },
+        "synthetic_quality": {
+          "mean_jsd": 1.0,
+          "accepted": false
         }
       }
     },
     {
-      "agent": "evaluation_agent",
-      "summary": "EvaluationAgent passed final validation. best_f1=0.93 vs threshold=0.82, non_fraud_f1=0.72 vs threshold=0.5, robustness_score=0.94 vs threshold=0.7.",
-      "action": "complete",
-      "confidence": 0.65,
+      "agent": "balance_agent",
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.99,
       "metadata": {
-        "evaluation": {
-          "eval_returncode": 0,
-          "robustness_returncode": 0,
-          "best_f1": 0.93,
-          "non_fraud_f1": 0.72,
-          "robustness_score": 0.94,
-          "classifier_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-          "robustness_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/summary_table.csv",
-          "eval_stdout_tail": "Stubbed evaluation.",
-          "robustness_stdout_tail": "Stubbed robustness evaluation.",
-          "stubbed": true
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
+        "ratio_search": {
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
+          "ratio_direction": "fraud_per_non_fraud",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
+          "candidates": [
+            {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
+              "ratio": 10,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
+            }
+          ],
+          "reason": "validation runs failed for all candidate ratios"
         },
-        "correction_target": "complete"
+        "ctgan_result": {
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
+          "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
+          "exists": true,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
+          "summary_exists": true,
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
+        },
+        "synthetic_quality": {
+          "mean_jsd": 1.0,
+          "accepted": false
+        }
+      }
+    },
+    {
+      "agent": "balance_agent",
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.99,
+      "metadata": {
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
+        "ratio_search": {
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
+          "ratio_direction": "fraud_per_non_fraud",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
+          "candidates": [
+            {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
+              "ratio": 10,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
+            }
+          ],
+          "reason": "validation runs failed for all candidate ratios"
+        },
+        "ctgan_result": {
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
+          "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
+          "exists": true,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
+          "summary_exists": true,
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
+        },
+        "synthetic_quality": {
+          "mean_jsd": 1.0,
+          "accepted": false
+        }
+      }
+    },
+    {
+      "agent": "balance_agent",
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.99,
+      "metadata": {
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
+        "ratio_search": {
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
+          "ratio_direction": "fraud_per_non_fraud",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
+          "candidates": [
+            {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
+              "ratio": 10,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
+            }
+          ],
+          "reason": "validation runs failed for all candidate ratios"
+        },
+        "ctgan_result": {
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
+          "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
+          "exists": true,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
+          "summary_exists": true,
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
+        },
+        "synthetic_quality": {
+          "mean_jsd": 1.0,
+          "accepted": false
+        }
+      }
+    },
+    {
+      "agent": "balance_agent",
+      "summary": "BalanceAgent rejected balancing output. Best ratio=15. mean JSD=1.0 exceeded threshold=0.2.",
+      "action": "retry_balancing",
+      "confidence": 0.98,
+      "metadata": {
+        "batch_fraud_count": 0,
+        "batch_non_fraud_count": 0,
+        "ratio_search": {
+          "best_ratio": 15,
+          "current_ratio": 18.4762,
+          "ratio_direction": "fraud_per_non_fraud",
+          "required_non_fraud_rows": 69,
+          "fraud_count": 5432,
+          "non_fraud_count": 294,
+          "source_scope": "dataset",
+          "selection_method": "heuristic_fallback",
+          "candidates": [
+            {
+              "ratio": 5,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 793,
+              "estimated_false_positive_penalty": 2.6952,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": -1.6952
+            },
+            {
+              "ratio": 10,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 250,
+              "estimated_false_positive_penalty": 0.8476,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.1524
+            },
+            {
+              "ratio": 15,
+              "meaning": "1 non_fraud : ratio fraud",
+              "required_non_fraud_rows": 69,
+              "estimated_false_positive_penalty": 0.2317,
+              "selection_method": "validation_metrics",
+              "returncode": 1,
+              "validation_score": 0.7529,
+              "macro_f1": 0.7885,
+              "non_fraud_f1": 0.6105,
+              "fraud_f1": 0.9665,
+              "utility": 0.7683
+            }
+          ],
+          "reason": "validation runs failed for all candidate ratios"
+        },
+        "ctgan_result": {
+          "returncode": 1,
+          "stdout_tail": "",
+          "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
+          "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
+          "target_ratio": 15,
+          "batch_fraud_count": 5432,
+          "batch_non_fraud_count": 294,
+          "required_non_fraud_rows": 69,
+          "exists": true,
+          "fresh_output": false,
+          "output_mtime": 1774781858.781344,
+          "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
+          "summary_exists": true,
+          "fresh_summary": false,
+          "summary_mtime": 1774781859.0275073
+        },
+        "synthetic_quality": {
+          "mean_jsd": 1.0,
+          "accepted": false
+        }
       }
     }
   ],
   "ingestion_agent": {
+    "scrape": {
+      "returncode": 0,
+      "posts_before": 3867,
+      "posts_after": 3982,
+      "new_posts_detected": 115,
+      "comments_after": 24203,
+      "stdout_tail": "",
+      "stderr_tail": "",
+      "timed_out": false,
+      "smoke_test": false,
+      "lookback_days": 7,
+      "max_results": 10
+    },
+    "label": {
+      "returncode": 0,
+      "rows": 0,
+      "new_labels_created": 0,
+      "output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/scraped_annotations_latest.csv",
+      "output_json": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/scraped_annotations_latest.json",
+      "incremental_output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.csv",
+      "incremental_output_json": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.json",
+      "stdout_tail": " (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qyxytv (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qyxytv (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qyxytv failed: Failed to get valid JSON for post 1qyxytv after retries. Skipping and logging to failed_posts.txt\nAnnotating 7/10 - 1qx7sgt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qx7sgt (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qx7sgt failed: Failed to get valid JSON for post 1qx7sgt after retries. Skipping and logging to failed_posts.txt\nAnnotating 8/10 - 1s64tmh\n[WARN] Invalid JSON for post 1s64tmh (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1s64tmh (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1s64tmh failed: Failed to get valid JSON for post 1s64tmh after retries. Skipping and logging to failed_posts.txt\nAnnotating 9/10 - 1qpi66k\n[WARN] Invalid JSON for post 1qpi66k (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1qpi66k (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1qpi66k failed: Failed to get valid JSON for post 1qpi66k after retries. Skipping and logging to failed_posts.txt\nAnnotating 10/10 - 1p2mvut\n[WARN] Invalid JSON for post 1p2mvut (attempt 1): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 2): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 3): Empty model response. Saved to debug_failed_response.txt\n[WARN] Invalid JSON for post 1p2mvut (attempt 4): Empty model response. Saved to debug_failed_response.txt\n[FATAL ERROR] Post 1p2mvut failed: Failed to get valid JSON for post 1p2mvut after retries. Skipping and logging to failed_posts.txt\nAnnotation Complete\nJSON: /home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.json\nCSV : /home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations.csv\n",
+      "stderr_tail": "",
+      "total_posts_available": 3982,
+      "already_labeled_posts": 2576,
+      "new_posts_available": 1406,
+      "new_posts_to_label": 10,
+      "known_post_ids": 9134,
+      "skipped_failed_posts": 1,
+      "label_cap": 10
+    },
+    "post_process": {
+      "returncode": 0,
+      "rows": 0,
+      "output_csv": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations_preprocessed.csv",
+      "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/incremental/new_annotations_preprocessed_summary.json",
+      "summary": {},
+      "stdout_tail": "No readable incremental labels to post-process.",
+      "stderr_tail": "",
+      "skipped": true,
+      "skip_reason": "NO_READABLE_INCREMENTAL_LABELS"
+    },
+    "append": {
+      "sync_result": {
+        "new_rows_added": 0,
+        "new_fraud_rows_added": 0,
+        "new_non_fraud_rows_added": 0,
+        "dataset_rows_added": 0,
+        "train_rows_added": 0,
+        "test_rows_added": 0,
+        "bootstrap_used": false,
+        "bootstrap_sources": {},
+        "min_new_fraud_rows_to_update": 2
+      },
+      "dataset_rows": 9628,
+      "train_rows": 4549,
+      "test_rows": 1177
+    },
     "profile": {
-      "train_rows": 3000,
-      "test_rows": 600,
-      "label_noise_score": 0.04,
-      "slang_drift_score": 0.03
+      "train_rows": 4549,
+      "test_rows": 1177,
+      "target_column": "annotation.is_fraud",
+      "class_balance_train": {
+        "1": 0.9470213233677731,
+        "0": 0.05297867663222686
+      },
+      "class_balance_test": {
+        "1": 0.9549702633814783,
+        "0": 0.045029736618521665
+      },
+      "label_noise_score": 0.0697,
+      "slang_drift_score": 0.0,
+      "top_train_tokens": [],
+      "top_test_tokens": [],
+      "prepared_dataset_exists": true
     },
     "review": {
-      "recommendation": "continue",
-      "ambiguous_ratio": 0.06
+      "sample_size": 50,
+      "ambiguous_rows": 2,
+      "ambiguous_ratio": 0.04,
+      "target_distribution": {
+        "1": 0.86,
+        "0": 0.14
+      },
+      "recommendation": "keep"
     },
-    "new_fraud_rows_added": 5,
-    "new_non_fraud_rows_added": 2,
-    "needs_relabel": false
+    "new_rows_added": 0,
+    "new_fraud_rows_added": 0,
+    "new_non_fraud_rows_added": 0,
+    "bootstrap_used": false,
+    "should_update_model": false,
+    "skip_model_update": false,
+    "labeling_failed": false,
+    "ingestion_gap": false,
+    "quality_failed": false,
+    "needs_relabel": false,
+    "retry_without_rescrape": false,
+    "action_source": "rules",
+    "attempt": 1,
+    "retries_exhausted": false
   },
   "drift_agent": {
     "profile": {
-      "train_rows": 3000,
-      "test_rows": 600,
-      "label_noise_score": 0.04,
-      "slang_drift_score": 0.03
+      "train_rows": 4549,
+      "test_rows": 1177,
+      "target_column": "annotation.is_fraud",
+      "class_balance_train": {
+        "1": 0.9470213233677731,
+        "0": 0.05297867663222686
+      },
+      "class_balance_test": {
+        "1": 0.9549702633814783,
+        "0": 0.045029736618521665
+      },
+      "label_noise_score": 0.0697,
+      "slang_drift_score": 0.0,
+      "top_train_tokens": [],
+      "top_test_tokens": [],
+      "prepared_dataset_exists": true
     },
     "review": {
-      "recommendation": "continue",
-      "ambiguous_ratio": 0.06
+      "sample_size": 50,
+      "ambiguous_rows": 2,
+      "ambiguous_ratio": 0.04,
+      "target_distribution": {
+        "1": 0.86,
+        "0": 0.14
+      },
+      "recommendation": "keep"
     },
     "accepted": true,
     "action_source": "rules",
@@ -306,177 +775,95 @@
   },
   "balance_agent": {
     "ratio_search": {
-      "best_ratio": 10,
-      "current_ratio": 2.0,
+      "best_ratio": 15,
+      "current_ratio": 18.4762,
       "ratio_direction": "fraud_per_non_fraud",
-      "required_non_fraud_rows": 0,
-      "fraud_count": 20,
-      "non_fraud_count": 10,
-      "source_scope": "stub",
+      "required_non_fraud_rows": 69,
+      "fraud_count": 5432,
+      "non_fraud_count": 294,
+      "source_scope": "dataset",
+      "selection_method": "heuristic_fallback",
       "candidates": [
         {
+          "ratio": 5,
+          "meaning": "1 non_fraud : ratio fraud",
+          "required_non_fraud_rows": 793,
+          "estimated_false_positive_penalty": 2.6952,
+          "selection_method": "validation_metrics",
+          "returncode": 1,
+          "validation_score": 0.7529,
+          "macro_f1": 0.7885,
+          "non_fraud_f1": 0.6105,
+          "fraud_f1": 0.9665,
+          "utility": -1.6952
+        },
+        {
           "ratio": 10,
-          "meaning": "1 non_fraud : 10 fraud",
-          "estimated_false_positive_penalty": 0.0,
-          "utility": 1.0
+          "meaning": "1 non_fraud : ratio fraud",
+          "required_non_fraud_rows": 250,
+          "estimated_false_positive_penalty": 0.8476,
+          "selection_method": "validation_metrics",
+          "returncode": 1,
+          "validation_score": 0.7529,
+          "macro_f1": 0.7885,
+          "non_fraud_f1": 0.6105,
+          "fraud_f1": 0.9665,
+          "utility": 0.1524
+        },
+        {
+          "ratio": 15,
+          "meaning": "1 non_fraud : ratio fraud",
+          "required_non_fraud_rows": 69,
+          "estimated_false_positive_penalty": 0.2317,
+          "selection_method": "validation_metrics",
+          "returncode": 1,
+          "validation_score": 0.7529,
+          "macro_f1": 0.7885,
+          "non_fraud_f1": 0.6105,
+          "fraud_f1": 0.9665,
+          "utility": 0.7683
         }
       ],
-      "stubbed": true
+      "reason": "validation runs failed for all candidate ratios"
     },
     "ctgan_result": {
-      "returncode": 0,
-      "stdout_tail": "Stubbed CTGAN run.",
-      "stderr_tail": "",
+      "returncode": 1,
+      "stdout_tail": "",
+      "stderr_tail": "in __call__\n    return super().__call__(iterable_with_config_and_warning_filters)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1986, in __call__\n    return output if self.return_generator else list(output)\n                                                ^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/joblib/parallel.py\", line 1914, in _get_sequential_output\n    res = func(*args, **kwargs)\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/parallel.py\", line 184, in __call__\n    return self.function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 1484, in _fit_transform_one\n    res = transformer.fit_transform(X, y, **params.get(\"fit_transform\", {}))\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/pipeline.py\", line 689, in fit_transform\n    return last_step.fit_transform(\n           ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_set_output.py\", line 316, in wrapped\n    data_to_wrap = f(self, X, *args, **kwargs)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 910, in fit_transform\n    return self.fit(X, y, **fit_params).transform(X)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/base.py\", line 1336, in wrapper\n    return fit_method(estimator, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 999, in fit\n    self._fit(\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/preprocessing/_encoders.py\", line 106, in _fit\n    result = _unique(Xi, return_counts=compute_counts)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 46, in _unique\n    return _unique_python(\n           ^^^^^^^^^^^^^^^\n  File \"/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/sklearn/utils/_encode.py\", line 182, in _unique_python\n    raise TypeError(\nTypeError: Encoders require their input argument must be uniformly strings or numbers. Got ['bool', 'str']\n",
       "output_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-      "target_ratio": 10,
-      "batch_fraud_count": 20,
-      "batch_non_fraud_count": 10,
-      "required_non_fraud_rows": 0,
+      "target_ratio": 15,
+      "batch_fraud_count": 5432,
+      "batch_non_fraud_count": 294,
+      "required_non_fraud_rows": 69,
       "exists": true,
-      "fresh_output": true,
-      "output_mtime": 1774860608.6646926,
+      "fresh_output": false,
+      "output_mtime": 1774781858.781344,
       "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
       "summary_exists": true,
-      "fresh_summary": true,
-      "summary_mtime": 1774860608.6646948,
-      "stubbed": true
+      "fresh_summary": false,
+      "summary_mtime": 1774781859.0275073
     },
     "synthetic_quality": {
-      "synthetic_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-      "reference_rows": 100,
-      "synthetic_rows": 100,
-      "reference_slice": "stub",
-      "mean_jsd": 0.05,
-      "column_jsd": {},
-      "accepted": true,
-      "stubbed": true
+      "mean_jsd": 1.0,
+      "accepted": false
     },
-    "accepted": true,
+    "accepted": false,
     "action_source": "rules",
-    "attempt": 1,
-    "retries_exhausted": false
+    "attempt": 6,
+    "retries_exhausted": true
   },
-  "training_agent": {
-    "training": {
-      "returncode": 0,
-      "best_f1": 0.93,
-      "results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-      "summary_exists": true,
-      "baseline_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/baseline/xgb_pipeline.joblib",
-      "augmented_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/xgb_pipeline.joblib",
-      "stdout_tail": "Stubbed classifier training.",
-      "stderr_tail": "",
-      "stubbed": true
-    },
-    "passed": true,
-    "action_source": "rules",
-    "attempt": 1,
-    "retries_exhausted": false
-  },
-  "supervisor_agent": {
-    "lane": "policy_agent",
-    "scores": {
-      "drift_score": 0.03,
-      "label_noise_score": 0.04,
-      "base_model_f1": 0.93,
-      "synthetic_jsd": 0.05
-    },
-    "action_source": "rules",
-    "attempt": 1
-  },
+  "training_agent": {},
+  "supervisor_agent": {},
   "investigation_agent": {},
-  "policy_agent": {
-    "proposal": {
-      "action": "advance_pipeline",
-      "mode": "standard",
-      "needs_adversarial_training": false,
-      "reason": "standard_policy_review"
-    },
-    "approval": {
-      "approved": true,
-      "owner": "policy_agent",
-      "review_mode": "standard"
-    },
-    "action_source": "rules",
-    "attempt": 1
-  },
-  "strategy_agent": {
-    "status": "executed",
-    "accepted": true,
-    "focus": "generic",
-    "adversarial_training": {
-      "focus": "generic",
-      "recommended_focus": "transactional short-form fraud",
-      "attack_surface": {
-        "long_form_ratio": 0.12,
-        "recommended_focus": "transactional short-form fraud",
-        "channel_counts": {
-          "website": 12,
-          "email": 8
-        }
-      },
-      "training_returncode": 0,
-      "robustness_returncode": 0,
-      "training_stdout_tail": "Stubbed adversarial training.",
-      "training_stderr_tail": "",
-      "robustness_stdout_tail": "Stubbed robustness curve generation.",
-      "robustness_stderr_tail": "",
-      "summary_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/summary_table.csv",
-      "robustness_curve_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/robustness_curve.png",
-      "summary_exists": true,
-      "robustness_curve_exists": true,
-      "baseline_attack_f1": 0.91,
-      "adversarial_attack_f1": 0.94,
-      "adversarial_clean_f1": 0.95,
-      "robustness_gain": 0.03,
-      "accepted": true,
-      "stubbed": true
-    },
-    "action_source": "rules",
-    "attempt": 1,
-    "retries_exhausted": false
-  },
-  "evaluation_agent": {
-    "evaluation": {
-      "eval_returncode": 0,
-      "robustness_returncode": 0,
-      "best_f1": 0.93,
-      "non_fraud_f1": 0.72,
-      "robustness_score": 0.94,
-      "classifier_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-      "robustness_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/summary_table.csv",
-      "eval_stdout_tail": "Stubbed evaluation.",
-      "robustness_stdout_tail": "Stubbed robustness evaluation.",
-      "stubbed": true
-    },
-    "passed": true,
-    "correction_target": "complete",
-    "action_source": "llm",
-    "attempt": 1,
-    "retries_exhausted": false
-  },
+  "policy_agent": {},
+  "strategy_agent": {},
+  "evaluation_agent": {},
   "simulation_agent": {},
   "scores": {
-    "drift_score": 0.03,
-    "label_noise_score": 0.04,
-    "base_model_f1": 0.93,
-    "synthetic_jsd": 0.05,
-    "robustness_gain": 0.03
+    "drift_score": 0.0,
+    "label_noise_score": 0.0697
   },
-  "proposal": {
-    "action": "advance_pipeline",
-    "mode": "standard",
-    "needs_adversarial_training": false,
-    "reason": "standard_policy_review"
-  },
-  "approval": {
-    "approved": true,
-    "owner": "policy_agent",
-    "review_mode": "standard"
-  },
-  "outcome": {
-    "deployment_ready": false,
-    "correction_target": "complete",
-    "evaluation_passed": true
-  }
+  "proposal": {},
+  "approval": {},
+  "outcome": {}
 }

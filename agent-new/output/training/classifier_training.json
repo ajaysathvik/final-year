@@ -1,11 +1,1 @@
-{
-  "returncode": 0,
-  "best_f1": 0.93,
-  "results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-  "summary_exists": true,
-  "baseline_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/baseline/xgb_pipeline.joblib",
-  "augmented_model_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/xgb_pipeline.joblib",
-  "stdout_tail": "Stubbed classifier training.",
-  "stderr_tail": "",
-  "stubbed": true
-}
+{}

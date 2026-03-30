@@ -30,7 +30,7 @@
 <div class="mermaid">graph TD
     START((START)) --&gt; IngestionAgent[Ingestion Agent]
     
-    IngestionAgent --&gt; |Retry: Noise/Drift| IngestionAgent
+    IngestionAgent --&gt; |Retry: Quality| IngestionAgent
     IngestionAgent --&gt; |Success| BalanceAgent[Balance Agent]
     
     BalanceAgent --&gt; |Retry: Low Quality| BalanceAgent
@@ -47,7 +47,7 @@
 <p><strong>Objective</strong>: Scrape, label, and profile the latest Reddit fraud data.</p>
 <ul>
 <li><strong>Tools</strong>: <code>reddit_scraper</code>, <code>reddit_labeller</code>, <code>post_processor</code>, <code>dataset_append</code>, <code>dataset_profiler</code>, <code>label_review</code>.</li>
-<li><strong>Decision Logic</strong>: Checks for <code>LABEL_NOISE_THRESHOLD</code>, <code>SLANG_DRIFT_THRESHOLD</code>, and scraper return codes. If the label quality is low or distribution drift is too high, it triggers a retry.</li>
+<li><strong>Decision Logic</strong>: Checks for <code>LABEL_NOISE_THRESHOLD</code> and scraper return codes. If label quality is low, it triggers a retry.</li>
 </ul>
 <h3 id="2-balance-agent">2. Balance Agent </h3>
 <p><strong>Objective</strong>: Resolve class imbalance using synthetic data generation.</p>

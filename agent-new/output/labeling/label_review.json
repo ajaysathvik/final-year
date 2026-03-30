@@ -1,4 +1,10 @@
 {
-  "recommendation": "continue",
-  "ambiguous_ratio": 0.06
+  "sample_size": 50,
+  "ambiguous_rows": 2,
+  "ambiguous_ratio": 0.04,
+  "target_distribution": {
+    "1": 0.86,
+    "0": 0.14
+  },
+  "recommendation": "keep"
 }

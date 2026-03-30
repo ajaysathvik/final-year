@@ -3,7 +3,6 @@
 This folder contains a LangGraph-based fraud-detection workflow that replaces a linear pipeline with specialized agents:
 
 - `IngestionAgent`: scrapes Reddit, labels posts, post-processes outputs, appends new rows into train/test, then checks data quality.
-- `DriftAgent`: makes dataset-health and drift decisions explicit before balancing.
 - `BalanceAgent`: searches balancing ratios, runs CTGAN generation, and rejects synthetic batches when JSD is too high.
 - `SupervisorAgent`: routes the workflow toward direct policy review or deeper investigation.
 - `InvestigationAgent`: gathers attack-surface evidence for uncertain or elevated-risk runs.
@@ -16,7 +15,7 @@ This folder contains a LangGraph-based fraud-detection workflow that replaces a 
 
 The graph loops when quality gates fail:
 
-`IngestionAgent -> DriftAgent -> BalanceAgent -> TrainingAgent -> SupervisorAgent -> InvestigationAgent/PolicyAgent -> StrategyAgent -> EvaluationAgent -> SimulationAgent`
+`IngestionAgent -> BalanceAgent -> TrainingAgent -> SupervisorAgent -> InvestigationAgent/PolicyAgent -> StrategyAgent -> EvaluationAgent -> SimulationAgent`
 
 Correction paths:
 
@@ -77,8 +76,7 @@ Run from a downstream agent with stubbed state:
 
 ```bash
 AGENT_STUB_DOWNSTREAM=1 \
-AGENT_START_AT=drift_agent \
-AGENT_STATE_FILE=agent-new/stubs/drift_agent_state.json \
+AGENT_START_AT=balance_agent \
 python agent-new/main.py
 ```
 

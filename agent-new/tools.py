@@ -3,12 +3,10 @@ from __future__ import annotations
 import json
 import math
 import os
-import re
 import shutil
 import subprocess
 import sys
 import time
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -62,26 +60,7 @@ from config import (
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-TEXT_COLUMNS = ("title", "body")
 TARGET_COLUMN_CANDIDATES = ("annotation.is_fraud", "is_fraud")
-TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_'-]{2,}")
-SCAM_LEXICON = {
-    "upi",
-    "otp",
-    "kyc",
-    "chargeback",
-    "refund",
-    "giftcard",
-    "crypto",
-    "telegram",
-    "escrow",
-    "impersonation",
-    "phishing",
-    "spoof",
-    "wallet",
-    "investment",
-    "romance",
-}
 
 
 @dataclass
@@ -129,16 +108,6 @@ def _target_column(df: pd.DataFrame) -> str:
         if column in df.columns:
             return column
     raise KeyError(f"Missing target column. Checked: {TARGET_COLUMN_CANDIDATES}")
-
-
-def _combined_text(df: pd.DataFrame) -> pd.Series:
-    frames = [df[column].fillna("").astype(str) for column in TEXT_COLUMNS if column in df.columns]
-    if not frames:
-        return pd.Series([""] * len(df))
-    text = frames[0]
-    for column in frames[1:]:
-        text = text.str.cat(column, sep=" ")
-    return text.str.lower()
 
 
 def _safe_series(df: pd.DataFrame, column: str) -> pd.Series:
@@ -577,15 +546,6 @@ class DatasetProfilerTool:
         test_df = _load_csv(TEST_PATH if TEST_PATH.exists() else DATASET_PATH)
         target = _target_column(train_df)
 
-        train_text = _combined_text(train_df)
-        test_text = _combined_text(test_df)
-        train_tokens = Counter(token for text in train_text for token in TOKEN_RE.findall(text))
-        test_tokens = Counter(token for text in test_text for token in TOKEN_RE.findall(text))
-
-        scam_token_share_train = sum(train_tokens[token] for token in SCAM_LEXICON) / max(sum(train_tokens.values()), 1)
-        scam_token_share_test = sum(test_tokens[token] for token in SCAM_LEXICON) / max(sum(test_tokens.values()), 1)
-        slang_drift = abs(scam_token_share_test - scam_token_share_train)
-
         confidence_col = "annotation.fraud_confidence"
         usable_col = "annotation.label_quality.usable_for_training"
         label_noise = 0.0
@@ -603,9 +563,6 @@ class DatasetProfilerTool:
             "class_balance_train": _normalized_counts(pd.to_numeric(train_df[target], errors="coerce").fillna(0).astype(int)),
             "class_balance_test": _normalized_counts(pd.to_numeric(test_df[target], errors="coerce").fillna(0).astype(int)),
             "label_noise_score": round(label_noise, 4),
-            "slang_drift_score": round(slang_drift, 4),
-            "top_train_tokens": train_tokens.most_common(15),
-            "top_test_tokens": test_tokens.most_common(15),
             "prepared_dataset_exists": PREPARED_DATASET_PATH.exists(),
         }
         return summary

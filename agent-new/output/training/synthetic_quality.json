@@ -1,10 +1,4 @@
 {
-  "synthetic_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-  "reference_rows": 100,
-  "synthetic_rows": 100,
-  "reference_slice": "stub",
-  "mean_jsd": 0.05,
-  "column_jsd": {},
-  "accepted": true,
-  "stubbed": true
+  "mean_jsd": 1.0,
+  "accepted": false
 }

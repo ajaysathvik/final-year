@@ -1,12 +1,1 @@
-{
-  "eval_returncode": 0,
-  "robustness_returncode": 0,
-  "best_f1": 0.93,
-  "non_fraud_f1": 0.72,
-  "robustness_score": 0.94,
-  "classifier_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/summary_metrics_3k.json",
-  "robustness_results_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/adversial/results/summary_table.csv",
-  "eval_stdout_tail": "Stubbed evaluation.",
-  "robustness_stdout_tail": "Stubbed robustness evaluation.",
-  "stubbed": true
-}
+{}

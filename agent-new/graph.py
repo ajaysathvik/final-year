@@ -20,7 +20,6 @@ from config import (
     OLLAMA_URL,
     OUTPUT_DIR,
     RUN_REPORT_PATH,
-    SLANG_DRIFT_THRESHOLD,
     STOP_AFTER_INGESTION_IF_NO_UPDATE,
     TARGET_F1_THRESHOLD,
     TARGET_NON_FRAUD_F1_THRESHOLD,
@@ -43,11 +42,9 @@ except ImportError:  # pragma: no cover
 
 MANUAL_START_NODES = {
     "ingestion_agent",
-    "drift_agent",
     "balance_agent",
     "training_agent",
     "supervisor_agent",
-    "investigation_agent",
     "policy_agent",
     "strategy_agent",
     "evaluation_agent",
@@ -60,11 +57,9 @@ class WorkflowState(TypedDict, total=False):
     agent_attempts: dict[str, int]
     next_step: str
     ingestion_agent: dict[str, Any]
-    drift_agent: dict[str, Any]
     balance_agent: dict[str, Any]
     training_agent: dict[str, Any]
     supervisor_agent: dict[str, Any]
-    investigation_agent: dict[str, Any]
     policy_agent: dict[str, Any]
     strategy_agent: dict[str, Any]
     evaluation_agent: dict[str, Any]
@@ -100,6 +95,7 @@ class DecisionEngine:
                 num_predict=800,
                 reasoning=False,
             )
+        self._objective_cache: dict[tuple[str, str], str] = {}
 
     def _build_messages(self, role: str, objective: str, payload: dict[str, Any]) -> tuple[str, str]:
         system_prompt = "You reason briefly. JSON is preferred but plain text is allowed."
@@ -164,6 +160,42 @@ class DecisionEngine:
             "confidence": 0.6,
             "metadata": {"raw": content, "payload": payload, "response_format": "text"},
         }
+
+    def generate_objective(self, role: str, default_objective: str) -> str:
+        cache_key = (role, default_objective)
+        if cache_key in self._objective_cache:
+            return self._objective_cache[cache_key]
+
+        if self.client is None or HumanMessage is None or SystemMessage is None:
+            self._objective_cache[cache_key] = default_objective
+            return default_objective
+
+        system_prompt = "Rewrite the supplied objective as one concise operational sentence. Return plain text only."
+        user_prompt = (
+            f"Role: {role}\n"
+            f"Base objective: {default_objective}\n"
+            "Write a single sentence objective for runtime logging. Keep it under 24 words."
+        )
+        try:
+            response = self.client.invoke(
+                [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt),
+                ]
+            )
+        except Exception:
+            self._objective_cache[cache_key] = default_objective
+            return default_objective
+
+        content = self._coerce_content_to_text(getattr(response, "content", ""))
+        cleaned = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+        cleaned = re.sub(r"^```(?:text)?\s*", "", cleaned)
+        cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        if not cleaned:
+            cleaned = default_objective
+        self._objective_cache[cache_key] = cleaned
+        return cleaned
 
     def decide(self, role: str, objective: str, payload: dict[str, Any]) -> dict[str, Any]:
         if self.client is None or HumanMessage is None or SystemMessage is None:
@@ -255,10 +287,6 @@ class FraudWorkflow:
             "label": "INGESTION AGENT",
             "status": "Starting data ingestion...",
         },
-        "drift_agent": {
-            "label": "DRIFT AGENT",
-            "status": "Checking dataset drift...",
-        },
         "balance_agent": {
             "label": "BALANCE AGENT",
             "status": "Balancing dataset...",
@@ -270,10 +298,6 @@ class FraudWorkflow:
         "supervisor_agent": {
             "label": "SUPERVISOR AGENT",
             "status": "Routing decision...",
-        },
-        "investigation_agent": {
-            "label": "INVESTIGATION AGENT",
-            "status": "Gathering evidence...",
         },
         "policy_agent": {
             "label": "POLICY AGENT",
@@ -325,7 +349,8 @@ class FraudWorkflow:
         if role:
             print(f" Role: {role}")
         if objective:
-            print(f" Objective: {objective}")
+            generated_objective = self.decision_engine.generate_objective(role or agent, objective)
+            print(f" Objective: {generated_objective}")
 
     def _tool_display_name(self, step: str) -> str:
         return self.TOOL_RUNTIME_INFO.get(step, step)
@@ -365,27 +390,10 @@ class FraudWorkflow:
         status = "passed" if passed else "failed"
         return f"TrainingAgent {status} base-model validation. best_f1={best_f1}, required>={threshold}."
 
-    def _drift_summary(self, *, accepted: bool, profile: dict[str, Any], review: dict[str, Any]) -> str:
-        noise = profile.get("label_noise_score")
-        drift = profile.get("slang_drift_score")
-        recommendation = review.get("recommendation")
-        status = "accepted" if accepted else "flagged"
-        return (
-            f"DriftAgent {status} dataset health. "
-            f"label_noise_score={noise}, slang_drift_score={drift}, recommendation={recommendation}."
-        )
-
     def _supervisor_summary(self, *, lane: str, scores: dict[str, Any]) -> str:
         return (
             f"SupervisorAgent routed the workflow to {lane}. "
-            f"base_model_f1={scores.get('base_model_f1')}, drift={scores.get('drift_score')}, "
-            f"synthetic_jsd={scores.get('synthetic_jsd')}."
-        )
-
-    def _investigation_summary(self, *, recommended_action: str, escalation_score: float) -> str:
-        return (
-            f"InvestigationAgent completed evidence gathering. "
-            f"recommended_action={recommended_action}, escalation_score={round(escalation_score, 4)}."
+            f"base_model_f1={scores.get('base_model_f1')}, synthetic_jsd={scores.get('synthetic_jsd')}."
         )
 
     def _policy_summary(self, *, approved: bool, proposal: dict[str, Any]) -> str:
@@ -526,7 +534,7 @@ class FraudWorkflow:
 
     def ingestion_agent(self, state: WorkflowState) -> WorkflowState:
         role = "IngestionAgent"
-        objective = "Ingest Reddit data through scraping, labeling, post-processing, train/test append, then assess label quality and slang drift."
+        objective = "Ingest Reddit data through scraping, labeling, post-processing, train/test append, then assess label quality."
         self._print_agent_header("ingestion_agent", role=role, objective=objective)
         iteration = int(state.get("iteration", 0)) + 1
         attempt, agent_attempts = self._register_attempt(state, "ingestion_agent")
@@ -548,7 +556,7 @@ class FraudWorkflow:
                         "stubbed": True,
                     }
                 },
-                "profile": {"label_noise_score": 0.0, "slang_drift_score": 0.0, "stubbed": True},
+                "profile": {"label_noise_score": 0.0, "stubbed": True},
                 "review": {"recommendation": "keep", "stubbed": True},
             }
             decision = AgentDecision(
@@ -658,7 +666,6 @@ class FraudWorkflow:
             ingestion_gap = False
         quality_failed = (
             profile["label_noise_score"] > LABEL_NOISE_THRESHOLD
-            or profile["slang_drift_score"] > SLANG_DRIFT_THRESHOLD
             or review["recommendation"] == "relabel"
         )
         needs_relabel = labeling_failed or ingestion_gap or quality_failed
@@ -689,7 +696,7 @@ class FraudWorkflow:
         elif action == "retry_ingestion":
             next_step = "ingestion_agent"
         elif action == "ready_for_balancing":
-            next_step = "drift_agent"
+            next_step = "balance_agent"
         else:
             next_step = "complete"
         self.memory.add_snapshot({"stage": "ingestion_agent", **payload})
@@ -914,80 +921,9 @@ class FraudWorkflow:
         )
         return res
 
-    def drift_agent(self, state: WorkflowState) -> WorkflowState:
-        role = "DriftAgent"
-        objective = "Assess dataset drift and label quality before balancing. Retry ingestion only when the dataset health is unacceptable."
-        self._print_agent_header("drift_agent", role=role, objective=objective)
-        iteration = int(state.get("iteration", 0)) + 1
-        attempt, agent_attempts = self._register_attempt(state, "drift_agent")
-        self._trace_event("drift_agent", "agent_started", iteration=iteration)
-        ingestion = state.get("ingestion_agent", {})
-        profile = ingestion.get("profile", {})
-        review = ingestion.get("review", {})
-        accepted = (
-            float(profile.get("label_noise_score", 0.0)) <= LABEL_NOISE_THRESHOLD
-            and float(profile.get("slang_drift_score", 0.0)) <= SLANG_DRIFT_THRESHOLD
-            and review.get("recommendation") != "relabel"
-        )
-        scores = dict(state.get("scores", {}))
-        scores["drift_score"] = round(float(profile.get("slang_drift_score", 0.0)), 4)
-        scores["label_noise_score"] = round(float(profile.get("label_noise_score", 0.0)), 4)
-        payload = {"profile": profile, "review": review, "accepted": accepted}
-        llm = self.decision_engine.decide(role, objective, payload)
-        retries_exhausted = (not accepted) and self._is_retry_exhausted(attempt)
-        fallback_action = "continue_to_balance" if accepted else "retry_ingestion"
-        action, action_source = self._select_action(
-            llm.get("action"),
-            fallback_action,
-            {"continue_to_balance", "retry_ingestion"},
-        )
-        decision = AgentDecision(
-            agent="drift_agent",
-            summary=self._drift_summary(accepted=accepted, profile=profile, review=review),
-            action=action,
-            confidence=float(llm.get("confidence", 0.7)),
-            metadata=payload,
-        )
-        if retries_exhausted and action == "retry_ingestion":
-            next_step = "complete"
-        elif action == "retry_ingestion":
-            next_step = "ingestion_agent"
-        else:
-            next_step = "balance_agent"
-        self.memory.add_snapshot({"stage": "drift_agent", **payload})
-        self._record("drift_agent", decision)
-        self._audit(decision, iteration, next_step)
-        decisions = list(state.get("decisions", []))
-        decisions.append(asdict(decision))
-        res = {
-            **state,
-            "iteration": iteration,
-            "agent_attempts": agent_attempts,
-            "drift_agent": {
-                "profile": profile,
-                "review": review,
-                "accepted": accepted,
-                "action_source": action_source,
-                "attempt": attempt,
-                "retries_exhausted": retries_exhausted,
-            },
-            "scores": scores,
-            "next_step": next_step,
-            "decisions": decisions,
-        }
-        print(f" ✅ DriftAgent: {decision.summary}")
-        print(f" -> Next step: {next_step}")
-        self._trace_event(
-            "drift_agent",
-            "agent_completed",
-            iteration=iteration,
-            payload={"next_step": next_step, "accepted": accepted, "attempt": attempt, "retries_exhausted": retries_exhausted},
-        )
-        return res
-
     def supervisor_agent(self, state: WorkflowState) -> WorkflowState:
         role = "SupervisorAgent"
-        objective = "Route the workflow between direct policy review and deeper investigation based on model quality, drift, and synthetic-data fidelity."
+        objective = "Route the workflow based on model quality, dataset health, and synthetic-data fidelity. Send abnormal data back for correction before policy review."
         self._print_agent_header("supervisor_agent", role=role, objective=objective)
         iteration = int(state.get("iteration", 0)) + 1
         attempt, agent_attempts = self._register_attempt(state, "supervisor_agent")
@@ -999,27 +935,21 @@ class FraudWorkflow:
             {
                 "base_model_f1": round(float(training.get("best_f1", 0.0)), 4),
                 "synthetic_jsd": round(float(balance.get("synthetic_quality", {}).get("mean_jsd", 1.0)), 4),
-                "drift_score": round(float(scores.get("drift_score", 0.0)), 4),
             }
         )
         lane = "policy_agent"
-        if not state.get("training_agent", {}).get("passed", False):
-            lane = "investigation_agent"
-        elif scores["drift_score"] > (SLANG_DRIFT_THRESHOLD * 0.75):
-            lane = "investigation_agent"
-        elif scores["synthetic_jsd"] > (MIN_JS_DIVERGENCE_ACCEPT * 0.8):
-            lane = "investigation_agent"
+        if scores["synthetic_jsd"] > MIN_JS_DIVERGENCE_ACCEPT:
+            lane = "balance_agent"
         payload = {
             "scores": scores,
             "training_passed": state.get("training_agent", {}).get("passed", False),
-            "drift_agent": state.get("drift_agent", {}),
             "balance_agent": balance,
         }
         llm = self.decision_engine.decide(role, objective, payload)
         action, action_source = self._select_action(
             llm.get("action"),
             lane,
-            {"policy_agent", "investigation_agent"},
+            {"policy_agent", "ingestion_agent", "balance_agent"},
         )
         decision = AgentDecision(
             agent="supervisor_agent",
@@ -1057,93 +987,41 @@ class FraudWorkflow:
         )
         return res
 
-    def investigation_agent(self, state: WorkflowState) -> WorkflowState:
-        role = "InvestigationAgent"
-        objective = "Review the attack surface and recommend whether policy should harden the model path or continue with standard review."
-        self._print_agent_header("investigation_agent", role=role, objective=objective)
-        iteration = int(state.get("iteration", 0)) + 1
-        attempt, agent_attempts = self._register_attempt(state, "investigation_agent")
-        self._trace_event("investigation_agent", "agent_started", iteration=iteration)
-        attack_surface = self._run_tool("investigation_agent", iteration, "attack_surface", self.tools["attack_surface"].run)
-        scores = dict(state.get("scores", {}))
-        escalation_score = round(
-            (0.5 * float(scores.get("drift_score", 0.0)))
-            + (0.3 * float(scores.get("synthetic_jsd", 0.0)))
-            + (0.2 * max(0.0, TARGET_F1_THRESHOLD - float(scores.get("base_model_f1", 0.0)))),
-            4,
-        )
-        recommended_action = "harden_with_adversarial_training" if escalation_score >= 0.08 else "standard_policy_review"
-        payload = {
-            "scores": scores,
-            "attack_surface": attack_surface,
-            "escalation_score": escalation_score,
-            "recommended_action": recommended_action,
-        }
-        llm = self.decision_engine.decide(role, objective, payload)
-        action, action_source = self._select_action(
-            llm.get("action"),
-            "policy_agent",
-            {"policy_agent"},
-        )
-        decision = AgentDecision(
-            agent="investigation_agent",
-            summary=self._investigation_summary(recommended_action=recommended_action, escalation_score=escalation_score),
-            action=action,
-            confidence=float(llm.get("confidence", 0.7)),
-            metadata=payload,
-        )
-        self.memory.add_snapshot({"stage": "investigation_agent", **payload})
-        self._record("investigation_agent", decision)
-        self._audit(decision, iteration, action)
-        decisions = list(state.get("decisions", []))
-        decisions.append(asdict(decision))
-        res = {
-            **state,
-            "iteration": iteration,
-            "agent_attempts": agent_attempts,
-            "investigation_agent": {
-                "attack_surface": attack_surface,
-                "escalation_score": escalation_score,
-                "recommended_action": recommended_action,
-                "action_source": action_source,
-                "attempt": attempt,
-            },
-            "next_step": action,
-            "decisions": decisions,
-        }
-        print(f" ✅ InvestigationAgent: {decision.summary}")
-        print(f" -> Next step: {action}")
-        self._trace_event(
-            "investigation_agent",
-            "agent_completed",
-            iteration=iteration,
-            payload={"next_step": action, "escalation_score": escalation_score, "attempt": attempt},
-        )
-        return res
-
     def policy_agent(self, state: WorkflowState) -> WorkflowState:
         role = "PolicyAgent"
-        objective = "Create a policy proposal for the next workflow step and approve it when the proposal is internally consistent."
+        objective = "Review the attack surface, create a policy proposal for the next workflow step, and approve it when the proposal is internally consistent."
         self._print_agent_header("policy_agent", role=role, objective=objective)
         iteration = int(state.get("iteration", 0)) + 1
         attempt, agent_attempts = self._register_attempt(state, "policy_agent")
         self._trace_event("policy_agent", "agent_started", iteration=iteration)
-        investigation = state.get("investigation_agent", {})
         scores = dict(state.get("scores", {}))
-        escalation_score = float(investigation.get("escalation_score", 0.0))
-        needs_adversarial_training = escalation_score >= 0.08 or float(scores.get("drift_score", 0.0)) > 0.05
+        attack_surface = self._run_tool("policy_agent", iteration, "attack_surface", self.tools["attack_surface"].run)
+        escalation_score = round(
+            (0.6 * float(scores.get("synthetic_jsd", 0.0)))
+            + (0.4 * max(0.0, TARGET_F1_THRESHOLD - float(scores.get("base_model_f1", 0.0)))),
+            4,
+        )
+        recommended_action = "harden_with_adversarial_training" if escalation_score >= 0.08 else "standard_policy_review"
+        needs_adversarial_training = escalation_score >= 0.08
         proposal = {
             "action": "advance_pipeline",
             "mode": "hardened" if needs_adversarial_training else "standard",
             "needs_adversarial_training": needs_adversarial_training,
-            "reason": investigation.get("recommended_action", "standard_policy_review"),
+            "reason": recommended_action,
         }
         approval = {
             "approved": True,
             "owner": "policy_agent",
             "review_mode": proposal["mode"],
         }
-        payload = {"proposal": proposal, "approval": approval, "scores": scores}
+        payload = {
+            "scores": scores,
+            "attack_surface": attack_surface,
+            "escalation_score": escalation_score,
+            "recommended_action": recommended_action,
+            "proposal": proposal,
+            "approval": approval,
+        }
         llm = self.decision_engine.decide(role, objective, payload)
         action, action_source = self._select_action(
             llm.get("action"),
@@ -1167,6 +1045,9 @@ class FraudWorkflow:
             "iteration": iteration,
             "agent_attempts": agent_attempts,
             "policy_agent": {
+                "attack_surface": attack_surface,
+                "escalation_score": escalation_score,
+                "recommended_action": recommended_action,
                 "proposal": proposal,
                 "approval": approval,
                 "action_source": action_source,
@@ -1183,7 +1064,7 @@ class FraudWorkflow:
             "policy_agent",
             "agent_completed",
             iteration=iteration,
-            payload={"next_step": action, "approved": True, "attempt": attempt},
+            payload={"next_step": action, "approved": True, "escalation_score": escalation_score, "attempt": attempt},
         )
         return res
 
@@ -1452,26 +1333,16 @@ class FraudWorkflow:
         target = state.get("evaluation_agent", {}).get("correction_target", "balance_agent")
         return "strategy_agent" if target == "strategy_agent" else "balance_agent"
 
-    def route_after_ingestion_agent(self, state: WorkflowState) -> Literal["drift_agent", "ingestion_agent", "complete"]:
+    def route_after_ingestion_agent(self, state: WorkflowState) -> Literal["balance_agent", "ingestion_agent", "complete"]:
         next_step = state.get("next_step")
-        if next_step in {"drift_agent", "ingestion_agent", "complete"}:
+        if next_step in {"balance_agent", "ingestion_agent", "complete"}:
             return next_step
         if state.get("ingestion_agent", {}).get("skip_model_update", False):
             return "complete"
         accepted = not state.get("ingestion_agent", {}).get("needs_relabel", False)
         if accepted:
-            return "drift_agent"
-        if state.get("ingestion_agent", {}).get("retries_exhausted", False):
-            return "complete"
-        return "ingestion_agent"
-
-    def route_after_drift_agent(self, state: WorkflowState) -> Literal["balance_agent", "ingestion_agent", "complete"]:
-        next_step = state.get("next_step")
-        if next_step in {"balance_agent", "ingestion_agent", "complete"}:
-            return next_step
-        if state.get("drift_agent", {}).get("accepted", False):
             return "balance_agent"
-        if state.get("drift_agent", {}).get("retries_exhausted", False):
+        if state.get("ingestion_agent", {}).get("retries_exhausted", False):
             return "complete"
         return "ingestion_agent"
 
@@ -1497,13 +1368,10 @@ class FraudWorkflow:
             return "complete"
         return "training_agent"
 
-    def route_after_supervisor_agent(self, state: WorkflowState) -> Literal["investigation_agent", "policy_agent"]:
+    def route_after_supervisor_agent(self, state: WorkflowState) -> Literal["policy_agent", "ingestion_agent", "balance_agent"]:
         next_step = state.get("next_step")
-        if next_step in {"investigation_agent", "policy_agent"}:
+        if next_step in {"policy_agent", "ingestion_agent", "balance_agent"}:
             return next_step
-        return "investigation_agent" if state.get("supervisor_agent", {}).get("lane") == "investigation_agent" else "policy_agent"
-
-    def route_after_investigation_agent(self, state: WorkflowState) -> Literal["policy_agent"]:
         return "policy_agent"
 
     def route_after_policy_agent(self, state: WorkflowState) -> Literal["strategy_agent", "complete"]:
@@ -1602,18 +1470,8 @@ class FraudWorkflow:
         lines.append(f"| Train rows | {profile.get('train_rows', 'N/A')} |")
         lines.append(f"| Test rows | {profile.get('test_rows', 'N/A')} |")
         lines.append(f"| Label noise score | {profile.get('label_noise_score', 'N/A')} |")
-        lines.append(f"| Slang drift score | {profile.get('slang_drift_score', 'N/A')} |")
         lines.append(f"| Label review recommendation | {review.get('recommendation', 'N/A')} |")
         lines.append(f"| Ambiguous ratio | {review.get('ambiguous_ratio', 'N/A')} |")
-        lines.append("")
-
-        drift = report.get("drift_agent", {})
-        lines.append("### Drift Review")
-        lines.append("")
-        lines.append(f"| Metric | Value |")
-        lines.append(f"|--------|-------|")
-        lines.append(f"| Accepted | {drift.get('accepted', 'N/A')} |")
-        lines.append(f"| Retries exhausted | {drift.get('retries_exhausted', 'N/A')} |")
         lines.append("")
 
         # --- Balance / CTGAN ---
@@ -1644,15 +1502,14 @@ class FraudWorkflow:
         lines.append("")
 
         supervisor = report.get("supervisor_agent", {})
-        investigation = report.get("investigation_agent", {})
         policy = report.get("policy_agent", {})
-        lines.append("## 5. Supervisor / Investigation / Policy")
+        lines.append("## 5. Supervisor / Policy")
         lines.append("")
         lines.append(f"| Metric | Value |")
         lines.append(f"|--------|-------|")
         lines.append(f"| Route lane | {supervisor.get('lane', 'N/A')} |")
-        lines.append(f"| Escalation score | {investigation.get('escalation_score', 'N/A')} |")
-        lines.append(f"| Recommended action | {investigation.get('recommended_action', 'N/A')} |")
+        lines.append(f"| Escalation score | {policy.get('escalation_score', 'N/A')} |")
+        lines.append(f"| Recommended action | {policy.get('recommended_action', 'N/A')} |")
         lines.append(f"| Policy mode | {policy.get('proposal', {}).get('mode', 'N/A')} |")
         lines.append(f"| Policy approved | {policy.get('approval', {}).get('approved', 'N/A')} |")
         lines.append("")
@@ -1750,11 +1607,9 @@ class FraudWorkflow:
             "agent_attempts": state.get("agent_attempts", {}),
             "decisions": state.get("decisions", []),
             "ingestion_agent": state.get("ingestion_agent", {}),
-            "drift_agent": state.get("drift_agent", {}),
             "balance_agent": state.get("balance_agent", {}),
             "training_agent": state.get("training_agent", {}),
             "supervisor_agent": state.get("supervisor_agent", {}),
-            "investigation_agent": state.get("investigation_agent", {}),
             "policy_agent": state.get("policy_agent", {}),
             "strategy_agent": state.get("strategy_agent", {}),
             "evaluation_agent": state.get("evaluation_agent", {}),
@@ -1774,7 +1629,6 @@ class FraudWorkflow:
         self._write_stage_output("labeling", "dataset_append_result.json", ing.get("append", {}))
         self._write_stage_output("labeling", "dataset_profile.json", ing.get("profile", {}))
         self._write_stage_output("labeling", "label_review.json", ing.get("review", {}))
-        self._write_stage_output("labeling", "drift_review.json", state.get("drift_agent", {}))
 
         bal = state.get("balance_agent", {})
         self._write_stage_output("training", "balance_search.json", bal.get("ratio_search", {}))
@@ -1784,7 +1638,6 @@ class FraudWorkflow:
         tr = state.get("training_agent", {})
         self._write_stage_output("training", "classifier_training.json", tr.get("training", {}))
         self._write_stage_output("training", "supervisor_decision.json", state.get("supervisor_agent", {}))
-        self._write_stage_output("training", "investigation_result.json", state.get("investigation_agent", {}))
         self._write_stage_output("training", "policy_decision.json", state.get("policy_agent", {}))
 
         strat = state.get("strategy_agent", {})
@@ -1820,11 +1673,9 @@ class FraudWorkflow:
             )
         graph = StateGraph(WorkflowState)
         graph.add_node("ingestion_agent", self.ingestion_agent)
-        graph.add_node("drift_agent", self.drift_agent)
         graph.add_node("balance_agent", self.balance_agent)
         graph.add_node("training_agent", self.training_agent)
         graph.add_node("supervisor_agent", self.supervisor_agent)
-        graph.add_node("investigation_agent", self.investigation_agent)
         graph.add_node("policy_agent", self.policy_agent)
         graph.add_node("strategy_agent", self.strategy_agent)
         graph.add_node("evaluation_agent", self.evaluation_agent)
@@ -1833,11 +1684,9 @@ class FraudWorkflow:
 
         graph.add_edge(START, "ingestion_agent")
         graph.add_conditional_edges("ingestion_agent", self.route_after_ingestion_agent)
-        graph.add_conditional_edges("drift_agent", self.route_after_drift_agent)
         graph.add_conditional_edges("balance_agent", self.route_after_balance_agent)
         graph.add_conditional_edges("training_agent", self.route_after_training_agent)
         graph.add_conditional_edges("supervisor_agent", self.route_after_supervisor_agent)
-        graph.add_conditional_edges("investigation_agent", self.route_after_investigation_agent)
         graph.add_conditional_edges("policy_agent", self.route_after_policy_agent)
         graph.add_conditional_edges("strategy_agent", self.route_after_strategy_agent)
         graph.add_conditional_edges("evaluation_agent", self.route_after_evaluation_agent)
@@ -1873,11 +1722,9 @@ def _load_stub_state_from_file(path_value: str | None) -> dict[str, Any]:
 def _manual_run(workflow: FraudWorkflow, start_at: str, state: WorkflowState) -> dict[str, Any]:
     step_handlers = {
         "ingestion_agent": workflow.ingestion_agent,
-        "drift_agent": workflow.drift_agent,
         "balance_agent": workflow.balance_agent,
         "training_agent": workflow.training_agent,
         "supervisor_agent": workflow.supervisor_agent,
-        "investigation_agent": workflow.investigation_agent,
         "policy_agent": workflow.policy_agent,
         "strategy_agent": workflow.strategy_agent,
         "evaluation_agent": workflow.evaluation_agent,
@@ -1885,11 +1732,9 @@ def _manual_run(workflow: FraudWorkflow, start_at: str, state: WorkflowState) ->
     }
     route_handlers = {
         "ingestion_agent": workflow.route_after_ingestion_agent,
-        "drift_agent": workflow.route_after_drift_agent,
         "balance_agent": workflow.route_after_balance_agent,
         "training_agent": workflow.route_after_training_agent,
         "supervisor_agent": workflow.route_after_supervisor_agent,
-        "investigation_agent": workflow.route_after_investigation_agent,
         "policy_agent": workflow.route_after_policy_agent,
         "strategy_agent": workflow.route_after_strategy_agent,
         "evaluation_agent": workflow.route_after_evaluation_agent,
