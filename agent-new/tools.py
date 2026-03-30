@@ -885,6 +885,8 @@ class BalanceSearchTool:
                 "current_ratio": 2.0,
                 "ratio_direction": "fraud_per_non_fraud",
                 "required_non_fraud_rows": 0,
+                "fraud_count": 20,
+                "non_fraud_count": 10,
                 "source_scope": "stub",
                 "candidates": [{"ratio": 10, "meaning": "1 non_fraud : 10 fraud", "estimated_false_positive_penalty": 0.0, "utility": 1.0}],
                 "stubbed": True,
@@ -907,6 +909,8 @@ class BalanceSearchTool:
                 "current_ratio": 0.0,
                 "ratio_direction": "fraud_per_non_fraud",
                 "required_non_fraud_rows": 0,
+                "fraud_count": fraud,
+                "non_fraud_count": non_fraud,
                 "source_scope": source_scope,
                 "candidates": [],
                 "reason": "no fraud rows to balance",
@@ -947,6 +951,8 @@ class BalanceSearchTool:
                 "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
                 "ratio_direction": "fraud_per_non_fraud",
                 "required_non_fraud_rows": 0,
+                "fraud_count": fraud,
+                "non_fraud_count": non_fraud,
                 "source_scope": source_scope,
                 "selection_method": "current_ratio_tie_break",
                 "candidates": candidates,
@@ -958,6 +964,7 @@ class BalanceSearchTool:
             required_non_fraud_rows = int(item["required_non_fraud_rows"])
             extra_env = {
                 "BALANCE_TARGET_FRAUD_PER_NON_FRAUD": str(item["ratio"]),
+                "BALANCE_INPUT_FILE": str(PREPARED_DATASET_PATH if PREPARED_DATASET_PATH.exists() else DATASET_PATH),
                 "BALANCE_BATCH_FRAUD_ROWS": str(fraud),
                 "BALANCE_BATCH_NON_FRAUD_ROWS": str(non_fraud),
                 "BALANCE_REQUIRED_SYNTHETIC_NON_FRAUD": str(required_non_fraud_rows),
@@ -998,6 +1005,8 @@ class BalanceSearchTool:
                 "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
                 "ratio_direction": "fraud_per_non_fraud",
                 "required_non_fraud_rows": required_non_fraud_rows,
+                "fraud_count": fraud,
+                "non_fraud_count": non_fraud,
                 "source_scope": source_scope,
                 "selection_method": "validation_metrics",
                 "selection_metric": "0.6*macro_f1 + 0.3*non_fraud_f1 + 0.1*fraud_f1",
@@ -1014,6 +1023,8 @@ class BalanceSearchTool:
             "current_ratio": "inf" if non_fraud == 0 else round(current_ratio, 4),
             "ratio_direction": "fraud_per_non_fraud",
             "required_non_fraud_rows": required_non_fraud_rows,
+            "fraud_count": fraud,
+            "non_fraud_count": non_fraud,
             "source_scope": source_scope,
             "selection_method": "heuristic_fallback",
             "candidates": candidates,
@@ -1117,13 +1128,14 @@ class CTGANTool:
                 "fresh_summary": False,
                 "summary_mtime": summary_path.stat().st_mtime if summary_path.exists() else None,
                 "skipped": True,
-                "reason": "no synthetic non-fraud rows required for scraped batch",
+                "reason": "no synthetic non-fraud rows required for current dataset ratio",
             }
 
         started_at = time.time()
         extra_env: dict[str, str] = {}
         if target_ratio is not None:
             extra_env["BALANCE_TARGET_FRAUD_PER_NON_FRAUD"] = str(target_ratio)
+        extra_env["BALANCE_INPUT_FILE"] = str(PREPARED_DATASET_PATH if PREPARED_DATASET_PATH.exists() else DATASET_PATH)
         extra_env["BALANCE_BATCH_FRAUD_ROWS"] = str(max(int(fraud_count), 0))
         extra_env["BALANCE_BATCH_NON_FRAUD_ROWS"] = str(max(int(non_fraud_count), 0))
         extra_env["BALANCE_REQUIRED_SYNTHETIC_NON_FRAUD"] = str(max(int(required_non_fraud_rows), 0))

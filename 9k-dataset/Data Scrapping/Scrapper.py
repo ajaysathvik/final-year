@@ -264,9 +264,6 @@ def fetch_posts(subreddit, max_posts, sleep_time, post_keyword_set):
             yield post_data
             yielded_count += 1
 
-            age_days = (NOW_UTC - created) // 86400
-            log(f"r/{subreddit} - Accepted post {d['id']} (age {age_days} days)")
-
             if yielded_count >= max_posts:
                 log(f"r/{subreddit} - Reached max post cap")
                 return
@@ -362,14 +359,22 @@ class ThreadSafeCSVWriter:
 
 def process_post_with_comments(post, params, keywords, post_writer, comment_writer, stats):
     """Process a single post and its comments"""
+    reserved_in_cache = False
     try:
-        # Skip if already seen in cache
+        # Reserve the post ID before doing any work so concurrent workers
+        # cannot race past the duplicate check for the same post.
         post_id = post.get("post_id")
         with cache_lock:
             if post_id in CACHE_SET:
                 log(f"Skipping cached post {post_id}")
                 return False
-        
+            CACHE_SET.add(post_id)
+            reserved_in_cache = True
+
+        created = post.get("created_utc", NOW_UTC)
+        age_days = (NOW_UTC - created) // 86400
+        log(f"r/{post['subreddit']} - Accepted post {post_id} (age {age_days} days)")
+
         # Write post
         post_writer.writerow(post)
         
@@ -396,9 +401,8 @@ def process_post_with_comments(post, params, keywords, post_writer, comment_writ
                 comment_writer.flush()
                 log(f"CHECKPOINT @ {stats['posts_processed']} posts, {stats['comments_collected']} comments")
         
-        # Mark as seen and persist cache
+        # Persist the reserved cache entry once processing succeeds.
         with cache_lock:
-            CACHE_SET.add(post_id)
             try:
                 save_cache()
             except Exception:
@@ -406,6 +410,9 @@ def process_post_with_comments(post, params, keywords, post_writer, comment_writ
 
         return True
     except Exception as e:
+        if reserved_in_cache and post_id:
+            with cache_lock:
+                CACHE_SET.discard(post_id)
         log(f"Error processing post {post.get('post_id', 'unknown')}: {e}")
         return False
 

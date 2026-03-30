@@ -624,17 +624,12 @@ class FraudWorkflow:
         ingestion_state = state.get("ingestion_agent", {})
         batch_fraud_count = int(ingestion_state.get("new_fraud_rows_added", 0))
         batch_non_fraud_count = int(ingestion_state.get("new_non_fraud_rows_added", 0))
-        # Use None (dataset-wide) when there is no new batch — avoids skipping
-        # balancing entirely just because the incremental batch was empty.
-        use_batch_counts = batch_fraud_count > 0 or batch_non_fraud_count > 0
         ratio_search = self._run_tool(
             "balance_agent",
             iteration,
             "balance_search",
             self.tools["balance_search"].run,
             DEFAULT_RATIO_CANDIDATES,
-            batch_fraud_count if use_batch_counts else None,
-            batch_non_fraud_count if use_batch_counts else None,
         )
         ctgan_result = self._run_tool(
             "balance_agent",
@@ -642,8 +637,8 @@ class FraudWorkflow:
             "ctgan_runner",
             self.tools["ctgan_runner"].run,
             ratio_search.get("best_ratio"),
-            fraud_count=batch_fraud_count,
-            non_fraud_count=batch_non_fraud_count,
+            fraud_count=int(ratio_search.get("fraud_count", 0)),
+            non_fraud_count=int(ratio_search.get("non_fraud_count", 0)),
             required_non_fraud_rows=int(ratio_search.get("required_non_fraud_rows", 0)),
         )
         synthetic_quality = {"mean_jsd": 1.0, "accepted": False}
@@ -657,6 +652,8 @@ class FraudWorkflow:
             )
 
         payload = {
+            "batch_fraud_count": batch_fraud_count,
+            "batch_non_fraud_count": batch_non_fraud_count,
             "ratio_search": ratio_search,
             "ctgan_result": ctgan_result,
             "synthetic_quality": synthetic_quality,

@@ -38,7 +38,9 @@ ARTIFACT_DIR = BASE_DIR / "artifacts" / "xgb_ctgan_3k"
 ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 os.environ["MPLCONFIGDIR"] = str(ARTIFACT_DIR / "mplconfig")
 
-INPUT_FILE = BASE_DIR / "processed" / "data_binary_only_first_3000.csv"
+DEFAULT_INPUT_FILE = BASE_DIR / "data.csv"
+INPUT_FILE_ENV = os.getenv("BALANCE_INPUT_FILE", "").strip()
+INPUT_FILE = Path(INPUT_FILE_ENV).expanduser() if INPUT_FILE_ENV else DEFAULT_INPUT_FILE
 TRAIN_FILE = ARTIFACT_DIR / "train_3k.csv"
 TEST_FILE = ARTIFACT_DIR / "test_3k.csv"
 SUMMARY_FILE = ARTIFACT_DIR / "summary_metrics_3k.json"
@@ -47,6 +49,7 @@ MATRIX_REPORT = BASE_DIR / "reports" / "PERFORMANCE_MATRIX_3K.md"
 PLOT_FILE = ARTIFACT_DIR / "comparison_metrics_3k.png"
 BASELINE_MODEL_FILE = ARTIFACT_DIR / "baseline" / "xgb_pipeline.joblib"
 AUGMENTED_MODEL_FILE = ARTIFACT_DIR / "augmented" / "xgb_pipeline.joblib"
+BALANCED_DATASET_FILE = ARTIFACT_DIR / "augmented" / "balanced_dataset.csv"
 
 TARGET = "annotation.is_fraud"
 RANDOM_STATE = 42
@@ -227,7 +230,14 @@ def save_roc_curve(curves: dict, output_file: Path, title: str):
     plt.savefig(output_file, dpi=180)
     plt.close()
 
-def write_report(subset_df: pd.DataFrame, train_df: pd.DataFrame, test_df: pd.DataFrame, results: dict):
+def write_report(
+    subset_df: pd.DataFrame,
+    train_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    balanced_df: pd.DataFrame,
+    dropped_rows: int,
+    results: dict,
+):
     baseline = results["baseline"]
     augmented = results["augmented"]
     synth_added = augmented["train_class_counts"]["0"] - baseline["train_class_counts"]["0"]
@@ -238,14 +248,16 @@ def write_report(subset_df: pd.DataFrame, train_df: pd.DataFrame, test_df: pd.Da
         "",
         "## Setup",
         "",
-        f"- Source data: `{INPUT_FILE.name}`.",
-        f"- 3k dataset class counts: `{int((subset_df[TARGET] == 1).sum())} fraud`, `{int((subset_df[TARGET] == 0).sum())} non_fraud`.",
+        f"- Source data: `{INPUT_FILE}`.",
+        f"- Labeled source class counts: `{int((subset_df[TARGET] == 1).sum())} fraud`, `{int((subset_df[TARGET] == 0).sum())} non_fraud`.",
+        f"- Unlabeled / excluded rows dropped before CTGAN: `{dropped_rows}`.",
         f"- Train split: `{int((train_df[TARGET] == 1).sum())} fraud`, `{int((train_df[TARGET] == 0).sum())} non_fraud`.",
         f"- Test split: `{int((test_df[TARGET] == 1).sum())} fraud`, `{int((test_df[TARGET] == 0).sum())} non_fraud`.",
         "- CTGAN trains only on the real minority rows from the train split.",
+        f"- Balanced dataset artifact: `{BALANCED_DATASET_FILE}` with `{int((balanced_df[TARGET] == 1).sum())} fraud`, `{int((balanced_df[TARGET] == 0).sum())} non_fraud`.",
         f"- Scraped batch counts: `{BATCH_FRAUD_ROWS} fraud`, `{BATCH_NON_FRAUD_ROWS} non_fraud`.",
         f"- Target balance: `1:{TARGET_FRAUD_PER_NON_FRAUD}` in `non_fraud:fraud` terms.",
-        f"- Synthetic non-fraud rows requested from scraped batch delta: `{REQUIRED_SYNTHETIC_NON_FRAUD}`.",
+        f"- Synthetic non-fraud rows requested from full dataset imbalance: `{REQUIRED_SYNTHETIC_NON_FRAUD}`.",
         "",
         "## Results",
         "",
@@ -310,6 +322,15 @@ def plot_comparison(results: dict):
 
 def main():
     subset_df = pd.read_csv(INPUT_FILE)
+    raw_rows = len(subset_df)
+    subset_df[TARGET] = pd.to_numeric(subset_df[TARGET], errors="coerce")
+    subset_df = subset_df[subset_df[TARGET].isin([0, 1])].copy().reset_index(drop=True)
+    dropped_rows = raw_rows - len(subset_df)
+    if subset_df.empty:
+        raise ValueError(f"No labeled 0/1 rows found in {INPUT_FILE}")
+    class_count = subset_df[TARGET].nunique()
+    if class_count < 2:
+        raise ValueError(f"Need both classes 0 and 1 in {INPUT_FILE}; found {class_count} class")
 
     train_df, test_df = train_test_split(
         subset_df,
@@ -354,6 +375,7 @@ def main():
         synthetic_df = train_df.head(0).copy()
 
     augmented_train = pd.concat([train_df, synthetic_df], ignore_index=True).reset_index(drop=True)
+    balanced_df = pd.concat([subset_df, synthetic_df.reindex(columns=subset_df.columns)], ignore_index=True).reset_index(drop=True)
     augmented_metrics, augmented_predictions, augmented_curves, augmented_pipeline = evaluate_model(augmented_train, test_df)
     results["augmented"] = augmented_metrics
 
@@ -362,6 +384,7 @@ def main():
     joblib.dump(augmented_pipeline, AUGMENTED_MODEL_FILE)
     synthetic_df.to_csv(augmented_dir / "synthetic_not_fraud.csv", index=False)
     augmented_train.to_csv(augmented_dir / "train_augmented.csv", index=False)
+    balanced_df.to_csv(BALANCED_DATASET_FILE, index=False)
     augmented_predictions.to_csv(augmented_dir / "test_predictions.csv", index=False)
     with (augmented_dir / "metrics.json").open("w", encoding="utf-8") as handle:
         json.dump(augmented_metrics, handle, indent=2)
@@ -371,11 +394,20 @@ def main():
     summary = {
         "train_file": str(TRAIN_FILE),
         "test_file": str(TEST_FILE),
+        "input_file": str(INPUT_FILE),
+        "input_rows_total": int(raw_rows),
+        "input_rows_labeled_binary": int(len(subset_df)),
+        "input_rows_dropped": int(dropped_rows),
         "target_fraud_per_non_fraud": TARGET_FRAUD_PER_NON_FRAUD,
         "batch_fraud_rows": BATCH_FRAUD_ROWS,
         "batch_non_fraud_rows": BATCH_NON_FRAUD_ROWS,
         "required_synthetic_non_fraud": REQUIRED_SYNTHETIC_NON_FRAUD,
         "synthetic_non_fraud_rows_added": int(len(synthetic_df)),
+        "balanced_dataset_path": str(BALANCED_DATASET_FILE),
+        "balanced_dataset_class_counts": {
+            "0": int((balanced_df[TARGET] == 0).sum()),
+            "1": int((balanced_df[TARGET] == 1).sum()),
+        },
         "model_paths": {
             "baseline_pipeline": str(BASELINE_MODEL_FILE),
             "augmented_pipeline": str(AUGMENTED_MODEL_FILE),
@@ -386,7 +418,7 @@ def main():
     with SUMMARY_FILE.open("w", encoding="utf-8") as handle:
         json.dump(summary, handle, indent=2)
 
-    write_report(subset_df, train_df, test_df, results)
+    write_report(subset_df, train_df, test_df, balanced_df, dropped_rows, results)
     write_matrix_report(results)
     plot_comparison(results)
     print(json.dumps(summary, indent=2))
