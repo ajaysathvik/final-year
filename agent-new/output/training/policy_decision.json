@@ -1,0 +1,15 @@
+{
+  "proposal": {
+    "action": "advance_pipeline",
+    "mode": "standard",
+    "needs_adversarial_training": false,
+    "reason": "standard_policy_review"
+  },
+  "approval": {
+    "approved": true,
+    "owner": "policy_agent",
+    "review_mode": "standard"
+  },
+  "action_source": "rules",
+  "attempt": 1
+}

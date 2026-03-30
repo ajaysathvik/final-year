@@ -1,0 +1,17 @@
+{
+  "ingestion_agent": {
+    "profile": {
+      "train_rows": 3000,
+      "test_rows": 600,
+      "label_noise_score": 0.04,
+      "slang_drift_score": 0.03
+    },
+    "review": {
+      "recommendation": "continue",
+      "ambiguous_ratio": 0.06
+    },
+    "new_fraud_rows_added": 5,
+    "new_non_fraud_rows_added": 2,
+    "needs_relabel": false
+  }
+}

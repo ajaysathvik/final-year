@@ -1,50 +1,57 @@
 # Agentic Fraud Pipeline — Run Summary
 
-**Status:** COMPLETED  
-**Total iterations:** 5  
-**Generated at:** 2026-03-29 10:57:53 UTC  
+**Status:** STOPPED  
+**Total iterations:** 7  
+**Generated at:** 2026-03-30 08:50:48 UTC  
 
 ## 1. Scraping (Ingestion Agent)
 
 | Metric | Value |
 |--------|-------|
-| Posts before | 3699 |
-| Posts after | 3703 |
-| New posts detected | 4 |
-| Comments after | 22941 |
-| Smoke test | False |
-| Return code | 0 |
+| Posts before | N/A |
+| Posts after | N/A |
+| New posts detected | 0 |
+| Comments after | N/A |
+| Smoke test | N/A |
+| Return code | N/A |
 
 ## 2. Labeling & Post-Processing
 
 | Metric | Value |
 |--------|-------|
 | Labeling skipped | False |
-| New posts to label | 10 |
+| New posts to label | 0 |
 | New labels created | 0 |
-| Post-processing skipped | True |
-| Processed rows | 0 |
-| Label return code | 0 |
+| Post-processing skipped | False |
+| Processed rows | N/A |
+| Label return code | N/A |
 
 ### Dataset Profile
 
 | Metric | Value |
 |--------|-------|
-| Train rows | 4549 |
-| Test rows | 1177 |
-| Label noise score | 0.0697 |
-| Slang drift score | 0.0 |
-| Label review recommendation | keep |
-| Ambiguous ratio | 0.04 |
+| Train rows | 3000 |
+| Test rows | 600 |
+| Label noise score | 0.04 |
+| Slang drift score | 0.03 |
+| Label review recommendation | continue |
+| Ambiguous ratio | 0.06 |
+
+### Drift Review
+
+| Metric | Value |
+|--------|-------|
+| Accepted | True |
+| Retries exhausted | False |
 
 ## 3. Balancing (CTGAN)
 
 | Metric | Value |
 |--------|-------|
-| Best ratio | 5 |
+| Best ratio | 10 |
 | CTGAN return code | 0 |
-| Synthetic rows | 793 |
-| Mean JSD | 0.1291 |
+| Synthetic rows | 100 |
+| Mean JSD | 0.05 |
 | Quality accepted | True |
 | Balance accepted | True |
 
@@ -53,10 +60,20 @@
 | Metric | Value |
 |--------|-------|
 | Return code | 0 |
-| Best F1 | 0.9665 |
+| Best F1 | 0.93 |
 | Passed | True |
 
-## 5. Adversarial Training (Strategy Agent)
+## 5. Supervisor / Investigation / Policy
+
+| Metric | Value |
+|--------|-------|
+| Route lane | policy_agent |
+| Escalation score | N/A |
+| Recommended action | N/A |
+| Policy mode | standard |
+| Policy approved | True |
+
+## 6. Adversarial Training (Strategy Agent)
 
 | Metric | Value |
 |--------|-------|
@@ -64,47 +81,50 @@
 | Recommended focus | transactional short-form fraud |
 | Training return code | 0 |
 | Robustness return code | 0 |
-| Baseline FGSM F1 | 0.9851 |
-| Adversarial FGSM F1 | 0.9878 |
-| Adversarial Clean F1 | 0.9878 |
-| Robustness gain (Δ) | 0.0027 |
+| Baseline FGSM F1 | 0.91 |
+| Adversarial FGSM F1 | 0.94 |
+| Adversarial Clean F1 | 0.95 |
+| Robustness gain (Δ) | 0.03 |
 | Accepted | True |
 
 ### Attack Surface
 
 | Fraud Channel | Count |
 |---------------|-------|
-| website | 286 |
-| email | 222 |
-| sms | 220 |
-| phone | 185 |
-| social_media | 104 |
-| unknown | 44 |
-| telegram | 35 |
-| none | 20 |
-| app | 16 |
-| sms | email | phone | social_media | website | app | unknown | none | 11 |
+| website | 12 |
+| email | 8 |
 
-## 6. Final Evaluation
+## 7. Final Evaluation
 
 | Metric | Value |
 |--------|-------|
 | Eval return code | 0 |
 | Robustness return code | 0 |
-| Best F1 | 0.9665 |
-| Robustness score | 0.9878 |
+| Best F1 | 0.93 |
+| Robustness score | 0.94 |
 | Passed | True |
 | Correction target | complete |
+
+## 8. Simulation Gate
+
+| Metric | Value |
+|--------|-------|
+| Proposal mode | N/A |
+| Simulation score | N/A |
+| Guardrail status | N/A |
+| Approved | N/A |
 
 ## Agent Decisions Timeline
 
 | # | Agent | Action | Confidence | Summary |
 |---|-------|--------|------------|---------|
-| 1 | ingestion_agent | ready_for_balancing | 0.95 | Ingestion completed successfully with 4 new posts scraped. Labeling phase encountered critical failures for 3 out of 10  |
-| 2 | balance_agent | ready_for_strategy | 0.6 | BalanceAgent accepted CTGAN output. Best ratio=5, mean JSD=0.1291, threshold=0.2. |
-| 3 | training_agent | ready_for_strategy | 0.6 | TrainingAgent passed base-model validation. best_f1=0.9665, required>=0.738. |
-| 4 | strategy_agent | ready_for_evaluation | 0.99 | StrategyAgent accepted adversarial training. focus=generic, robustness_gain=0.0027, adversarial_clean_f1=0.9878. |
-| 5 | evaluation_agent | deploy | 0.99 | EvaluationAgent passed final validation. best_f1=0.9665 vs threshold=0.82, non_fraud_f1=0.6105 vs threshold=0.5, robustn |
+| 1 | drift_agent | continue_to_balance | 0.94 | DriftAgent accepted dataset health. label_noise_score=0.04, slang_drift_score=0.03, recommendation=continue. |
+| 2 | balance_agent | ready_for_strategy | 0.85 | BalanceAgent accepted the batch without CTGAN because no synthetic non-fraud rows were required. Best ratio=10. |
+| 3 | training_agent | ready_for_strategy | 0.95 | TrainingAgent passed base-model validation. best_f1=0.93, required>=0.738. |
+| 4 | supervisor_agent | policy_agent | 0.98 | SupervisorAgent routed the workflow to policy_agent. base_model_f1=0.93, drift=0.03, synthetic_jsd=0.05. |
+| 5 | policy_agent | strategy_agent | 0.98 | PolicyAgent approved proposal. action=advance_pipeline, mode=standard, needs_adversarial_training=False. |
+| 6 | strategy_agent | ready_for_evaluation | 0.95 | StrategyAgent accepted adversarial training. focus=generic, robustness_gain=0.03, adversarial_clean_f1=0.95. |
+| 7 | evaluation_agent | complete | 0.65 | EvaluationAgent passed final validation. best_f1=0.93 vs threshold=0.82, non_fraud_f1=0.72 vs threshold=0.5, robustness_ |
 
 ## Adversarial Training Charts
 

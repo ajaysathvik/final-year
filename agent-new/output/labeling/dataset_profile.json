@@ -1,18 +1,6 @@
 {
-  "train_rows": 4549,
-  "test_rows": 1177,
-  "target_column": "annotation.is_fraud",
-  "class_balance_train": {
-    "1": 0.9470213233677731,
-    "0": 0.05297867663222686
-  },
-  "class_balance_test": {
-    "1": 0.9549702633814783,
-    "0": 0.045029736618521665
-  },
-  "label_noise_score": 0.0697,
-  "slang_drift_score": 0.0,
-  "top_train_tokens": [],
-  "top_test_tokens": [],
-  "prepared_dataset_exists": true
+  "train_rows": 3000,
+  "test_rows": 600,
+  "label_noise_score": 0.04,
+  "slang_drift_score": 0.03
 }

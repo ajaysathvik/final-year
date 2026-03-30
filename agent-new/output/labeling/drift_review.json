@@ -1,0 +1,16 @@
+{
+  "profile": {
+    "train_rows": 3000,
+    "test_rows": 600,
+    "label_noise_score": 0.04,
+    "slang_drift_score": 0.03
+  },
+  "review": {
+    "recommendation": "continue",
+    "ambiguous_ratio": 0.06
+  },
+  "accepted": true,
+  "action_source": "rules",
+  "attempt": 1,
+  "retries_exhausted": false
+}

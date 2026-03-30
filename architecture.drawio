@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="agentic-architecture" name="Architecture">
-        <mxGraphModel dx="1643" dy="865" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
+        <mxGraphModel dx="1665" dy="768" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -10,84 +10,126 @@
                 <mxCell id="data" value="Data Sources&lt;br&gt;- Reddit posts/comments&lt;br&gt;- Existing labeled dataset&lt;br&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" parent="1" vertex="1">
                     <mxGeometry x="40" y="120" width="220" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="ingestion" value="Ingestion Agent&#10;- scrape&#10;- label&#10;- post-process&#10;- drift and quality review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+                <mxCell id="ingestion" value="Ingestion Agent&#10;- scrape&#10;- label&#10;- post-process&#10;- append usable rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
                     <mxGeometry x="320" y="120" width="220" height="120" as="geometry"/>
                 </mxCell>
+                <mxCell id="drift" value="Drift Agent&#10;- label noise gate&#10;- slang drift gate&#10;- relabel / continue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="120" width="220" height="120" as="geometry"/>
+                </mxCell>
                 <mxCell id="balance" value="Balance Agent&#10;- ratio search&#10;- CTGAN training&#10;- synthetic quality check&#10;(mean JSD threshold)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="600" y="120" width="230" height="120" as="geometry"/>
+                    <mxGeometry x="880" y="120" width="230" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="training" value="Training Agent&#10;- baseline XGBoost&#10;- metric validation&#10;- model checkpointing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="890" y="120" width="220" height="120" as="geometry"/>
+                    <mxGeometry x="1170" y="120" width="220" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="supervisor" value="Supervisor Agent&#10;- read shared scores&#10;- route clean vs uncertain&#10;- send to policy / investigation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1450" y="120" width="230" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="investigation" value="Investigation Agent&#10;- attack-surface tool&#10;- escalation score&#10;- recommendation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1310" y="320" width="220" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="policy" value="Policy Agent&#10;- proposal creation&#10;- approval state&#10;- choose hardened / standard path" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1590" y="320" width="230" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="strategy" value="Strategy Agent&#10;- FGSM adversarial training&#10;- attack-surface analysis&#10;- robustness gain check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="1170" y="120" width="230" height="120" as="geometry"/>
+                    <mxGeometry x="1590" y="520" width="230" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;endArrow=block;rounded=0;strokeColor=#666666;strokeWidth=1.5;" edge="1" parent="1" source="eval" target="ingestion">
+                <mxCell id="2" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;endArrow=block;rounded=0;strokeColor=#666666;strokeWidth=1.5;" parent="1" source="eval" target="ingestion" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" value="after some cond" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="2">
+                <mxCell id="3" value="manual refresh path" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="2" vertex="1" connectable="0">
                     <mxGeometry x="0.1172" relative="1" as="geometry">
                         <mxPoint x="1" as="offset"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="eval" value="Evaluation Agent&#10;- clean test metrics&#10;- attack evaluation&#10;- final accept / correction order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="1008" y="443" width="220" height="120" as="geometry"/>
+                    <mxGeometry x="1310" y="520" width="220" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="simulation" value="Simulation Agent&#10;- offline release gate&#10;- guardrail check&#10;- complete / correction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="1020" y="520" width="230" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="deploy" value="Outputs&#10;- balanced datasets&#10;- trained models&#10;- robustness charts&#10;- deployment decision" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="1302" y="443" width="230" height="120" as="geometry"/>
+                    <mxGeometry x="730" y="520" width="230" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="memory" value="Shared Memory and Audit Layer&#10;- run state&#10;- agent decisions&#10;- thresholds and reports" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
-                    <mxGeometry x="540" y="540" width="360" height="110" as="geometry"/>
+                <mxCell id="memory" value="Shared Memory and Audit Layer&#10;- workflow state&#10;- scores / proposal / approval / outcome&#10;- decisions, reports, artifacts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="945" y="756" width="520" height="110" as="geometry"/>
                 </mxCell>
                 <mxCell id="edge1" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="data" target="ingestion" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="edge2" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="ingestion" target="balance" edge="1">
+                <mxCell id="edge2" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="ingestion" target="drift" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge2b" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="drift" target="balance" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="edge3" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="balance" target="training" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="edge4" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="training" target="strategy" edge="1">
+                <mxCell id="edge4" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="training" target="supervisor" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="edge5" style="endArrow=block;html=1;rounded=1;strokeWidth=2;curved=1;edgeStyle=orthogonalEdgeStyle;exitX=0.302;exitY=1.022;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="strategy" target="eval" edge="1">
+                <mxCell id="edge4b" value="clean path" style="endArrow=block;html=1;rounded=1;strokeWidth=2;curved=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="supervisor" target="policy" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1226" y="243"/>
-                            <mxPoint x="1226" y="341"/>
-                            <mxPoint x="1110" y="341"/>
+                            <mxPoint x="1660" y="260"/>
+                            <mxPoint x="1700" y="290"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="edge6" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="eval" target="deploy" edge="1">
+                <mxCell id="edge4c" value="uncertain path" style="endArrow=block;html=1;rounded=1;strokeWidth=2;curved=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="supervisor" target="investigation" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge4d" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="investigation" target="policy" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge5" style="endArrow=block;html=1;rounded=1;strokeWidth=2;curved=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="policy" target="strategy" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1705" y="460"/>
+                            <mxPoint x="1705" y="490"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="edge5b" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="strategy" target="eval" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge6" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="eval" target="simulation" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="edge7" style="endArrow=block;html=1;rounded=0;strokeWidth=2;" parent="1" source="simulation" target="deploy" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="loopdrift" value="retry / relabel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;dashed=1;strokeColor=#b85450;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="drift" target="drift" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="708" y="74"/>
+                            <mxPoint x="652" y="74"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="loop2" value="retry / rebalance" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;dashed=1;strokeColor=#d6b656;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="balance" target="balance" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="715" y="74"/>
-                            <mxPoint x="658" y="74"/>
+                            <mxPoint x="995" y="74"/>
+                            <mxPoint x="938" y="74"/>
                         </Array>
-                        <mxPoint x="580" y="180" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="loop3" value="retry / retrain" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;dashed=1;strokeColor=#b85450;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="training" target="training" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1000" y="70"/>
-                            <mxPoint x="945" y="70"/>
+                            <mxPoint x="1280" y="70"/>
+                            <mxPoint x="1225" y="70"/>
                         </Array>
-                        <mxPoint x="870" y="180" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="loop4" value="retry / harden" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;dashed=1;strokeColor=#9673a6;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="strategy" target="strategy" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1285" y="72"/>
-                            <mxPoint x="1228" y="72"/>
+                            <mxPoint x="1705" y="468"/>
+                            <mxPoint x="1648" y="468"/>
                         </Array>
-                        <mxPoint x="1150" y="180" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="corr1" value="utility correction" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#666666;dashPattern=8 8;" parent="1" source="eval" target="balance" edge="1">
@@ -96,14 +138,20 @@
                 <mxCell id="corr2" value="robustness correction" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#666666;edgeStyle=orthogonalEdgeStyle;curved=1;dashPattern=8 8;" parent="1" target="strategy" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1135" y="441"/>
-                            <mxPoint x="1135" y="363"/>
-                            <mxPoint x="1266" y="363"/>
+                            <mxPoint x="1420" y="500"/>
+                            <mxPoint x="1480" y="500"/>
+                            <mxPoint x="1590" y="500"/>
                         </Array>
-                        <mxPoint x="1128" y="441" as="sourcePoint"/>
+                        <mxPoint x="1420" y="580" as="sourcePoint"/>
                     </mxGeometry>
                 </mxCell>
+                <mxCell id="corr3" value="simulation fail" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#666666;dashPattern=8 8;" parent="1" source="simulation" target="strategy" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
                 <mxCell id="mem1" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="ingestion" target="memory" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mem1b" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="drift" target="memory" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="mem2" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="balance" target="memory" edge="1">
@@ -112,10 +160,22 @@
                 <mxCell id="mem3" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="training" target="memory" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
+                <mxCell id="mem3b" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="supervisor" target="memory" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mem3c" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="investigation" target="memory" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mem3d" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="policy" target="memory" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
                 <mxCell id="mem4" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="strategy" target="memory" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="mem5" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="eval" target="memory" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="mem6" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;dashed=1;strokeColor=#B20000;dashPattern=8 8;fillColor=#e51400;" parent="1" source="simulation" target="memory" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="nxi7xkvkAZUaQsAePlx_-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" source="ingestion" target="ingestion" edge="1">
@@ -126,7 +186,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="4" value="retry/scrape/label" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="nxi7xkvkAZUaQsAePlx_-1">
+                <mxCell id="4" value="retry/scrape/label" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="nxi7xkvkAZUaQsAePlx_-1" vertex="1" connectable="0">
                     <mxGeometry x="0.4873" y="5" relative="1" as="geometry">
                         <mxPoint x="21" y="-7" as="offset"/>
                     </mxGeometry>

@@ -1,23 +1,30 @@
 # Agentic Fraud Workflow
 
-This folder contains a LangGraph-based fraud-detection workflow that replaces a linear pipeline with four specialized agents:
+This folder contains a LangGraph-based fraud-detection workflow that replaces a linear pipeline with specialized agents:
 
 - `IngestionAgent`: scrapes Reddit, labels posts, post-processes outputs, appends new rows into train/test, then checks data quality.
+- `DriftAgent`: makes dataset-health and drift decisions explicit before balancing.
 - `BalanceAgent`: searches balancing ratios, runs CTGAN generation, and rejects synthetic batches when JSD is too high.
+- `SupervisorAgent`: routes the workflow toward direct policy review or deeper investigation.
+- `InvestigationAgent`: gathers attack-surface evidence for uncertain or elevated-risk runs.
+- `PolicyAgent`: creates and approves a proposal for the next training strategy.
 - `StrategyAgent`: runs adversarial training and robustness-curve generation on the balanced model candidate.
 - `EvaluationAgent`: validates F1 and robustness thresholds, then either deploys or issues a correction order.
+- `SimulationAgent`: runs a final offline gate before completion.
 
 ## Architecture
 
 The graph loops when quality gates fail:
 
-`IngestionAgent -> BalanceAgent -> StrategyAgent -> EvaluationAgent`
+`IngestionAgent -> DriftAgent -> BalanceAgent -> TrainingAgent -> SupervisorAgent -> InvestigationAgent/PolicyAgent -> StrategyAgent -> EvaluationAgent -> SimulationAgent`
 
 Correction paths:
 
 - Low synthetic fidelity: `EvaluationAgent -> BalanceAgent`
 - Weak robustness: `EvaluationAgent -> StrategyAgent`
-- Pass thresholds: `EvaluationAgent -> Complete`
+- Clean review path: `SupervisorAgent -> PolicyAgent`
+- Investigated path: `SupervisorAgent -> InvestigationAgent -> PolicyAgent`
+- Pass thresholds plus simulation: `SimulationAgent -> Complete`
 
 ## Memory
 
@@ -63,6 +70,24 @@ pip install -r agent-new/requirements.txt
 Run the workflow:
 
 ```bash
+python agent-new/main.py
+```
+
+Run from a downstream agent with stubbed state:
+
+```bash
+AGENT_STUB_DOWNSTREAM=1 \
+AGENT_START_AT=drift_agent \
+AGENT_STATE_FILE=agent-new/stubs/drift_agent_state.json \
+python agent-new/main.py
+```
+
+You can also jump straight to `supervisor_agent` with:
+
+```bash
+AGENT_STUB_DOWNSTREAM=1 \
+AGENT_START_AT=supervisor_agent \
+AGENT_STATE_FILE=agent-new/stubs/supervisor_agent_state.json \
 python agent-new/main.py
 ```
 

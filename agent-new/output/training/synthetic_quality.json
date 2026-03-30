@@ -1,28 +1,10 @@
 {
   "synthetic_path": "/home/norm/Projects/Reddit-dataset/9k-dataset/artifacts/xgb_ctgan_3k/augmented/synthetic_not_fraud.csv",
-  "reference_rows": 294,
-  "synthetic_rows": 793,
-  "reference_slice": "non_fraud_only",
-  "mean_jsd": 0.1291,
-  "column_jsd": {
-    "annotation.is_fraud": 0.0,
-    "annotation.fraud_labels.transaction_upi_fraud": 0.0,
-    "annotation.fraud_labels.transaction_card_fraud": 0.0,
-    "annotation.fraud_labels.transaction_bank_transfer": 0.0,
-    "annotation.fraud_labels.commerce_nondelivery": 0.0,
-    "annotation.fraud_labels.commerce_fake_seller": 0.0,
-    "annotation.fraud_labels.credential_phishing": 0.0,
-    "annotation.fraud_labels.social_authority_scam": 0.0,
-    "annotation.fraud_labels.social_urgency_scam": 0.0,
-    "annotation.fraud_labels.meta_victim_story": 0.0,
-    "annotation.fraud_labels.meta_fraud_question": 0.0,
-    "annotation.key_features.urgency_level": 0.433,
-    "annotation.psychological_tactics.urgency": 0.3235,
-    "annotation.psychological_tactics.fear": 0.3952,
-    "annotation.psychological_tactics.authority": 0.4258,
-    "annotation.psychological_tactics.reward": 0.4489,
-    "annotation.key_features.amount_normalized": 0.298,
-    "annotation.key_features.has_amount": 0.0
-  },
-  "accepted": true
+  "reference_rows": 100,
+  "synthetic_rows": 100,
+  "reference_slice": "stub",
+  "mean_jsd": 0.05,
+  "column_jsd": {},
+  "accepted": true,
+  "stubbed": true
 }

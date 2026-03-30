@@ -1,47 +1,18 @@
 {
-  "best_ratio": 5,
-  "current_ratio": 18.4762,
+  "best_ratio": 10,
+  "current_ratio": 2.0,
   "ratio_direction": "fraud_per_non_fraud",
-  "required_non_fraud_rows": 793,
-  "source_scope": "dataset",
-  "selection_method": "validation_metrics",
-  "selection_metric": "0.6*macro_f1 + 0.3*non_fraud_f1 + 0.1*fraud_f1",
+  "required_non_fraud_rows": 0,
+  "fraud_count": 20,
+  "non_fraud_count": 10,
+  "source_scope": "stub",
   "candidates": [
     {
-      "ratio": 5,
-      "meaning": "1 non_fraud : ratio fraud",
-      "required_non_fraud_rows": 793,
-      "estimated_false_positive_penalty": 2.6952,
-      "selection_method": "validation_metrics",
-      "returncode": 0,
-      "validation_score": 0.8245,
-      "macro_f1": 0.8507,
-      "non_fraud_f1": 0.72,
-      "fraud_f1": 0.9813
-    },
-    {
       "ratio": 10,
-      "meaning": "1 non_fraud : ratio fraud",
-      "required_non_fraud_rows": 250,
-      "estimated_false_positive_penalty": 0.8476,
-      "selection_method": "validation_metrics",
-      "returncode": 0,
-      "validation_score": 0.78,
-      "macro_f1": 0.8123,
-      "non_fraud_f1": 0.6506,
-      "fraud_f1": 0.974
-    },
-    {
-      "ratio": 15,
-      "meaning": "1 non_fraud : ratio fraud",
-      "required_non_fraud_rows": 69,
-      "estimated_false_positive_penalty": 0.2317,
-      "selection_method": "validation_metrics",
-      "returncode": 0,
-      "validation_score": 0.7656,
-      "macro_f1": 0.7998,
-      "non_fraud_f1": 0.6292,
-      "fraud_f1": 0.9703
+      "meaning": "1 non_fraud : 10 fraud",
+      "estimated_false_positive_penalty": 0.0,
+      "utility": 1.0
     }
-  ]
+  ],
+  "stubbed": true
 }
