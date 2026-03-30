@@ -21,7 +21,6 @@ graph TD
     BalanceAgent -->|retry_balancing| BalanceAgent
     BalanceAgent -->|ready_for_strategy| TrainingAgent[Training Agent]
 
-    TrainingAgent -->|retry_training| TrainingAgent
     TrainingAgent -->|ready_for_strategy| SupervisorAgent[Supervisor Agent]
 
     SupervisorAgent -->|policy_agent| PolicyAgent[Policy Agent]
@@ -122,7 +121,6 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 - passes when the script succeeds and `best_f1 >= TARGET_F1_THRESHOLD * 0.9`
 
 **Routing**
-- `retry_training`
 - `ready_for_strategy`
 
 ### 4. Supervisor Agent

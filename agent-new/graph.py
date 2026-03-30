@@ -872,12 +872,12 @@ class FraudWorkflow:
         payload = {"training": training}
         llm = self.decision_engine.decide(role, objective, payload)
         passed = training.get("returncode") == 0 and training["best_f1"] >= (TARGET_F1_THRESHOLD * 0.9)
-        retries_exhausted = (not passed) and self._is_retry_exhausted(attempt)
-        fallback_action = "ready_for_strategy" if passed else "retry_training"
+        retries_exhausted = False
+        fallback_action = "ready_for_strategy"
         action, action_source = self._select_action(
             llm.get("action"),
             fallback_action,
-            {"ready_for_strategy", "retry_training"},
+            {"ready_for_strategy"},
         )
         decision = AgentDecision(
             agent="training_agent",
@@ -886,12 +886,7 @@ class FraudWorkflow:
             confidence=float(llm.get("confidence", 0.7)),
             metadata=payload,
         )
-        if retries_exhausted and action == "retry_training":
-            next_step = "complete"
-        elif action == "retry_training":
-            next_step = "training_agent"
-        else:
-            next_step = "supervisor_agent"
+        next_step = "supervisor_agent"
         self.memory.add_snapshot({"stage": "training_agent", **payload})
         self._record("training_agent", decision)
         self._audit(decision, iteration, next_step)
@@ -1357,16 +1352,13 @@ class FraudWorkflow:
             return "complete"
         return "balance_agent"
 
-    def route_after_training_agent(self, state: WorkflowState) -> Literal["supervisor_agent", "training_agent", "complete"]:
+    def route_after_training_agent(self, state: WorkflowState) -> Literal["supervisor_agent", "complete"]:
         next_step = state.get("next_step")
-        if next_step in {"supervisor_agent", "training_agent", "complete"}:
+        if next_step in {"supervisor_agent", "complete"}:
             return next_step
-        passed = state.get("training_agent", {}).get("passed", False)
-        if passed:
-            return "supervisor_agent"
         if state.get("training_agent", {}).get("retries_exhausted", False):
             return "complete"
-        return "training_agent"
+        return "supervisor_agent"
 
     def route_after_supervisor_agent(self, state: WorkflowState) -> Literal["policy_agent", "ingestion_agent", "balance_agent"]:
         next_step = state.get("next_step")
