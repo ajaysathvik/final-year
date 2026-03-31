@@ -1,57 +1,80 @@
+"""
+Configuration: paths, thresholds, and constants for the fraud detection pipeline.
+"""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
-
+# ── Paths ──────────────────────────────────────────────────────────
 AGENT_ROOT = Path(__file__).resolve().parent
-REPO_ROOT = AGENT_ROOT.parent
+REPO_ROOT  = AGENT_ROOT.parent
+DATA_ROOT  = REPO_ROOT / "9k-dataset"
 
-MAIN_CSV_PATH = REPO_ROOT / "Data labeling" / "outputs" / "main.csv"
-TRAIN_CSV_PATH = REPO_ROOT / "Data labeling" / "outputs" / "train_3k.csv"
-TEST_CSV_PATH = REPO_ROOT / "Data labeling" / "outputs" / "test_3k.csv"
-SCRAPED_POSTS_PATH = REPO_ROOT / "Reddit-dataset" / "Data Scrapping" / "posts.csv"
-SCRAPED_COMMENTS_PATH = REPO_ROOT / "Reddit-dataset" / "Data Scrapping" / "comments.csv"
-SCRAPER_SCRIPT_PATH = REPO_ROOT / "Reddit-dataset" / "Data Scrapping" / "Scrapper.py"
-SCRAPER_WORKDIR = REPO_ROOT / "Reddit-dataset" / "Data Scrapping"
-LABEL_SCRIPT_PATH = REPO_ROOT / "Reddit-dataset" / "Data labeling" / "label.py"
-LABEL_WORKDIR = REPO_ROOT / "Reddit-dataset" / "Data labeling"
-SCRAPED_LABELED_CSV_PATH = REPO_ROOT / "Data labeling" / "outputs" / "scraped_annotations_latest.csv"
-SCRAPED_LABELED_JSON_PATH = REPO_ROOT / "Data labeling" / "outputs" / "scraped_annotations_latest.json"
-PREPROCESS_DATASET_SCRIPT = REPO_ROOT / "9k-dataset" / "scripts" / "data_prep" / "preprocess_dataset.py"
-PREPROCESSED_SCRAPED_LABELED_CSV_PATH = REPO_ROOT / "Data labeling" / "outputs" / "scraped_annotations_preprocessed.csv"
-PREPROCESSED_SCRAPED_SUMMARY_PATH = REPO_ROOT / "Data labeling" / "outputs" / "scraped_annotations_preprocessed_summary.json"
+DATASET_PATH = DATA_ROOT / "data.csv"
 
-FIN_FRAUD_ROOT = REPO_ROOT / "Fin-Fraud_AI"
-ORIGINAL_DATASET_DIR = FIN_FRAUD_ROOT / "original_dataset"
-ORIGINAL_DATASET_PATH = ORIGINAL_DATASET_DIR / "final1.csv"
-NOVEL_SCAM_SEEDS_PATH = ORIGINAL_DATASET_DIR / "new_scam_seeds.csv"
-NOVEL_SCAM_REPORT_PATH = ORIGINAL_DATASET_DIR / "new_scam_report.json"
+OUTPUT_DIR   = AGENT_ROOT / "output"
+MODELS_DIR   = OUTPUT_DIR / "models"
+LOGS_DIR     = OUTPUT_DIR / "logs"
+METRICS_DIR  = OUTPUT_DIR / "metrics"
+KNOWLEDGE_LOG_PATH = LOGS_DIR / "knowledge.jsonl"
 
-STANDARD_CTGAN_SCRIPT = FIN_FRAUD_ROOT / "CTGAN" / "run_standard_ctgan.py"
-ADV_CTGAN_SCRIPT = FIN_FRAUD_ROOT / "adversarial_training" / "adv_ctgan_train.py"
-CLASSIFIER_EVAL_SCRIPT = FIN_FRAUD_ROOT / "classifier_models" / "comprehensive_eval.py"
-ROBUSTNESS_EVAL_SCRIPT = FIN_FRAUD_ROOT / "adversarial_training" / "robustness_evaluation.py"
+# ── Model promotion thresholds ─────────────────────────────────────
+F1_THRESHOLD        = float(os.getenv("F1_THRESHOLD", "0.70"))
+PRECISION_THRESHOLD = float(os.getenv("PRECISION_THRESHOLD", "0.65"))
+FPR_THRESHOLD       = float(os.getenv("FPR_THRESHOLD", "0.15"))
+ROBUSTNESS_THRESHOLD = float(os.getenv("ROBUSTNESS_THRESHOLD", "0.60"))
 
-CTGAN_OUTPUT_PATH = FIN_FRAUD_ROOT / "CTGAN" / "ctgan_balanced_data.csv"
-CTGAN_SYNTHETIC_NOVEL_OUTPUT_PATH = FIN_FRAUD_ROOT / "CTGAN" / "synthetic_new_scams_ctgan.csv"
-ADV_CTGAN_OUTPUT_PATH = FIN_FRAUD_ROOT / "adversarial_training" / "adv_balanced_data.csv"
-ADV_CTGAN_SYNTHETIC_NOVEL_OUTPUT_PATH = FIN_FRAUD_ROOT / "adversarial_training" / "synthetic_new_scams_adv_ctgan.csv"
-ADV_CTGAN_SYNTHETIC_BATCH_PATH = FIN_FRAUD_ROOT / "adversarial_training" / "synthetic_adv_batch.csv"
-CLASSIFIER_OUTPUT_PATH = FIN_FRAUD_ROOT / "outputs" / "classifier_comparison.csv"
-ROBUSTNESS_OUTPUT_PATH = FIN_FRAUD_ROOT / "outputs" / "robustness_results.csv"
-MODELS_DIR = FIN_FRAUD_ROOT / "models"
+# ── Drift detection ───────────────────────────────────────────────
+PSI_THRESHOLD = float(os.getenv("PSI_THRESHOLD", "0.20"))
+KS_THRESHOLD  = float(os.getenv("KS_THRESHOLD", "0.05"))
 
-MEMORY_DIR = AGENT_ROOT / "memory"
-MEMORY_PATH = MEMORY_DIR / "agent_memory.json"
-OUTPUT_DIR = AGENT_ROOT / "output"
-RUN_SUMMARY_PATH = OUTPUT_DIR / "pipeline_run_summary.json"
-TOOL_CALL_OUTPUTS_PATH = OUTPUT_DIR / "tool_call_outputs.json"
-OUTPUT_MODELS_DIR = OUTPUT_DIR / "models"
-OUTPUT_MEMORY_PATH = OUTPUT_DIR / "agent_memory.json"
-OUTPUT_PREPARED_DATASET_PATH = OUTPUT_DIR / "final1.csv"
-OUTPUT_CTGAN_PATH = OUTPUT_DIR / "ctgan_balanced_data.csv"
-OUTPUT_CTGAN_SYNTHETIC_NOVEL_PATH = OUTPUT_DIR / "synthetic_new_scams_ctgan.csv"
-OUTPUT_ADV_CTGAN_PATH = OUTPUT_DIR / "adv_balanced_data.csv"
-OUTPUT_ADV_CTGAN_SYNTHETIC_NOVEL_PATH = OUTPUT_DIR / "synthetic_new_scams_adv_ctgan.csv"
-OUTPUT_CLASSIFIER_RESULTS_PATH = OUTPUT_DIR / "classifier_comparison.csv"
-OUTPUT_ROBUSTNESS_RESULTS_PATH = OUTPUT_DIR / "robustness_results.csv"
+# ── CTGAN ──────────────────────────────────────────────────────────
+CTGAN_EPOCHS       = int(os.getenv("CTGAN_EPOCHS", "100"))
+CTGAN_SAMPLE_RATIO = float(os.getenv("CTGAN_SAMPLE_RATIO", "1.0"))
+
+# ── Adversarial ────────────────────────────────────────────────────
+ADVERSARIAL_NOISE_STD   = float(os.getenv("ADV_NOISE_STD", "0.05"))
+ADVERSARIAL_BOUNDARY_K  = int(os.getenv("ADV_BOUNDARY_K", "5"))
+ADVERSARIAL_EVASION_STD = float(os.getenv("ADV_EVASION_STD", "0.03"))
+
+# ── Training ───────────────────────────────────────────────────────
+TEST_SIZE        = float(os.getenv("TEST_SIZE", "0.2"))
+RANDOM_STATE     = int(os.getenv("RANDOM_STATE", "42"))
+N_ESTIMATORS     = int(os.getenv("N_ESTIMATORS", "200"))
+
+# ── Supervisor ─────────────────────────────────────────────────────
+SUPERVISOR_HEALTH_MIN = float(os.getenv("SUPERVISOR_HEALTH_MIN", "0.50"))
+
+# ── Feedback loop limits ───────────────────────────────────────────
+MAX_L1_ITERATIONS = int(os.getenv("MAX_L1_ITERATIONS", "2"))  # Eval → Balance
+MAX_L2_ITERATIONS = int(os.getenv("MAX_L2_ITERATIONS", "2"))  # Eval → Strategy
+MAX_L3_ITERATIONS = int(os.getenv("MAX_L3_ITERATIONS", "2"))  # Training self-loop
+MAX_L4_ITERATIONS = int(os.getenv("MAX_L4_ITERATIONS", "2"))  # Supervisor ↔ Policy
+MAX_L5_ITERATIONS = int(os.getenv("MAX_L5_ITERATIONS", "1"))  # Eval → KB validation
+MAX_KB_LOOPS     = int(os.getenv("MAX_KB_LOOPS", "3"))        # KB → Drift closed loop re-cycles
+
+# ── Feature columns (numeric ones suitable for ML) ─────────────────
+NUMERIC_FEATURE_COLS = [
+    # Psychological content signals (style of post, not fraud label)
+    "annotation.psychological_tactics.urgency",
+    "annotation.psychological_tactics.fear",
+    "annotation.psychological_tactics.authority",
+    "annotation.psychological_tactics.reward",
+    # Community-observed signals
+    "annotation.community_signals.num_comments",
+    "annotation.community_signals.scam_confirmations",
+    "annotation.community_signals.not_scam_claims",
+    "annotation.community_signals.advice_requests",
+    # Content feature
+    "annotation.key_features.has_amount",
+    # NOTE: annotation.fraud_confidence and annotation.fraud_labels.*
+    # are EXCLUDED — they directly encode the target label and cause
+    # data leakage (F1=1.0 on every run).
+]
+
+TARGET_COL = "annotation.is_fraud"
+
+# ── Ensure output directories exist ───────────────────────────────
+for _d in (OUTPUT_DIR, MODELS_DIR, LOGS_DIR, METRICS_DIR):
+    _d.mkdir(parents=True, exist_ok=True)

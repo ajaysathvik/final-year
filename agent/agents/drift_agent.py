@@ -1,0 +1,88 @@
+"""
+Drift Agent — Monitor phase of MAPE-K.
+Detects feature drift using PSI and KS test.
+Reads drift history from Knowledge Base.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+from config import PSI_THRESHOLD, KS_THRESHOLD
+
+
+def _psi(reference: np.ndarray, current: np.ndarray, bins: int = 10) -> float:
+    """Compute Population Stability Index between two distributions."""
+    eps = 1e-4
+    ref_min, ref_max = reference.min(), reference.max()
+    if ref_min == ref_max:
+        return 0.0
+    breakpoints = np.linspace(ref_min, ref_max, bins + 1)
+    ref_counts = np.histogram(reference, bins=breakpoints)[0] + eps
+    cur_counts = np.histogram(current, bins=breakpoints)[0] + eps
+    ref_pct = ref_counts / ref_counts.sum()
+    cur_pct = cur_counts / cur_counts.sum()
+    return float(np.sum((cur_pct - ref_pct) * np.log(cur_pct / ref_pct)))
+
+
+def drift_agent(state: dict) -> dict:
+    """
+    Split data into reference (first 70%) and current (last 30%) windows,
+    compute PSI and KS statistics per numeric feature.
+    Logs results to the Knowledge Base.
+    """
+    print("\n" + "=" * 60)
+    print(" [ DRIFT AGENT ] Detecting feature drift (PSI / KS)...")
+    print("=" * 60)
+
+    kb = state["knowledge_base"]
+    train_df: pd.DataFrame = state["train_df"]
+    feature_cols: list[str] = state["feature_cols"]
+
+    # Read prior drift history from KB
+    prior = kb.get_latest("drift_history")
+    if prior:
+        print(f"  ℹ️  Prior drift record found: {prior.get('timestamp', 'unknown')}")
+
+    split_idx = int(len(train_df) * 0.7)
+    ref = train_df.iloc[:split_idx]
+    cur = train_df.iloc[split_idx:]
+
+    drift_report: dict = {}
+    any_drift = False
+
+    for col in feature_cols:
+        if col not in train_df.columns:
+            continue
+        ref_vals = ref[col].dropna().values.astype(float)
+        cur_vals = cur[col].dropna().values.astype(float)
+        if len(ref_vals) < 10 or len(cur_vals) < 10:
+            continue
+
+        psi_val = _psi(ref_vals, cur_vals)
+        ks_stat, ks_pval = stats.ks_2samp(ref_vals, cur_vals)
+        drifted = psi_val > PSI_THRESHOLD or ks_pval < KS_THRESHOLD
+
+        drift_report[col] = {
+            "psi": round(psi_val, 6),
+            "ks_stat": round(ks_stat, 6),
+            "ks_pval": round(ks_pval, 6),
+            "drifted": drifted,
+        }
+        if drifted:
+            any_drift = True
+
+    drifted_features = [c for c, v in drift_report.items() if v.get("drifted")]
+    print(f"  ✅ Analyzed {len(drift_report)} features.")
+    print(f"  {'⚠️  Drift detected' if any_drift else '✅ No drift detected'} "
+          f"in {len(drifted_features)} feature(s)")
+
+    # Log to Knowledge Base
+    kb.log_event("drift", "drift_detection", {
+        "features_analyzed": len(drift_report),
+        "drifted_features": drifted_features,
+        "drift_detected": any_drift,
+    })
+
+    return {**state, "drift_report": drift_report, "drift_detected": any_drift}

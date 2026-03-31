@@ -26,6 +26,7 @@ graph TD
     SupervisorAgent -->|policy_agent| PolicyAgent[Policy Agent]
     SupervisorAgent -->|abnormal data quality| IngestionAgent
     SupervisorAgent -->|poor synthetic fidelity| BalanceAgent
+    SupervisorAgent -->|retry budget exhausted| Complete
     PolicyAgent -->|strategy_agent| StrategyAgent[Strategy Agent]
     PolicyAgent -->|complete| Complete
 
@@ -127,7 +128,7 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 
 **Role**: `SupervisorAgent`
 
-**Objective**: route the workflow based on model quality, dataset health, and synthetic-data fidelity. Send abnormal data back for correction before policy review.
+**Objective**: score cross-stage workflow health, enforce a workflow-wide retry budget, identify likely root cause, and route to correction, policy review, or termination.
 
 **Tools**
 - none directly
@@ -135,10 +136,30 @@ At runtime, the console now prints the same `Role` and `Objective` strings that 
 **Consumes**
 - training pass/fail state
 - synthetic JSD
+- ingestion quality signals
+- prior evaluation metrics when available
+- workflow retry history
 
 **Routing**
-- `balance_agent` when synthetic JSD exceeds `MIN_JS_DIVERGENCE_ACCEPT`
-- `policy_agent`
+- `ingestion_agent` when composite data-health signals indicate ingestion or labeling is the root issue
+- `balance_agent` when synthetic fidelity or model quality is the dominant issue
+- `policy_agent` when combined workflow health is acceptable for review
+- `complete` when the workflow-wide retry budget is exhausted and health remains poor
+
+**Health scoring**
+- `data_health` combines label noise, ingestion gaps, relabel recommendations, ambiguous-label rate, and ingestion retry pressure
+- `synthesis_health` combines synthetic JSD, CTGAN success/freshness, and balancing retry pressure
+- `model_health` combines base F1, non-fraud F1, robustness score, and robustness gain when available
+- `combined_health` is a weighted composite of data, synthesis, and model health used for routing
+
+**Retry arbitration**
+- the supervisor computes a workflow-level retry budget across `ingestion_agent`, `balance_agent`, `strategy_agent`, and `evaluation_agent`
+- if cumulative retries exceed `WORKFLOW_RETRY_BUDGET`, the supervisor can terminate the workflow even when no single agent has exhausted its local retries
+
+**Root-cause routing**
+- routes back to `ingestion_agent` for label-noise, relabel, or ingestion-gap driven failures
+- routes back to `balance_agent` for CTGAN/JSD failures or broader model-quality issues that likely originate upstream of policy review
+- routes to `policy_agent` only when risk is acceptable at the workflow level
 
 ### 5. Policy Agent
 

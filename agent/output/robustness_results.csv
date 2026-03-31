@@ -1,4 +1,0 @@
-Dataset,Clean Accuracy,FGSM Accuracy,PGD Accuracy,Robustness Score,FGSM Perturbation,PGD Perturbation
-Original (Imbalanced),1.0,0.9991,0.9991,0.0009,6.1417,6.1417
-Standard CTGAN,1.0,0.9974,0.9974,0.0026,6.1221,6.1221
-Adv-CTGAN (Custom),1.0,0.9974,0.9974,0.0026,6.1221,6.1221
