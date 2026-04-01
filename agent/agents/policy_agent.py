@@ -24,7 +24,8 @@ def policy_agent(state: dict) -> dict:
     kb = state["knowledge_base"]
     supervisor_health = state.get("supervisor_health", {})
     supervisor_decision = state.get("supervisor_decision", "proceed")
-    eval_metrics = state.get("eval_metrics", {})
+    eval_metrics = state.get("eval_metrics") or {}
+    simulation_passed = state.get("simulation_passed")
     l4_count = state.get("l4_count", 0)
     current_model = state.get("current_model")
 
@@ -69,6 +70,7 @@ def policy_agent(state: dict) -> dict:
     should_retrain = False
     should_rebalance = False
     should_skip = False
+    should_validate_existing = False
     reasons = []
 
     # If supervisor escalated, consider rebalancing (L4 loop)
@@ -87,6 +89,9 @@ def policy_agent(state: dict) -> dict:
     elif last_known_f1 < F1_THRESHOLD:
         should_retrain = True
         reasons.append(f"last_known_f1={last_known_f1:.4f}<{F1_THRESHOLD}")
+    elif eval_metrics.get("f1") is None or simulation_passed is None:
+        should_validate_existing = True
+        reasons.append("validation_required_for_current_run")
     else:
         should_skip = True
         reasons.append("model_meets_thresholds")
@@ -95,6 +100,7 @@ def policy_agent(state: dict) -> dict:
         "should_retrain": should_retrain,
         "should_rebalance": should_rebalance,
         "should_skip": should_skip,
+        "should_validate_existing": should_validate_existing,
         "reasons": reasons,
         "supervisor_health": combined_health,
         "current_f1": last_known_f1,
@@ -112,8 +118,10 @@ def policy_agent(state: dict) -> dict:
     return {
         **state,
         "policy_decision": decision,
+        "current_model": current_model,
         "should_retrain": should_retrain,
         "should_rebalance": should_rebalance,
         "should_skip": should_skip,
+        "should_validate_existing": should_validate_existing,
         "l4_count": new_l4_count,
     }

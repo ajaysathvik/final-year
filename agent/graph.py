@@ -1,17 +1,21 @@
 """
 LangGraph Orchestration — MAPE-K Flow
-Matches Agentic_Architecture.drawio exactly:
 
+Primary path:
   Ingestion → Drift → Balance → Supervisor → Policy → Strategy
-            → Training → Evaluation → Simulation → Deployment
-            → Knowledge → END
+            → Training → Strategy → Evaluation
+            → Knowledge → Simulation → Deployment → END
+
+Strategy is the central adaptation hub. It routes to training when a
+candidate must be built or rebuilt, and to evaluation when a candidate or
+current model is ready to be assessed.
 
 Feedback loops:
   L1: Evaluation → Balance   (data correction & rebalancing)
   L2: Evaluation → Strategy  (strategy refinement)
   L3: Training  → Training   (iterative retraining self-loop)
   L4: Supervisor ↔ Policy    (governance loop)
-  L5: Evaluation → KB        (simulated validation logging)
+  L5: Evaluation → KB        (evaluation handoff logging)
 
 Knowledge Base is the central hub connected to all agents.
 """
@@ -42,7 +46,6 @@ from config import (
     MAX_L2_ITERATIONS,
     MAX_L3_ITERATIONS,
     MAX_L4_ITERATIONS,
-    MAX_L5_ITERATIONS,
     F1_THRESHOLD,
 )
 from state import PipelineState
@@ -112,7 +115,7 @@ def ingest_node(state: dict) -> dict:
             scraped_df = pd.concat(dfs, ignore_index=True)
             print(f"  📊 Total scraped data available: {len(scraped_df)} rows")
 
-    # Initialize Knowledge Base (preserve existing if looping)
+    # Initialize Knowledge Base
     kb = state.get("knowledge_base")
     if kb is None:
         kb = KnowledgeBase()
@@ -127,15 +130,17 @@ def ingest_node(state: dict) -> dict:
         "target_col": TARGET_COL,
 
         "current_model": None,
+        "candidate_needs_evaluation": False,
         "knowledge_base": kb,
         "knowledge_log": [],
+        "knowledge_stage": "final",
         # Initialize all feedback-loop counters
         "l1_count": 0,
         "l2_count": 0,
         "l3_count": 0,
         "l4_count": 0,
         "l5_count": 0,
-        "kb_loop_count": 0,   # KB→Drift closed-loop re-cycle counter
+        "kb_loop_count": 0,
     }
 
 
@@ -161,22 +166,40 @@ def route_after_training(state: dict) -> str:
     """
     L3 feedback loop: Training → Training (self-loop).
     If training F1 is too low and we haven't hit the max, retrain.
+    Otherwise return to Strategy so Strategy remains the adaptation hub.
     """
     metrics = state.get("training_metrics", {})
     train_f1 = metrics.get("train_f1", 0)
     l3_count = state.get("l3_count", 0)
 
     if train_f1 < F1_THRESHOLD and l3_count < MAX_L3_ITERATIONS:
-        print(f"  🔄 L3 loop: Train F1={train_f1} < {F1_THRESHOLD} → Retrain (iteration {l3_count + 1})")
+        print(f"  🔄 L3 loop: Train-set F1={train_f1} < {F1_THRESHOLD} → Retrain (iteration {l3_count + 1})")
         return "training_agent"  # self-loop
-    return "evaluation_agent"
+    return "strategy_agent"
+
+
+def route_after_strategy(state: dict) -> str:
+    """
+    Strategy is the hub for adaptation decisions after policy, training,
+    and evaluation feedback.
+    """
+    decision = state.get("strategy_decision", "training")
+
+    if decision == "training":
+        print("  ▶️  Strategy: route to Training")
+        return "training_agent"
+    if decision == "evaluation":
+        print("  ▶️  Strategy: route to Evaluation")
+        return "evaluation_agent"
+    print(f"  ⚠️  Unknown strategy decision '{decision}', defaulting to Training")
+    return "training_agent"
 
 
 def route_after_evaluation(state: dict) -> str:
     """
     L1: Evaluation → Balance (data correction & rebalancing)
     L2: Evaluation → Strategy (strategy refinement)
-    Otherwise: proceed to Simulation.
+    Otherwise: log the evaluation handoff in KB, then continue to Simulation.
     """
     needs_rebalance = state.get("needs_rebalance", False)
     needs_strategy = state.get("needs_strategy_refinement", False)
@@ -193,16 +216,20 @@ def route_after_evaluation(state: dict) -> str:
         print(f"  🔄 L2 loop: Evaluation → Strategy (iteration {l2_count + 1})")
         return "strategy_agent"
 
-    return "simulation_agent"
+    return "knowledge_agent"
 
 
 def route_after_policy(state: dict) -> str:
     """
     Route after Policy Agent decision.
-    If policy says skip → go straight to knowledge/end.
-    If rebalance → loop back to balance (L4 re-entry).
+    If policy requests validation of the existing model, go to Evaluation.
+    If policy says skip after validation → go straight to Knowledge.
+    If rebalance → loop back to Balance (L4 re-entry).
     Otherwise → proceed to Strategy.
     """
+    if state.get("should_validate_existing", False):
+        print("  ✅ Policy: validate current model before deciding to skip")
+        return "evaluation_agent"
     if state.get("should_skip", False):
         print("  ⏭️  Policy: skip update → Knowledge Agent")
         return "knowledge_agent"
@@ -216,26 +243,15 @@ def route_after_policy(state: dict) -> str:
 
 def route_after_knowledge(state: dict) -> str:
     """
-    L5 closed loop: KB → Ingestion (Continuous Loop).
-    If we have scraped data, loop back to ingestion to process it.
-    If the knowledge base dictates a drift check, loop back to drift detection.
+    Route forward after KB logging.
+    Post-evaluation KB logging continues to Simulation.
+    Final KB logging ends the pipeline.
     """
-    kb = state.get("knowledge_base")
-    l5_count = state.get("l5_count", 0)
-    
-    if l5_count < MAX_L5_ITERATIONS:
-        scraped_dir = _AGENT_ROOT / "output" / "scraped_data"
-        has_scraped = scraped_dir.exists() and any(scraped_dir.glob("*.csv"))
-        
-        if has_scraped:
-            print(f"  🔄 L5 Continuous Loop: Found scraped data, looping to Ingestion (cycle {l5_count + 1})")
-            return "ingest_node"
-            
-        if kb and kb.should_retrigger_drift():
-            print(f"  🔄 L5 KB loop: re-triggering Drift Detection (cycle {l5_count + 1})")
-            return "drift_agent"
-            
-    print("  🛑 L5 loop complete or max iterations reached. Ending pipeline.")
+    if state.get("knowledge_stage") == "post_evaluation_logged":
+        print("  ▶️  Knowledge: continue to Simulation")
+        return "simulation_agent"
+
+    print("  🛑 Knowledge logging complete. Ending pipeline.")
     return END
 
 
@@ -246,9 +262,10 @@ def build_graph() -> StateGraph:
     Construct the MAPE-K LangGraph matching Agentic_Architecture.drawio:
 
     Ingestion → Drift Detection → Balance → Supervisor → Policy → Strategy
-              → Training → Evaluation → Simulation → Deployment → Knowledge → END
+              → Training → Strategy → Evaluation
+              → Knowledge → Simulation → Deployment → END
 
-    With feedback loops L1–L5 as conditional edges.
+    With feedback loops L1–L4 and an L5 knowledge handoff after evaluation.
     """
     graph = StateGraph(PipelineState)
 
@@ -281,51 +298,57 @@ def build_graph() -> StateGraph:
         },
     )
 
-    # Policy → Strategy | Balance(L4) | Knowledge(skip)
+    # Policy → Strategy | Evaluation(validate current model) | Balance(L4) | Knowledge(skip)
     graph.add_conditional_edges(
         "policy_agent",
         route_after_policy,
         {
             "strategy_agent": "strategy_agent",
+            "evaluation_agent": "evaluation_agent",
             "balance_agent": "balance_agent",
             "knowledge_agent": "knowledge_agent",
         },
     )
 
-    # Strategy → Training
-    graph.add_edge("strategy_agent", "training_agent")
+    # Strategy → Training | Evaluation
+    graph.add_conditional_edges(
+        "strategy_agent",
+        route_after_strategy,
+        {
+            "training_agent": "training_agent",
+            "evaluation_agent": "evaluation_agent",
+        },
+    )
 
-    # Training → Evaluation | Training(L3 self-loop)
+    # Training → Strategy | Training(L3 self-loop)
     graph.add_conditional_edges(
         "training_agent",
         route_after_training,
         {
-            "evaluation_agent": "evaluation_agent",
+            "strategy_agent": "strategy_agent",
             "training_agent": "training_agent",      # L3 self-loop
         },
     )
 
-    # Evaluation → Simulation | Balance(L1) | Strategy(L2)
+    # Evaluation → Knowledge(L5) | Balance(L1) | Strategy(L2)
     graph.add_conditional_edges(
         "evaluation_agent",
         route_after_evaluation,
         {
-            "simulation_agent": "simulation_agent",
+            "knowledge_agent": "knowledge_agent",
             "balance_agent": "balance_agent",        # L1 feedback
             "strategy_agent": "strategy_agent",      # L2 feedback
         },
     )
 
-    # Simulation → Deployment → Knowledge → END (or KB→Drift closed loop)
+    # Evaluation KB handoff → Simulation → Deployment → END
     graph.add_edge("simulation_agent", "deployment_agent")
-    graph.add_edge("deployment_agent", "knowledge_agent")
+    graph.add_edge("deployment_agent", END)
 
-    # ── KB→Drift/Ingestion closed loop (L5 / KB bidirectional) ──
-    # If scraped data exists or KB requests, trigger a new cycle.
     graph.add_conditional_edges(
         "knowledge_agent",
         route_after_knowledge,
-        {"drift_agent": "drift_agent", "ingest_node": "ingest_node", END: END},
+        {"simulation_agent": "simulation_agent", END: END},
     )
 
     return graph

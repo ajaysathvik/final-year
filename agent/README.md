@@ -9,7 +9,7 @@ A **drift-aware, adversarially trained, policy-governed, multi-agent fraud detec
 | **Monitor** | `drift_agent` — PSI/KS feature drift        |
 | **Analyze** | `evaluation_agent` — F1, precision, recall, ROC-AUC, FPR |
 | **Plan**    | `policy_agent` → `strategy_agent`            |
-| **Execute** | `augmentation_agent` (CTGAN) → `adversarial_agent` (noise/boundary/evasion) → `training_agent` (XGBoost/RF) → `simulation_agent` |
+| **Execute** | `augmentation_agent` (CTGAN) → `training_agent` (XGBoost/RF + integrated adversarial augmentation) → `simulation_agent` |
 | **Knowledge** | `knowledge_agent` — JSONL logs             |
 
 ## LangGraph Flow
@@ -17,7 +17,6 @@ A **drift-aware, adversarially trained, policy-governed, multi-agent fraud detec
 ```
 START → drift_agent → evaluation_agent → policy_agent → strategy_agent
   → [if CTGAN] augmentation_agent
-  → [if adversarial] adversarial_agent
   → training_agent → evaluation_agent → simulation_agent
   → policy_agent (promote/reject) → knowledge_agent → END
 ```
@@ -87,8 +86,7 @@ agent/
     ├── policy_agent.py         # Plan: retrain/promote decisions
     ├── strategy_agent.py       # Plan: adaptation plan builder
     ├── augmentation_agent.py   # Execute: CTGAN synthetic data
-    ├── adversarial_agent.py    # Execute: noise/boundary/evasion attacks
-    ├── training_agent.py       # Execute: XGBoost/RandomForest
+    ├── training_agent.py       # Execute: XGBoost/RandomForest + adversarial augmentation
     ├── simulation_agent.py     # Execute: robustness stress testing
     └── knowledge_agent.py      # Knowledge: JSONL logging + model promotion
 ```
@@ -101,7 +99,7 @@ The training data combines three sources:
 training_data = clean_data + ctgan_data + adversarial_data
 ```
 
-The adversarial agent generates samples using:
+The training agent generates adversarial samples using:
 1. **Noise perturbation** — Gaussian noise on all features
 2. **Boundary attack** — interpolation between fraud and nearest non-fraud
 3. **Evasion mutation** — selective feature mutation (~33% of features)

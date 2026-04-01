@@ -6,5 +6,7 @@
   "n_non_fraud": 3357,
   "n_estimators": 200,
   "l3_count": 0,
-  "timestamp": "20260331_211345"
+  "used_adversarial_samples": false,
+  "adversarial_sample_count": 0,
+  "timestamp": "20260401_114758"
 }

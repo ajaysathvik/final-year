@@ -46,7 +46,7 @@ def evaluation_agent(state: dict) -> dict:
     Logs results to Knowledge Base (L5).
     """
     print("\n" + "=" * 60)
-    print(" [ EVALUATION AGENT ] Computing model metrics...")
+    print(" [ EVALUATION AGENT ] Computing test-set metrics...")
     print("=" * 60)
 
     kb = state["knowledge_base"]
@@ -75,7 +75,7 @@ def evaluation_agent(state: dict) -> dict:
     else:
         metrics = _compute_metrics(model, X_test, y_test)
 
-    print(f"  ✅ Metrics: {metrics}")
+    print(f"  ✅ Test-set metrics: {metrics}")
 
     # ── L1 trigger: poor recall / high FPR → needs rebalancing ──
     needs_rebalance = (
@@ -103,8 +103,10 @@ def evaluation_agent(state: dict) -> dict:
     return {
         **state,
         "eval_metrics": metrics,
+        "candidate_needs_evaluation": False,
         "needs_rebalance": needs_rebalance,
         "needs_strategy_refinement": needs_strategy,
         "l1_count": l1_count + (1 if needs_rebalance else 0),
         "l2_count": l2_count + (1 if needs_strategy else 0),
+        "knowledge_stage": "post_evaluation",
     }

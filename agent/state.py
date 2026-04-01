@@ -34,9 +34,12 @@ class PipelineState(TypedDict, total=False):
     should_retrain: bool
     should_rebalance: bool
     should_skip: bool
+    should_validate_existing: bool
 
     # ── Strategy Agent ─────────────────────────────────────────
     strategy_plan: dict[str, Any]     # model selection, hyperparams, adv strategy
+    strategy_decision: str            # "training" | "evaluation"
+    candidate_needs_evaluation: bool
 
     # ── Training Agent ─────────────────────────────────────────
     current_model: Any
@@ -44,6 +47,9 @@ class PipelineState(TypedDict, total=False):
     candidate_model: Any
     candidate_model_path: str
     training_metrics: dict[str, float]
+    adversarial_samples: pd.DataFrame
+    adversarial_report: dict[str, Any]
+    adversarial_trained: bool
 
     # ── Evaluation Agent ───────────────────────────────────────
     eval_metrics: dict[str, float]    # F1, precision, recall, roc_auc, fpr
@@ -72,3 +78,4 @@ class PipelineState(TypedDict, total=False):
     # ── Knowledge Base ref (in-memory, not serialized) ─────────
     knowledge_base: Any
     knowledge_log: list[dict[str, Any]]
+    knowledge_stage: str

@@ -1,20 +1,18 @@
 """
 Knowledge Agent — Knowledge layer of MAPE-K.
 L5: Logs ALL events from every phase to the knowledge base (comprehensive).
-Final pipeline node — also decides whether to trigger KB→Drift closed loop.
+Used both after evaluation and as the final pipeline node.
 """
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
-
-from config import KNOWLEDGE_LOG_PATH
 
 
 def knowledge_agent(state: dict) -> dict:
     """
-    L5 — Comprehensive logging of every pipeline phase to the knowledge layer.
-    Increments kb_loop_count so graph.py route_after_knowledge can gate re-cycles.
+    L5 logging node.
+    After evaluation it records the KB handoff and forwards to simulation.
+    After deployment it records the final run summary.
     """
     print("\n" + "=" * 60)
     print(" [ KNOWLEDGE AGENT ] L5 — logging full run to knowledge layer...")
@@ -23,9 +21,38 @@ def knowledge_agent(state: dict) -> dict:
     kb = state.get("knowledge_base")
     timestamp = datetime.now(timezone.utc).isoformat()
     l5_count = state.get("l5_count", 0)
+    knowledge_stage = state.get("knowledge_stage", "final")
 
-    # Pre-evaluate KB trigger to accurately log full_run_summary
-    should_loop = kb.should_retrigger_drift() if kb else False
+    if knowledge_stage == "post_evaluation":
+        entry = {
+            "timestamp": timestamp,
+            "event_type": "post_evaluation_summary",
+            "l5_cycle_count": l5_count,
+            "eval_metrics": _sanitize(state.get("eval_metrics")),
+            "needs_rebalance": state.get("needs_rebalance"),
+            "needs_strategy_refinement": state.get("needs_strategy_refinement"),
+            "l1_count": state.get("l1_count", 0),
+            "l2_count": state.get("l2_count", 0),
+            "l3_count": state.get("l3_count", 0),
+            "l4_count": state.get("l4_count", 0),
+            "l5_count": l5_count + 1,
+        }
+
+        if kb:
+            kb.log_event("knowledge", "post_evaluation_summary", entry)
+
+        print("  ✅ Logged post-evaluation handoff to knowledge base")
+
+        log_list = list(state.get("knowledge_log", []))
+        log_list.append(entry)
+
+        return {
+            **state,
+            "knowledge_log": log_list,
+            "knowledge_stage": "post_evaluation_logged",
+            "l5_count": l5_count + 1,
+            "kb_loop_count": state.get("kb_loop_count", 0),
+        }
 
     # ── Build comprehensive full-run summary (L5 logs everything) ──
     entry = {
@@ -68,12 +95,11 @@ def knowledge_agent(state: dict) -> dict:
         "l5_count": l5_count,
     }
 
-    # Write to JSONL
-    with open(KNOWLEDGE_LOG_PATH, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=True, default=str) + "\n")
+    if kb:
+        kb.log_event("knowledge", "full_run_summary", entry)
 
-    print(f"  ✅ Logged full_run_summary to {KNOWLEDGE_LOG_PATH}")
-    print(f"  Feedback loops — L1={entry['l1_count']} L2={entry['l2_count']} "
+    print("  ✅ Logged full_run_summary to knowledge base")
+    print(f"  Feedback loops - L1={entry['l1_count']} L2={entry['l2_count']} "
           f"L3={entry['l3_count']} L4={entry['l4_count']} L5={entry['l5_count']}")
 
     if state.get("promoted"):
@@ -81,15 +107,7 @@ def knowledge_agent(state: dict) -> dict:
     else:
         print("  ℹ️  Model not promoted.")
 
-    # Log to KB in-memory store as well
-    if kb:
-        kb.log_event("knowledge", "full_run_summary", entry)
-
-    # ── KB→Drift decision ─────────────────────────────────────
-    if should_loop:
-        print(f"  🔄 KB→Drift closed loop triggered (L5 iteration {l5_count + 1})")
-    else:
-        print("  ✅ KB: no re-trigger needed — pipeline complete.")
+    print("  ✅ KB: pipeline complete.")
 
     log_list = list(state.get("knowledge_log", []))
     log_list.append(entry)
@@ -97,7 +115,8 @@ def knowledge_agent(state: dict) -> dict:
     return {
         **state,
         "knowledge_log": log_list,
-        "l5_count": l5_count + (1 if should_loop else 0),
+        "knowledge_stage": "final",
+        "l5_count": l5_count,
         "kb_loop_count": state.get("kb_loop_count", 0), # retain backward compat
     }
 

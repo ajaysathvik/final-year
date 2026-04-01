@@ -27,6 +27,7 @@ class KnowledgeBase:
             "supervisor_records": [],
             "balance_records": [],
             "deployment_records": [],
+            "knowledge_records": [],
         }
         self._log_path = KNOWLEDGE_LOG_PATH
         self._replay_log()  # load history from previous runs
@@ -43,6 +44,7 @@ class KnowledgeBase:
             "supervisor": "supervisor_records",
             "balance": "balance_records",
             "deployment": "deployment_records",
+            "knowledge": "knowledge_records",
         }
         if not self._log_path.exists():
             return
@@ -54,7 +56,21 @@ class KnowledgeBase:
                         continue
                     try:
                         entry = json.loads(line)
-                        cat = category_map.get(entry.get("agent", ""), "drift_history")
+                        agent = entry.get("agent")
+                        if not agent and entry.get("event_type") == "full_run_summary":
+                            agent = "knowledge"
+                            entry = {
+                                "timestamp": entry.get("timestamp"),
+                                "agent": "knowledge",
+                                "event_type": entry.get("event_type"),
+                                "data": {
+                                    k: v for k, v in entry.items()
+                                    if k not in {"timestamp", "agent", "event_type"}
+                                },
+                            }
+                        if not agent:
+                            continue
+                        cat = category_map.get(agent, "drift_history")
                         self.store[cat].append(entry)
                     except json.JSONDecodeError:
                         continue
@@ -86,6 +102,7 @@ class KnowledgeBase:
             "supervisor": "supervisor_records",
             "balance": "balance_records",
             "deployment": "deployment_records",
+            "knowledge": "knowledge_records",
         }
         cat = category_map.get(agent, "drift_history")
         self.store[cat].append(entry)

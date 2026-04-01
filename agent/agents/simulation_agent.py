@@ -23,7 +23,7 @@ def simulation_agent(state: dict) -> dict:
     print("=" * 60)
 
     kb = state.get("knowledge_base")
-    model = state.get("candidate_model")
+    model = state.get("candidate_model") or state.get("current_model")
     if model is None:
         print("  ❌ No candidate model to simulate.")
         return {**state, "simulation_results": {"error": "no_model"}, "simulation_passed": False}
