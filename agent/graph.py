@@ -42,8 +42,8 @@ from config import (
     MAX_L2_ITERATIONS,
     MAX_L3_ITERATIONS,
     MAX_L4_ITERATIONS,
+    MAX_L5_ITERATIONS,
     F1_THRESHOLD,
-    MAX_KB_LOOPS,
 )
 from state import PipelineState
 from knowledge_base import KnowledgeBase
@@ -62,8 +62,9 @@ from agents.knowledge_agent import knowledge_agent
 # ── Data Ingestion (first graph node) ──────────────────────────────
 
 def ingest_node(state: dict) -> dict:
-    """Load CSV, select features, split train/test, initialize KB."""
+    """Load CSV, select features, split train/test, ingest scraped data, initialize KB."""
     csv_path = Path(state.get("csv_path") or DATASET_PATH)
+
     print(f"\n📂 Loading dataset: {csv_path}")
     df = pd.read_csv(csv_path)
     print(f"  Rows: {len(df)}, Columns: {len(df.columns)}")
@@ -91,16 +92,40 @@ def ingest_node(state: dict) -> dict:
     print(f"  Fraud: {fraud_count}, Non-fraud: {len(df) - fraud_count}")
     print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
 
-    # Initialize Knowledge Base
-    kb = KnowledgeBase()
+    # Handle scraped data ingestion
+    scraped_dir = _AGENT_ROOT / "output" / "scraped_data"
+    scraped_df = None
+    if scraped_dir.exists() and any(scraped_dir.iterdir()):
+        print(f"  📥 Found scraped data in {scraped_dir}")
+        dfs = []
+        for file_path in scraped_dir.glob("*.csv"):
+            try:
+                sdf = pd.read_csv(file_path)
+                sdf = sdf[sdf[TARGET_COL].isin([0, 1, -1])].copy()
+                sdf[TARGET_COL] = sdf[TARGET_COL].map({1: 1, 0: 0, -1: 0})
+                sdf[available_cols] = sdf[available_cols].fillna(0).astype(float)
+                dfs.append(sdf)
+                print(f"    - Loaded {file_path.name} ({len(sdf)} rows)")
+            except Exception as e:
+                print(f"    - Failed to load {file_path.name}: {e}")
+        if dfs:
+            scraped_df = pd.concat(dfs, ignore_index=True)
+            print(f"  📊 Total scraped data available: {len(scraped_df)} rows")
+
+    # Initialize Knowledge Base (preserve existing if looping)
+    kb = state.get("knowledge_base")
+    if kb is None:
+        kb = KnowledgeBase()
 
     return {
         **state,
         "raw_df": df,
         "train_df": train_df,
         "test_df": test_df,
+        "scraped_df": scraped_df,
         "feature_cols": available_cols,
         "target_col": TARGET_COL,
+
         "current_model": None,
         "knowledge_base": kb,
         "knowledge_log": [],
@@ -191,17 +216,28 @@ def route_after_policy(state: dict) -> str:
 
 def route_after_knowledge(state: dict) -> str:
     """
-    L5 closed loop: KB → Drift Detection.
-    If the knowledge base determines a new cycle is needed (e.g., poor robustness
-    or degrading F1), we loop back to drift detection to re-trigger the whole process.
+    L5 closed loop: KB → Ingestion (Continuous Loop).
+    If we have scraped data, loop back to ingestion to process it.
+    If the knowledge base dictates a drift check, loop back to drift detection.
     """
     kb = state.get("knowledge_base")
-    kb_loop_count = state.get("kb_loop_count", 0)
+    l5_count = state.get("l5_count", 0)
     
-    if kb and kb_loop_count < MAX_KB_LOOPS and kb.should_retrigger_drift():
-        print(f"  🔄 L5 KB loop: re-triggering Drift Detection (cycle {kb_loop_count + 1})")
-        return "drift_agent"
+    if l5_count < MAX_L5_ITERATIONS:
+        scraped_dir = _AGENT_ROOT / "output" / "scraped_data"
+        has_scraped = scraped_dir.exists() and any(scraped_dir.glob("*.csv"))
+        
+        if has_scraped:
+            print(f"  🔄 L5 Continuous Loop: Found scraped data, looping to Ingestion (cycle {l5_count + 1})")
+            return "ingest_node"
+            
+        if kb and kb.should_retrigger_drift():
+            print(f"  🔄 L5 KB loop: re-triggering Drift Detection (cycle {l5_count + 1})")
+            return "drift_agent"
+            
+    print("  🛑 L5 loop complete or max iterations reached. Ending pipeline.")
     return END
+
 
 # ── Build the LangGraph ───────────────────────────────────────────
 
@@ -284,12 +320,12 @@ def build_graph() -> StateGraph:
     graph.add_edge("simulation_agent", "deployment_agent")
     graph.add_edge("deployment_agent", "knowledge_agent")
 
-    # ── KB→Drift closed loop (L5 / KB bidirectional) ─────────────
-    # After knowledge agent logs everything, check if KB warrants a new cycle.
+    # ── KB→Drift/Ingestion closed loop (L5 / KB bidirectional) ──
+    # If scraped data exists or KB requests, trigger a new cycle.
     graph.add_conditional_edges(
         "knowledge_agent",
         route_after_knowledge,
-        {"drift_agent": "drift_agent", END: END},
+        {"drift_agent": "drift_agent", "ingest_node": "ingest_node", END: END},
     )
 
     return graph

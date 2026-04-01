@@ -22,13 +22,16 @@ def knowledge_agent(state: dict) -> dict:
 
     kb = state.get("knowledge_base")
     timestamp = datetime.now(timezone.utc).isoformat()
-    kb_loop_count = state.get("kb_loop_count", 0)
+    l5_count = state.get("l5_count", 0)
+
+    # Pre-evaluate KB trigger to accurately log full_run_summary
+    should_loop = kb.should_retrigger_drift() if kb else False
 
     # ── Build comprehensive full-run summary (L5 logs everything) ──
     entry = {
         "timestamp": timestamp,
         "event_type": "full_run_summary",
-        "kb_loop_cycle": kb_loop_count,
+        "l5_cycle_count": l5_count,
         # ── Monitor ─────────────────────────────────────────────
         "drift_detected": state.get("drift_detected"),
         "drift_features": [
@@ -62,8 +65,7 @@ def knowledge_agent(state: dict) -> dict:
         "l2_count": state.get("l2_count", 0),
         "l3_count": state.get("l3_count", 0),
         "l4_count": state.get("l4_count", 0),
-        "l5_count": state.get("l5_count", 0),
-        "kb_loop_count": kb_loop_count,
+        "l5_count": l5_count,
     }
 
     # Write to JSONL
@@ -73,7 +75,6 @@ def knowledge_agent(state: dict) -> dict:
     print(f"  ✅ Logged full_run_summary to {KNOWLEDGE_LOG_PATH}")
     print(f"  Feedback loops — L1={entry['l1_count']} L2={entry['l2_count']} "
           f"L3={entry['l3_count']} L4={entry['l4_count']} L5={entry['l5_count']}")
-    print(f"  KB loop cycle: {kb_loop_count}")
 
     if state.get("promoted"):
         print(f"  🏆 Model promoted: {state.get('promoted_model_path')}")
@@ -85,14 +86,10 @@ def knowledge_agent(state: dict) -> dict:
         kb.log_event("knowledge", "full_run_summary", entry)
 
     # ── KB→Drift decision ─────────────────────────────────────
-    if kb:
-        should_loop = kb.should_retrigger_drift()
-        if should_loop:
-            print(f"  🔄 KB→Drift closed loop triggered (cycle {kb_loop_count + 1})")
-        else:
-            print("  ✅ KB: no re-trigger needed — pipeline complete.")
+    if should_loop:
+        print(f"  🔄 KB→Drift closed loop triggered (L5 iteration {l5_count + 1})")
     else:
-        should_loop = False
+        print("  ✅ KB: no re-trigger needed — pipeline complete.")
 
     log_list = list(state.get("knowledge_log", []))
     log_list.append(entry)
@@ -100,7 +97,8 @@ def knowledge_agent(state: dict) -> dict:
     return {
         **state,
         "knowledge_log": log_list,
-        "kb_loop_count": kb_loop_count + 1,  # increment so route_after_knowledge can gate
+        "l5_count": l5_count + (1 if should_loop else 0),
+        "kb_loop_count": state.get("kb_loop_count", 0), # retain backward compat
     }
 
 

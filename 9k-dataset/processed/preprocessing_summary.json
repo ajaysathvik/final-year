@@ -1,44 +1,32 @@
 {
-  "input_file": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/annotations_20260321_145548.csv",
-  "output_file": "/home/norm/Projects/Reddit-dataset/9k-dataset/data.csv",
+  "input_file": "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/annotations_20260401_115026.csv",
+  "output_file": "/home/norm/Projects/Reddit-dataset/9k-dataset/processed/data_preprocessed.csv",
   "raw_shape": [
-    9628,
-    87
+    100,
+    41
   ],
   "processed_shape": [
-    9628,
-    89
+    100,
+    43
   ],
   "dropped_trailing_columns": 0,
-  "keep_post_id": true,
+  "keep_post_id": false,
   "is_fraud_distribution": {
-    "-1": 3902,
-    "0": 294,
-    "1": 5432
+    "-1": 39,
+    "0": 2,
+    "1": 59
   },
   "fraud_type_top_10": {
-    "none": 4199,
-    "transaction": 3717,
-    "commerce": 796,
-    "social_engineering": 767,
-    "meta": 45,
-    "credential": 34,
-    "advanced": 22,
-    "pig_butchering": 11,
-    "task": 5,
-    "identity_theft": 4
+    "transaction": 43,
+    "none": 41,
+    "commerce": 12,
+    "social_engineering": 3,
+    "meta": 1
   },
   "currencies_top_10": {
-    "unknown": 7610,
-    "USD": 1168,
-    "INR": 585,
-    "EUR": 78,
-    "GBP": 45,
-    "USDT": 27,
-    "CAD": 24,
-    "BTC": 18,
-    "ETH": 12,
-    "SOL": 9
+    "unknown": 83,
+    "USD": 11,
+    "INR": 6
   },
-  "parsed_amount_count": 2513
+  "parsed_amount_count": 23
 }

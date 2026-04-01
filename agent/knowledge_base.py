@@ -29,6 +29,37 @@ class KnowledgeBase:
             "deployment_records": [],
         }
         self._log_path = KNOWLEDGE_LOG_PATH
+        self._replay_log()  # load history from previous runs
+
+    def _replay_log(self) -> None:
+        """Replay the persisted JSONL log into the in-memory store on startup."""
+        category_map = {
+            "drift": "drift_history",
+            "evaluation": "evaluation_history",
+            "policy": "policy_decisions",
+            "strategy": "strategy_plans",
+            "training": "training_records",
+            "simulation": "simulation_records",
+            "supervisor": "supervisor_records",
+            "balance": "balance_records",
+            "deployment": "deployment_records",
+        }
+        if not self._log_path.exists():
+            return
+        try:
+            with open(self._log_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry = json.loads(line)
+                        cat = category_map.get(entry.get("agent", ""), "drift_history")
+                        self.store[cat].append(entry)
+                    except json.JSONDecodeError:
+                        continue
+        except OSError:
+            pass
 
     def log_event(self, agent: str, event_type: str, data: dict[str, Any]) -> None:
         """Append an event to the JSONL log and in-memory store."""

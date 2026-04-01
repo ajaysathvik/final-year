@@ -549,7 +549,7 @@ if __name__ == "__main__":
     elif choice == "2":
         run_annotation()
     elif choice == "3":
-        run_annotation(limit=20)
+        run_annotation(limit=100)
     elif choice == "4":
         post_id = input("Enter Post ID: ").strip()
         posts_df = pd.read_csv(POSTS_FILE)

@@ -12,6 +12,7 @@ class PipelineState(TypedDict, total=False):
     raw_df: pd.DataFrame
     train_df: pd.DataFrame
     test_df: pd.DataFrame
+    scraped_df: pd.DataFrame          # new data from scraped_data folder
     feature_cols: list[str]
     target_col: str
 
@@ -64,9 +65,9 @@ class PipelineState(TypedDict, total=False):
     l1_count: int    # Eval → Balance (data correction & rebalancing)
     l2_count: int    # Eval → Strategy (strategy refinement)
     l3_count: int    # Training self-loop
-    l4_count: int    # Supervisor ↔ Policy
-    l5_count: int    # Eval → KB (simulated validation)
-    kb_loop_count: int  # KB → Drift closed-loop re-cycle counter
+    l4_count: int    # Supervisor ↔ Policy governance loop
+    l5_count: int    # KB → Drift closed loop (re-cycles)
+    kb_loop_count: int # Alias/duplicate of l5_count (retained for backward config compat)
 
     # ── Knowledge Base ref (in-memory, not serialized) ─────────
     knowledge_base: Any

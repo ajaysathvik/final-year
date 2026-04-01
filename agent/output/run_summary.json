@@ -7,40 +7,25 @@
   },
   "supervisor_decision": "proceed",
   "policy_decision": {
-    "should_retrain": true,
+    "should_retrain": false,
     "should_rebalance": false,
-    "should_skip": false,
+    "should_skip": true,
     "reasons": [
-      "no_existing_model"
+      "model_meets_thresholds"
     ],
     "supervisor_health": 1.0,
-    "current_f1": 0,
+    "current_f1": 0.9193,
     "l4_count": 0
   },
-  "eval_metrics": {
-    "f1": 0.8982,
-    "precision": 0.8877,
-    "recall": 0.9089,
-    "roc_auc": 0.9522,
-    "fpr": 0.149
-  },
-  "simulation_passed": true,
-  "deployment_decision": {
-    "promoted": true,
-    "reasons": [
-      "all_checks_passed"
-    ],
-    "simulation_passed": true,
-    "policy_retrain": true,
-    "candidate_path": "/home/norm/Projects/Reddit-dataset/agent/output/models/candidate_xgboost_20260331_131701.joblib",
-    "promoted_model_path": "/home/norm/Projects/Reddit-dataset/agent/output/models/promoted_model.joblib"
-  },
-  "promoted": true,
+  "eval_metrics": null,
+  "simulation_passed": null,
+  "deployment_decision": null,
+  "promoted": null,
   "feedback_loops": {
     "L1_eval_to_balance": 0,
     "L2_eval_to_strategy": 0,
     "L3_training_self_loop": 0,
     "L4_supervisor_policy": 0,
-    "L5_eval_to_kb": 1
+    "L5_eval_to_kb": 0
   }
 }

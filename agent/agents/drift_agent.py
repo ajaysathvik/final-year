@@ -45,15 +45,23 @@ def drift_agent(state: dict) -> dict:
     if prior:
         print(f"  ℹ️  Prior drift record found: {prior.get('timestamp', 'unknown')}")
 
-    split_idx = int(len(train_df) * 0.7)
-    ref = train_df.iloc[:split_idx]
-    cur = train_df.iloc[split_idx:]
+    scraped_df = state.get("scraped_df")
+
+    if scraped_df is not None and len(scraped_df) > 0:
+        print(f"  📥 Using scraped data ({len(scraped_df)} rows) for current distribution vs original ({len(train_df)}).")
+        ref = train_df
+        cur = scraped_df
+    else:
+        print("  ℹ️  No scraped data. Using 70/30 split of training data for drift check.")
+        split_idx = int(len(train_df) * 0.7)
+        ref = train_df.iloc[:split_idx]
+        cur = train_df.iloc[split_idx:]
 
     drift_report: dict = {}
     any_drift = False
 
     for col in feature_cols:
-        if col not in train_df.columns:
+        if col not in ref.columns or col not in cur.columns:
             continue
         ref_vals = ref[col].dropna().values.astype(float)
         cur_vals = cur[col].dropna().values.astype(float)

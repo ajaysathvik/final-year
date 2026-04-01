@@ -7,7 +7,7 @@ import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-INPUT_FILE = BASE_DIR / "data.csv"
+INPUT_FILE = "/home/norm/Projects/Reddit-dataset/9k-dataset/Data labeling/outputs/annotations_20260401_115026.csv"
 OUTPUT_DIR = BASE_DIR / "processed"
 OUTPUT_FILE = OUTPUT_DIR / "data_preprocessed.csv"
 SUMMARY_FILE = OUTPUT_DIR / "preprocessing_summary.json"

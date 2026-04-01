@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="agentic_arch" name="Agent Architecture">
-        <mxGraphModel dx="787" dy="647" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1600" background="#ffffff" math="0" shadow="0">
+        <mxGraphModel dx="894" dy="762" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1600" background="#ffffff" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -20,7 +20,7 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="N_KBB" value="&lt;b&gt;Knowledge Base&lt;/b&gt;&lt;br&gt;(Logs, Models, Policies, Drift History, Metrics)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#333333;fontFamily=Helvetica;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="440" width="280" height="60" as="geometry"/>
+                    <mxGeometry x="38" y="480" width="280" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="N_Ingest" value="&lt;b&gt;Ingestion&lt;/b&gt;&lt;br&gt;(Raw Data)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontFamily=Helvetica;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="430" y="178" width="140" height="60" as="geometry"/>

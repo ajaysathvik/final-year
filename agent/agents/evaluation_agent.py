@@ -59,7 +59,6 @@ def evaluation_agent(state: dict) -> dict:
 
     l1_count = state.get("l1_count", 0)
     l2_count = state.get("l2_count", 0)
-    l5_count = state.get("l5_count", 0)
 
     # ── KB context: compare against prior eval (KB→Eval communication) ──
     prior_eval = kb.get_latest("evaluation_history")
@@ -97,7 +96,6 @@ def evaluation_agent(state: dict) -> dict:
         **metrics,
         "l1_count": l1_count,
         "l2_count": l2_count,
-        "l5_count": l5_count,
         "needs_rebalance": needs_rebalance,
         "needs_strategy_refinement": needs_strategy,
     })
@@ -109,5 +107,4 @@ def evaluation_agent(state: dict) -> dict:
         "needs_strategy_refinement": needs_strategy,
         "l1_count": l1_count + (1 if needs_rebalance else 0),
         "l2_count": l2_count + (1 if needs_strategy else 0),
-        "l5_count": l5_count + 1,
     }

@@ -28,6 +28,20 @@ def policy_agent(state: dict) -> dict:
     l4_count = state.get("l4_count", 0)
     current_model = state.get("current_model")
 
+    # ── If no in-memory model, try to load the last promoted model from KB ──
+    if current_model is None:
+        import joblib
+        from pathlib import Path
+        latest_deploy = kb.get_latest("deployment_records")
+        if latest_deploy:
+            promoted_path = latest_deploy.get("data", {}).get("promoted_model_path", "")
+            if promoted_path and Path(promoted_path).exists():
+                try:
+                    current_model = joblib.load(promoted_path)
+                    print(f"  📦 Loaded previously promoted model from KB: {promoted_path}")
+                except Exception as e:
+                    print(f"  ⚠️  Could not load promoted model ({e}), treating as no model.")
+
     # ── KB context: read eval trend (KB→Policy communication) ────
     eval_history = kb.get_history("evaluation_history", limit=3)
     f1_trend = [e.get("data", {}).get("f1", None) for e in eval_history if e.get("data", {}).get("f1") is not None]
@@ -37,7 +51,19 @@ def policy_agent(state: dict) -> dict:
               f"({'⬇ degrading' if trend_degrading else '➡ stable/improving'})")
 
     combined_health = supervisor_health.get("combined_health", 0.5)
-    f1 = eval_metrics.get("f1", 0)
+
+    # ── Resolve best available F1 ────────────────────────────────
+    # eval_metrics is empty before evaluation runs on this cycle.
+    # Use it if present; otherwise fall back to the last train_f1 recorded in KB.
+    eval_f1 = eval_metrics.get("f1")
+    if eval_f1 is not None:
+        last_known_f1 = eval_f1
+        f1_source = "eval_metrics"
+    else:
+        latest_train = kb.get_latest("training_records")
+        last_known_f1 = latest_train.get("data", {}).get("train_f1", 0.0) if latest_train else 0.0
+        f1_source = "kb_training_records" if latest_train else "default_zero"
+    print(f"  📊 Last known F1 = {last_known_f1:.4f} (source: {f1_source})")
 
     # ── Determine action ────────────────────────────────────────
     should_retrain = False
@@ -52,20 +78,18 @@ def policy_agent(state: dict) -> dict:
     elif current_model is None:
         should_retrain = True
         reasons.append("no_existing_model")
-    elif f1 < F1_THRESHOLD:
-        should_retrain = True
-        reasons.append(f"f1={f1}<{F1_THRESHOLD}")
     elif state.get("drift_detected", False):
         should_retrain = True
         reasons.append("drift_detected")
+    elif trend_degrading:
+        should_retrain = True
+        reasons.append("f1_trend_degrading")
+    elif last_known_f1 < F1_THRESHOLD:
+        should_retrain = True
+        reasons.append(f"last_known_f1={last_known_f1:.4f}<{F1_THRESHOLD}")
     else:
         should_skip = True
         reasons.append("model_meets_thresholds")
-
-    # Always retrain if no model exists
-    if not should_retrain and not should_rebalance and not should_skip:
-        should_retrain = True
-        reasons.append("default_retrain")
 
     decision = {
         "should_retrain": should_retrain,
@@ -73,7 +97,7 @@ def policy_agent(state: dict) -> dict:
         "should_skip": should_skip,
         "reasons": reasons,
         "supervisor_health": combined_health,
-        "current_f1": f1,
+        "current_f1": last_known_f1,
         "l4_count": l4_count,
     }
 
