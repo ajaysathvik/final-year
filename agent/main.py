@@ -11,10 +11,6 @@ MAPE-K Pipeline Flow:
               → Training → Evaluation → Simulation → Deployment
               → Knowledge → END
 """
-from __future__ import annotations
-
-import argparse
-import json
 import sys
 from pathlib import Path
 
@@ -22,6 +18,10 @@ from pathlib import Path
 _AGENT_ROOT = Path(__file__).resolve().parent
 if str(_AGENT_ROOT) not in sys.path:
     sys.path.insert(0, str(_AGENT_ROOT))
+
+# Parse args before any other imports that might depend on sys.path
+import argparse
+import json
 
 from graph import compile_and_run
 from config import KNOWLEDGE_LOG_PATH, OUTPUT_DIR

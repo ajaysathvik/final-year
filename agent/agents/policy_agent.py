@@ -53,17 +53,21 @@ def policy_agent(state: dict) -> dict:
 
     combined_health = supervisor_health.get("combined_health", 0.5)
 
-    # ── Resolve best available F1 ────────────────────────────────
-    # eval_metrics is empty before evaluation runs on this cycle.
-    # Use it if present; otherwise fall back to the last train_f1 recorded in KB.
+    # ── Resolve best available held-out F1 ───────────────────────
+    # Policy decisions should only use evaluation F1. Training F1 is
+    # retained for L3 retraining diagnostics, not governance.
     eval_f1 = eval_metrics.get("f1")
     if eval_f1 is not None:
         last_known_f1 = eval_f1
         f1_source = "eval_metrics"
     else:
-        latest_train = kb.get_latest("training_records")
-        last_known_f1 = latest_train.get("data", {}).get("train_f1", 0.0) if latest_train else 0.0
-        f1_source = "kb_training_records" if latest_train else "default_zero"
+        latest_eval = kb.get_latest_evaluation_metrics()
+        if latest_eval.get("f1") is not None:
+            last_known_f1 = latest_eval["f1"]
+            f1_source = "kb_evaluation_history"
+        else:
+            last_known_f1 = 0.0
+            f1_source = "default_zero"
     print(f"  📊 Last known F1 = {last_known_f1:.4f} (source: {f1_source})")
 
     # ── Determine action ────────────────────────────────────────

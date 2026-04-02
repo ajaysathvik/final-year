@@ -82,6 +82,32 @@ def drift_agent(state: dict) -> dict:
             any_drift = True
 
     drifted_features = [c for c, v in drift_report.items() if v.get("drifted")]
+    remediated_train_df = train_df
+    drift_remediation = {
+        "applied": False,
+        "method": "none",
+        "base_rows": int(len(train_df)),
+        "scraped_rows_available": int(len(scraped_df)) if scraped_df is not None else 0,
+        "rows_added": 0,
+        "total_rows_after": int(len(train_df)),
+    }
+
+    if any_drift and scraped_df is not None and len(scraped_df) > 0:
+        required_cols = feature_cols + [state["target_col"]]
+        usable_scraped = scraped_df[required_cols].copy()
+        remediated_train_df = pd.concat([train_df, usable_scraped], ignore_index=True)
+        drift_remediation = {
+            "applied": True,
+            "method": "append_scraped_rows",
+            "base_rows": int(len(train_df)),
+            "scraped_rows_available": int(len(scraped_df)),
+            "rows_added": int(len(usable_scraped)),
+            "total_rows_after": int(len(remediated_train_df)),
+        }
+        print(
+            f"  🔧 Drift remediation: appended {len(usable_scraped)} scraped rows "
+            f"to training data ({len(remediated_train_df)} rows total)."
+        )
     print(f"  ✅ Analyzed {len(drift_report)} features.")
     print(f"  {'⚠️  Drift detected' if any_drift else '✅ No drift detected'} "
           f"in {len(drifted_features)} feature(s)")
@@ -91,6 +117,13 @@ def drift_agent(state: dict) -> dict:
         "features_analyzed": len(drift_report),
         "drifted_features": drifted_features,
         "drift_detected": any_drift,
+        "drift_remediation": drift_remediation,
     })
 
-    return {**state, "drift_report": drift_report, "drift_detected": any_drift}
+    return {
+        **state,
+        "drift_report": drift_report,
+        "drift_detected": any_drift,
+        "drift_remediation": drift_remediation,
+        "remediated_train_df": remediated_train_df,
+    }

@@ -33,6 +33,8 @@ def strategy_agent(state: dict) -> dict:
     model_available = candidate_model is not None or current_model is not None
     candidate_needs_evaluation = state.get("candidate_needs_evaluation", candidate_model is not None)
     should_retrain = state.get("should_retrain", False)
+    drift_detected = state.get("drift_detected", False)
+    drift_remediation = state.get("drift_remediation", {})
 
     # ── KB context: read prior eval history (KB→Strategy communication) ──
     prior_eval = kb.get_latest("evaluation_history")
@@ -42,11 +44,69 @@ def strategy_agent(state: dict) -> dict:
         print(f"  📖 KB context: prior eval F1={kb_prior_f1}")
 
     # ── Check if this is an L2 refinement ──────────────────────
+    optuna_used = False
     if l2_count > 0:
-        print(f"  ℹ️  L2 refinement iteration #{l2_count}")
-        # Adapt: increase model complexity or change adversarial params
-        n_estimators = N_ESTIMATORS + (50 * l2_count)
-        noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
+        print(f"  ℹ️  L2 refinement iteration #{l2_count} — using Optuna HPO")
+        # Bug-7 fix: use Optuna to find optimal hyperparameters
+        try:
+            import optuna
+            from sklearn.model_selection import cross_val_score
+            from sklearn.ensemble import RandomForestClassifier
+
+            optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+            # Get training data for HPO validation
+            train_df = state.get("balanced_train_df")
+            if train_df is None:
+                train_df = state.get("remediated_train_df", state.get("train_df"))
+            feature_cols = state["feature_cols"]
+            target_col = state["target_col"]
+            X = train_df[feature_cols].values
+            y = train_df[target_col].values.astype(int)
+
+            # Determine model type
+            try:
+                import xgboost  # noqa: F401
+                use_xgb = True
+            except ImportError:
+                use_xgb = False
+
+            def objective(trial):
+                n_est = trial.suggest_int("n_estimators", 100, 500, step=50)
+                max_d = trial.suggest_int("max_depth", 3, 12)
+                if use_xgb:
+                    from xgboost import XGBClassifier
+                    lr = trial.suggest_float("learning_rate", 0.01, 0.3, log=True)
+                    clf = XGBClassifier(
+                        n_estimators=n_est, max_depth=max_d, learning_rate=lr,
+                        eval_metric="logloss", random_state=42, use_label_encoder=False,
+                        scale_pos_weight=max(1, int((y == 0).sum() / max(1, (y == 1).sum()))),
+                    )
+                else:
+                    clf = RandomForestClassifier(
+                        n_estimators=n_est, max_depth=max_d,
+                        class_weight="balanced", random_state=42, n_jobs=-1,
+                    )
+                scores = cross_val_score(clf, X, y, cv=3, scoring="f1", n_jobs=-1)
+                return scores.mean()
+
+            study = optuna.create_study(direction="maximize")
+            study.optimize(objective, n_trials=20, timeout=120)
+
+            best = study.best_params
+            n_estimators = best["n_estimators"]
+            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
+            optuna_used = True
+            print(f"  🔬 Optuna best params: {best} (F1={study.best_value:.4f})")
+
+        except ImportError:
+            print("  ⚠️  Optuna not installed. Falling back to static L2 adaptation.")
+            n_estimators = N_ESTIMATORS + (50 * l2_count)
+            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
+        except Exception as exc:
+            print(f"  ⚠️  Optuna HPO failed ({exc}). Falling back to static L2 adaptation.")
+            n_estimators = N_ESTIMATORS + (50 * l2_count)
+            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
     elif kb_prior_f1 is not None and kb_prior_f1 < 0.6:
         # KB shows prior run had low F1 — pre-emptively boost estimators
         n_estimators = N_ESTIMATORS + 50
@@ -101,10 +161,13 @@ def strategy_agent(state: dict) -> dict:
             "evasion_mutation": {"enabled": True, "std": round(noise_std * 0.6, 4)},
         },
         "use_adversarial_training": (
-            model_available
-            and not candidate_needs_evaluation
-            and robustness_score is not None
-            and robustness_score < ROBUSTNESS_THRESHOLD
+            (
+                model_available
+                and not candidate_needs_evaluation
+                and robustness_score is not None
+                and robustness_score < ROBUSTNESS_THRESHOLD
+            )
+            or (drift_detected and drift_remediation.get("applied", False))
         ),
         "l2_refinement": l2_count > 0,
         "l2_count": l2_count,
@@ -112,6 +175,11 @@ def strategy_agent(state: dict) -> dict:
         "decision_reason": decision_reason,
         "eval_f1": eval_f1,
         "robustness_score": robustness_score,
+        "drift_adaptation": {
+            "drift_detected": drift_detected,
+            "remediation_applied": bool(drift_remediation.get("applied", False)),
+            "rows_added": int(drift_remediation.get("rows_added", 0)),
+        },
     }
 
     print(f"  Model: {model_type} (n_estimators={n_estimators})")

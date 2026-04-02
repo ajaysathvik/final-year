@@ -43,13 +43,23 @@ def simulation_agent(state: dict) -> dict:
     y_test = test_df[target_col].values.astype(int)
 
     # 1. Noise stress test — degrade inputs and check F1 stability
-    noise_levels = [0.01, 0.03, 0.05, 0.10]
+    # Bug-9 fix: use wider epsilon range, fixed seed per epsilon, and perturb only 50% of features
+    noise_levels = [0.05, 0.10, 0.20, 0.50]
     noise_scores = {}
+
     for eps in noise_levels:
-        X_noisy = X_test + np.random.normal(0, eps, size=X_test.shape)
+        rng = np.random.RandomState(42 + int(eps * 1000))
+        mask = rng.binomial(1, 0.5, size=X_test.shape).astype(bool)
+        noise = rng.normal(0, eps, size=X_test.shape)
+        
+        X_noisy = X_test.copy()
+        X_noisy[mask] += noise[mask]
+        
         preds = model.predict(X_noisy)
         f1 = round(float(f1_score(y_test, preds, zero_division=0)), 4)
         noise_scores[f"eps_{eps}"] = f1
+        if eps == noise_levels[-1] and len(X_test) > 0:
+            print(f"    Sample perturbation (eps={eps}, row 0): orig={X_test[0,:3]} → noisy={X_noisy[0,:3]}")
 
     print(f"  Noise stress test: {noise_scores}")
 
@@ -70,6 +80,11 @@ def simulation_agent(state: dict) -> dict:
 
     # 3. Worst-case noise score
     worst_noise_f1 = min(noise_scores.values())
+    
+    # Bug-9 check: if all noise scores are identical, the model didn't react at all
+    if len(set(noise_scores.values())) <= 1 and worst_noise_f1 > 0:
+        print("  ⚠️ WARNING: All epsilon levels produced identical F1. Noise perturbation may not be effective.")
+
     robustness_score = round(float(np.mean([worst_noise_f1, boot_lower])), 4)
 
     passed = robustness_score >= ROBUSTNESS_THRESHOLD

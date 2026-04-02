@@ -116,6 +116,13 @@ class KnowledgeBase:
         """Get recent entries from a category."""
         return self.store.get(category, [])[-limit:]
 
+    def get_latest_evaluation_metrics(self) -> dict[str, Any]:
+        """Return the latest held-out evaluation metrics, if any."""
+        latest_eval = self.get_latest("evaluation_history")
+        if not latest_eval:
+            return {}
+        return latest_eval.get("data", {}) or {}
+
     def get_summary(self) -> dict[str, int]:
         """Return count of entries per category."""
         return {k: len(v) for k, v in self.store.items()}

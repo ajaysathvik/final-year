@@ -132,13 +132,17 @@ def training_agent(state: dict) -> dict:
     l3_count = state.get("l3_count", 0)
     strategy_decision = state.get("strategy_decision")
 
-    # Use balanced data if available, else original training data
-    base_train_data = state.get("balanced_train_df", state["train_df"])
+    # Prefer drift-remediated data, then balanced data built from it.
+    base_train_data = state.get("balanced_train_df")
+    if base_train_data is None:
+        base_train_data = state.get("remediated_train_df", state["train_df"])
     train_data = base_train_data
     use_adversarial_training = bool(strategy.get("use_adversarial_training", False))
     adv_samples = state.get("adversarial_samples")
     adv_report = state.get("adversarial_report", {})
     used_adversarial_samples = False
+    drift_remediation = state.get("drift_remediation", {})
+    used_drift_remediation = bool(drift_remediation.get("applied", False))
 
     if use_adversarial_training:
         adv_samples, adv_report = _generate_adversarial_samples(
@@ -151,11 +155,31 @@ def training_agent(state: dict) -> dict:
             train_data = pd.concat([base_train_data, adv_samples], ignore_index=True)
             used_adversarial_samples = True
 
+    # ── Bug-5 fix: detect post-augmentation class imbalance ─────
+    post_augmentation_imbalanced = False
+    y_check = train_data[target_col].values.astype(int)
+    n_fraud_post = int(y_check.sum())
+    n_non_fraud_post = int(len(y_check) - n_fraud_post)
+    if n_non_fraud_post > 0:
+        post_aug_ratio = n_fraud_post / n_non_fraud_post
+    else:
+        post_aug_ratio = float("inf")
+
+    if post_aug_ratio > 3.0 or post_aug_ratio < 0.3:
+        post_augmentation_imbalanced = True
+        print(f"  ⚠️ Post-augmentation imbalance detected: "
+              f"fraud={n_fraud_post}, non-fraud={n_non_fraud_post}, ratio={post_aug_ratio:.2f}")
+
     X_train = train_data[feature_cols].values
     y_train = train_data[target_col].values.astype(int)
 
     print(f"  Training rows: {len(train_data)} "
           f"(fraud={int(y_train.sum())}, non-fraud={int(len(y_train) - y_train.sum())})")
+    if used_drift_remediation:
+        print(
+            f"  ℹ️  Drift remediation enabled with "
+            f"{drift_remediation.get('rows_added', 0)} appended scraped rows"
+        )
     if use_adversarial_training:
         if used_adversarial_samples:
             print(f"  ℹ️  Adversarial strengthening enabled with {len(adv_samples)} generated samples")
@@ -228,6 +252,8 @@ def training_agent(state: dict) -> dict:
         "n_non_fraud": int(len(y_train) - y_train.sum()),
         "n_estimators": n_estimators,
         "l3_count": new_l3_count,
+        "used_drift_remediation": used_drift_remediation,
+        "drift_rows_added": int(drift_remediation.get("rows_added", 0)) if used_drift_remediation else 0,
         "used_adversarial_samples": used_adversarial_samples,
         "adversarial_sample_count": int(len(adv_samples)) if used_adversarial_samples else 0,
         "timestamp": timestamp,
@@ -253,4 +279,6 @@ def training_agent(state: dict) -> dict:
         "adversarial_samples": adv_samples if use_adversarial_training else pd.DataFrame(),
         "adversarial_report": adv_report if use_adversarial_training else {},
         "adversarial_trained": used_adversarial_samples,
+        "augmented_train_df": train_data,  # Bug-5: store full augmented data for balance re-check
+        "post_augmentation_imbalanced": post_augmentation_imbalanced,  # Bug-5: flag for L1
     }

@@ -99,6 +99,14 @@ The training data combines three sources:
 training_data = clean_data + ctgan_data + adversarial_data
 ```
 
+When feature drift is detected and labeled scraped rows are available, the
+pipeline now appends those scraped rows to the training set before balancing
+and retraining:
+
+```
+training_data = clean_data + drifted_scraped_data + ctgan_data + adversarial_data
+```
+
 The training agent generates adversarial samples using:
 1. **Noise perturbation** — Gaussian noise on all features
 2. **Boundary attack** — interpolation between fraud and nearest non-fraud

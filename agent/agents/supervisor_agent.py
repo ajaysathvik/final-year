@@ -34,6 +34,12 @@ def supervisor_agent(state: dict) -> dict:
     if balance_report.get("action") == "skipped" and balance_report.get("reason") == "too_few_fraud":
         data_quality -= 0.2
 
+    # Bug-5 fix: detect post-augmentation imbalance from training agent
+    post_aug_imbalanced = state.get("post_augmentation_imbalanced", False)
+    if post_aug_imbalanced:
+        data_quality -= 0.3
+        print("  ⚠️ Post-augmentation class imbalance detected — penalizing data quality")
+
     balance_quality = 1.0
     if balance_report.get("action") == "balanced":
         balance_quality = 0.8  # balanced is good but synthetic data adds uncertainty

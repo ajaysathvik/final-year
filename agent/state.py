@@ -13,12 +13,14 @@ class PipelineState(TypedDict, total=False):
     train_df: pd.DataFrame
     test_df: pd.DataFrame
     scraped_df: pd.DataFrame          # new data from scraped_data folder
+    remediated_train_df: pd.DataFrame
     feature_cols: list[str]
     target_col: str
 
     # ── Drift Agent ────────────────────────────────────────────
     drift_report: dict[str, Any]
     drift_detected: bool
+    drift_remediation: dict[str, Any]
 
     # ── Balance Agent (CTGAN / SMOTE) ──────────────────────────
     balanced_train_df: pd.DataFrame  # train_df after balancing
@@ -50,12 +52,18 @@ class PipelineState(TypedDict, total=False):
     adversarial_samples: pd.DataFrame
     adversarial_report: dict[str, Any]
     adversarial_trained: bool
+    augmented_train_df: pd.DataFrame     # full training set after adversarial augmentation
+    post_augmentation_imbalanced: bool   # flag: augmented data has severe class imbalance
 
     # ── Evaluation Agent ───────────────────────────────────────
     eval_metrics: dict[str, float]    # F1, precision, recall, roc_auc, fpr
     eval_passed: bool
     needs_rebalance: bool             # L1 trigger flag
     needs_strategy_refinement: bool   # L2 trigger flag
+    prev_eval_f1: float               # previous iteration's eval F1 (for degradation detection)
+    best_eval_f1: float               # best eval F1 seen across loop iterations
+    best_model: Any                   # best model object across loop iterations
+    best_model_path: str              # path to best model across loop iterations
 
     # ── Simulation Agent (incl. adversarial testing) ───────────
     simulation_results: dict[str, Any]

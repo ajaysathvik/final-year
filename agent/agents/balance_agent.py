@@ -12,6 +12,20 @@ import pandas as pd
 from config import CTGAN_EPOCHS, CTGAN_SAMPLE_RATIO
 
 
+def _format_class_ratio(n_fraud: int, n_non_fraud: int) -> str:
+    """Return class ratio in fraud:non-fraud form with the smaller side normalized to 1."""
+    if n_fraud <= 0 and n_non_fraud <= 0:
+        return "0:0"
+    if n_fraud <= 0:
+        return f"0:{n_non_fraud}"
+    if n_non_fraud <= 0:
+        return f"{n_fraud}:0"
+
+    if n_fraud <= n_non_fraud:
+        return f"1:{(n_non_fraud / n_fraud):.2f}"
+    return f"{(n_fraud / n_non_fraud):.2f}:1"
+
+
 def balance_agent(state: dict) -> dict:
     """
     Analyze class imbalance and generate synthetic minority samples
@@ -22,10 +36,17 @@ def balance_agent(state: dict) -> dict:
     print("=" * 60)
 
     kb = state["knowledge_base"]
-    train_df: pd.DataFrame = state["train_df"]
+    l1_count = state.get("l1_count", 0)
     feature_cols: list[str] = state["feature_cols"]
     target_col: str = state["target_col"]
-    l1_count = state.get("l1_count", 0)
+
+    # Bug-5 fix: on L1 re-entry, prefer the post-augmentation data (augmented_train_df)
+    # so we can detect and fix the imbalance created by adversarial augmentation.
+    if l1_count > 0 and state.get("augmented_train_df") is not None:
+        train_df: pd.DataFrame = state["augmented_train_df"]
+        print(f"  ℹ️  L1 re-entry: using augmented training data ({len(train_df)} rows) for rebalancing")
+    else:
+        train_df: pd.DataFrame = state.get("remediated_train_df", state["train_df"])
 
     # ── KB context: read prior balance history (KB→Balance communication) ──
     prior_balance = kb.get_latest("balance_records")
@@ -40,18 +61,28 @@ def balance_agent(state: dict) -> dict:
     non_fraud_df = train_df[train_df[target_col] != 1]
     n_fraud = len(fraud_df)
     n_non_fraud = len(non_fraud_df)
+    class_ratio = _format_class_ratio(n_fraud, n_non_fraud)
 
     print(f"  Fraud: {n_fraud}, Non-fraud: {n_non_fraud}")
+    print(f"  Class ratio (fraud:non-fraud): {class_ratio}")
 
     # Determine if balancing is needed
     if n_fraud < 5:
         print("  ⚠️  Too few fraud samples for balancing. Passing data through.")
-        kb.log_event("balance", "balance_skipped", {"reason": "too_few_fraud", "n_fraud": n_fraud})
+        kb.log_event("balance", "balance_skipped", {
+            "reason": "too_few_fraud",
+            "n_fraud": n_fraud,
+            "class_ratio": class_ratio,
+        })
         return {
             **state,
             "balanced_train_df": train_df,
             "ctgan_samples": pd.DataFrame(),
-            "balance_report": {"action": "skipped", "reason": "too_few_fraud"},
+            "balance_report": {
+                "action": "skipped",
+                "reason": "too_few_fraud",
+                "class_ratio": class_ratio,
+            },
         }
 
     ratio = n_fraud / max(1, n_non_fraud)
@@ -59,13 +90,22 @@ def balance_agent(state: dict) -> dict:
     n_needed = int(abs(n_non_fraud - n_fraud) * CTGAN_SAMPLE_RATIO) if needs_balance else 0
 
     if not needs_balance or n_needed <= 0:
-        print(f"  ✅ No balancing needed (ratio={ratio:.2f}).")
-        kb.log_event("balance", "balance_skipped", {"reason": "balanced", "ratio": ratio})
+        print(f"  ✅ No balancing needed (ratio={ratio:.2f}, class_ratio={class_ratio}).")
+        kb.log_event("balance", "balance_skipped", {
+            "reason": "balanced",
+            "ratio": ratio,
+            "class_ratio": class_ratio,
+        })
         return {
             **state,
             "balanced_train_df": train_df,
             "ctgan_samples": pd.DataFrame(),
-            "balance_report": {"action": "skipped", "reason": "already_balanced", "ratio": round(ratio, 4)},
+            "balance_report": {
+                "action": "skipped",
+                "reason": "already_balanced",
+                "ratio": round(ratio, 4),
+                "class_ratio": class_ratio,
+            },
         }
 
     print(f"  Generating {n_needed} synthetic fraud rows...")
@@ -102,13 +142,19 @@ def balance_agent(state: dict) -> dict:
         }
 
     balanced = pd.concat([train_df, synthetic[feature_cols + [target_col]]], ignore_index=True)
+    balanced_fraud = int((balanced[target_col] == 1).sum())
+    balanced_non_fraud = int((balanced[target_col] != 1).sum())
     report = {
         "action": "balanced",
         "method": method,
         "original_fraud": n_fraud,
         "original_non_fraud": n_non_fraud,
+        "original_class_ratio": class_ratio,
         "synthetic_generated": len(synthetic),
         "total_after": len(balanced),
+        "balanced_fraud": balanced_fraud,
+        "balanced_non_fraud": balanced_non_fraud,
+        "balanced_class_ratio": _format_class_ratio(balanced_fraud, balanced_non_fraud),
     }
 
     kb.log_event("balance", "balance_completed", report)
