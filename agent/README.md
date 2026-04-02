@@ -107,6 +107,9 @@ and retraining:
 training_data = clean_data + drifted_scraped_data + ctgan_data + adversarial_data
 ```
 
+Set `USE_SCRAPED_DRIFT_DATA=false` to force the pipeline to train from
+`data.csv` only, without appending rows from `agent/output/scraped_data`.
+
 The training agent generates adversarial samples using:
 1. **Noise perturbation** — Gaussian noise on all features
 2. **Boundary attack** — interpolation between fraud and nearest non-fraud

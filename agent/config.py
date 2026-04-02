@@ -17,6 +17,8 @@ OUTPUT_DIR   = AGENT_ROOT / "output"
 MODELS_DIR   = OUTPUT_DIR / "models"
 LOGS_DIR     = OUTPUT_DIR / "logs"
 METRICS_DIR  = OUTPUT_DIR / "metrics"
+RUNS_DIR     = OUTPUT_DIR / "runs"
+PLOTS_DIR    = OUTPUT_DIR / "plots"
 KNOWLEDGE_LOG_PATH = LOGS_DIR / "knowledge.jsonl"
 
 # ── Model promotion thresholds ─────────────────────────────────────
@@ -28,6 +30,9 @@ ROBUSTNESS_THRESHOLD = float(os.getenv("ROBUSTNESS_THRESHOLD", "0.60"))
 # ── Drift detection ───────────────────────────────────────────────
 PSI_THRESHOLD = float(os.getenv("PSI_THRESHOLD", "0.20"))
 KS_THRESHOLD  = float(os.getenv("KS_THRESHOLD", "0.05"))
+USE_SCRAPED_DRIFT_DATA = os.getenv("USE_SCRAPED_DRIFT_DATA", "true").strip().lower() in {
+    "1", "true", "yes", "on"
+}
 
 # ── CTGAN ──────────────────────────────────────────────────────────
 CTGAN_EPOCHS       = int(os.getenv("CTGAN_EPOCHS", "100"))
@@ -42,6 +47,8 @@ ADVERSARIAL_EVASION_STD = float(os.getenv("ADV_EVASION_STD", "0.03"))
 TEST_SIZE        = float(os.getenv("TEST_SIZE", "0.2"))
 RANDOM_STATE     = int(os.getenv("RANDOM_STATE", "42"))
 N_ESTIMATORS     = int(os.getenv("N_ESTIMATORS", "200"))
+OPTUNA_MAX_TRIALS = int(os.getenv("OPTUNA_MAX_TRIALS", "8"))
+OPTUNA_TIMEOUT_SECONDS = int(os.getenv("OPTUNA_TIMEOUT_SECONDS", "45"))
 
 # ── Supervisor ─────────────────────────────────────────────────────
 SUPERVISOR_HEALTH_MIN = float(os.getenv("SUPERVISOR_HEALTH_MIN", "0.50"))
@@ -76,5 +83,5 @@ NUMERIC_FEATURE_COLS = [
 TARGET_COL = "annotation.is_fraud"
 
 # ── Ensure output directories exist ───────────────────────────────
-for _d in (OUTPUT_DIR, MODELS_DIR, LOGS_DIR, METRICS_DIR):
+for _d in (OUTPUT_DIR, MODELS_DIR, LOGS_DIR, METRICS_DIR, RUNS_DIR, PLOTS_DIR):
     _d.mkdir(parents=True, exist_ok=True)

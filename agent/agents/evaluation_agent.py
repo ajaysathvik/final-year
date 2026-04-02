@@ -133,6 +133,12 @@ def evaluation_agent(state: dict) -> dict:
         or (post_aug_imbalanced and metrics["precision"] < PRECISION_THRESHOLD)
     )
 
+    # ── Suppress L1 if balance already determined no action needed ──
+    balance_action = state.get("balance_report", {}).get("action", "")
+    if needs_rebalance and balance_action == "skipped":
+        print("  ℹ️  Suppressing L1: Balance Agent already determined no rebalancing needed.")
+        needs_rebalance = False
+
     # ── L2 trigger: F1 degradation → strategy needs Optuna HPO ──
     needs_strategy = (
         metrics["f1"] < F1_THRESHOLD

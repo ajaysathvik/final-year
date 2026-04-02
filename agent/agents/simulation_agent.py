@@ -1,6 +1,6 @@
 """
 Simulation Agent — Execute phase of MAPE-K.
-Tests model robustness before deployment using noise injection and bootstrap tests.
+Tests model robustness before deployment using FGSM-style perturbation and bootstrap tests.
 """
 from __future__ import annotations
 
@@ -9,6 +9,18 @@ import pandas as pd
 from sklearn.metrics import f1_score
 
 from config import ROBUSTNESS_THRESHOLD
+
+
+def _fgsm_perturb(X: np.ndarray, epsilon: float, seed: int) -> np.ndarray:
+    """Match the reference FGSM-style random-sign perturbation used in training."""
+    if epsilon <= 0 or X.size == 0:
+        return X.copy()
+
+    rng = np.random.RandomState(seed)
+    perturbed = X.copy().astype(np.float32)
+    noise = epsilon * np.sign(rng.randn(*perturbed.shape))
+    perturbed += noise
+    return np.clip(perturbed, 0.0, None).astype(np.float32)
 
 
 def simulation_agent(state: dict) -> dict:
@@ -42,26 +54,19 @@ def simulation_agent(state: dict) -> dict:
     X_test = test_df[feature_cols].values
     y_test = test_df[target_col].values.astype(int)
 
-    # 1. Noise stress test — degrade inputs and check F1 stability
-    # Bug-9 fix: use wider epsilon range, fixed seed per epsilon, and perturb only 50% of features
-    noise_levels = [0.05, 0.10, 0.20, 0.50]
-    noise_scores = {}
+    # 1. FGSM-style robustness curve — evaluate across increasing epsilon
+    epsilons = [0.0, 0.01, 0.03, 0.05, 0.08, 0.10, 0.15, 0.20, 0.25, 0.30]
+    attack_scores = {}
 
-    for eps in noise_levels:
-        rng = np.random.RandomState(42 + int(eps * 1000))
-        mask = rng.binomial(1, 0.5, size=X_test.shape).astype(bool)
-        noise = rng.normal(0, eps, size=X_test.shape)
-        
-        X_noisy = X_test.copy()
-        X_noisy[mask] += noise[mask]
-        
-        preds = model.predict(X_noisy)
+    for eps in epsilons:
+        X_attacked = _fgsm_perturb(X_test, epsilon=eps, seed=42 + int(eps * 1000))
+        preds = model.predict(X_attacked)
         f1 = round(float(f1_score(y_test, preds, zero_division=0)), 4)
-        noise_scores[f"eps_{eps}"] = f1
-        if eps == noise_levels[-1] and len(X_test) > 0:
-            print(f"    Sample perturbation (eps={eps}, row 0): orig={X_test[0,:3]} → noisy={X_noisy[0,:3]}")
+        attack_scores[f"eps_{eps}"] = f1
+        if eps == epsilons[-1] and len(X_test) > 0:
+            print(f"    Sample perturbation (eps={eps}, row 0): orig={X_test[0,:3]} → attacked={X_attacked[0,:3]}")
 
-    print(f"  Noise stress test: {noise_scores}")
+    print(f"  FGSM-style robustness curve: {attack_scores}")
 
     # 2. Bootstrap confidence interval (30 resamples)
     n_bootstrap = 30
@@ -78,19 +83,21 @@ def simulation_agent(state: dict) -> dict:
 
     print(f"  Bootstrap F1: {boot_mean} ± {boot_std} [{boot_lower}, {boot_upper}]")
 
-    # 3. Worst-case noise score
-    worst_noise_f1 = min(noise_scores.values())
-    
-    # Bug-9 check: if all noise scores are identical, the model didn't react at all
-    if len(set(noise_scores.values())) <= 1 and worst_noise_f1 > 0:
-        print("  ⚠️ WARNING: All epsilon levels produced identical F1. Noise perturbation may not be effective.")
+    # 3. Worst-case attacked score
+    attacked_scores = [score for key, score in attack_scores.items() if key != "eps_0.0"]
+    worst_noise_f1 = min(attacked_scores) if attacked_scores else min(attack_scores.values())
+
+    if len(set(attack_scores.values())) <= 1 and worst_noise_f1 > 0:
+        print("  ⚠️ WARNING: All epsilon levels produced identical F1. FGSM-style perturbation may not be effective.")
 
     robustness_score = round(float(np.mean([worst_noise_f1, boot_lower])), 4)
 
     passed = robustness_score >= ROBUSTNESS_THRESHOLD
 
     results = {
-        "noise_stress_test": noise_scores,
+        "noise_stress_test": attack_scores,
+        "attack_method": "fgsm_style_random_sign",
+        "attack_epsilons": epsilons,
         "bootstrap_mean_f1": boot_mean,
         "bootstrap_std": boot_std,
         "bootstrap_ci_95": [boot_lower, boot_upper],

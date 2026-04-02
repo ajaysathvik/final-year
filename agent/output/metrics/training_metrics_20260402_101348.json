@@ -1,0 +1,16 @@
+{
+  "model_type": "XGBoost",
+  "train_f1": 0.9263,
+  "total_rows": 15484,
+  "n_fraud": 8730,
+  "n_non_fraud": 6754,
+  "n_estimators": 200,
+  "l3_count": 0,
+  "used_drift_remediation": true,
+  "drift_rows_added": 40,
+  "used_adversarial_samples": true,
+  "adversarial_sample_count": 7742,
+  "adversarial_method": "fgsm_style_random_sign",
+  "adversarial_epsilon": 0.05,
+  "timestamp": "20260402_101348"
+}

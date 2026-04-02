@@ -26,6 +26,18 @@ def _format_class_ratio(n_fraud: int, n_non_fraud: int) -> str:
     return f"{(n_fraud / n_non_fraud):.2f}:1"
 
 
+def _select_balance_target(n_fraud: int, n_non_fraud: int) -> tuple[int, str]:
+    """Return the minority class label and name.
+
+    For a 1:x imbalance, add one new sample for each current sample in the
+    smaller class. That changes the smaller side from 1 to 2, instead of
+    forcing strict 1:1 parity.
+    """
+    if n_fraud <= n_non_fraud:
+        return 1, "fraud"
+    return 0, "non_fraud"
+
+
 def balance_agent(state: dict) -> dict:
     """
     Analyze class imbalance and generate synthetic minority samples
@@ -87,7 +99,10 @@ def balance_agent(state: dict) -> dict:
 
     ratio = n_fraud / max(1, n_non_fraud)
     needs_balance = ratio < 0.3 or ratio > 3.0
-    n_needed = int(abs(n_non_fraud - n_fraud) * CTGAN_SAMPLE_RATIO) if needs_balance else 0
+
+    minority_label, minority_name = _select_balance_target(n_fraud, n_non_fraud)
+    minority_df = fraud_df if minority_label == 1 else non_fraud_df
+    n_needed = int(len(minority_df) * CTGAN_SAMPLE_RATIO) if needs_balance else 0
 
     if not needs_balance or n_needed <= 0:
         print(f"  ✅ No balancing needed (ratio={ratio:.2f}, class_ratio={class_ratio}).")
@@ -108,29 +123,29 @@ def balance_agent(state: dict) -> dict:
             },
         }
 
-    print(f"  Generating {n_needed} synthetic fraud rows...")
+    print(f"  Generating {n_needed} synthetic {minority_name} rows...")
 
     try:
         from ctgan import CTGAN
 
-        fraud_features = fraud_df[feature_cols + [target_col]]
+        minority_features = minority_df[feature_cols + [target_col]]
         ctgan_model = CTGAN(epochs=CTGAN_EPOCHS, verbose=False)
-        ctgan_model.fit(fraud_features, discrete_columns=[target_col])
+        ctgan_model.fit(minority_features, discrete_columns=[target_col])
         synthetic = ctgan_model.sample(n_needed)
-        synthetic[target_col] = 1
+        synthetic[target_col] = minority_label
         method = "CTGAN"
-        print(f"  ✅ Generated {len(synthetic)} synthetic fraud samples via CTGAN.")
+        print(f"  ✅ Generated {len(synthetic)} synthetic {minority_name} samples via CTGAN.")
     except ImportError:
         print("  ⚠️  CTGAN not installed. Falling back to noise-oversampling.")
-        indices = np.random.choice(len(fraud_df), size=n_needed, replace=True)
-        synthetic = fraud_df.iloc[indices].copy().reset_index(drop=True)
+        indices = np.random.choice(len(minority_df), size=n_needed, replace=True)
+        synthetic = minority_df.iloc[indices].copy().reset_index(drop=True)
         for col in feature_cols:
             if synthetic[col].dtype in [np.float64, np.float32, np.int64, np.int32]:
                 noise = np.random.normal(0, 0.01, size=len(synthetic))
                 synthetic[col] = synthetic[col].astype(float) + noise
-        synthetic[target_col] = 1
+        synthetic[target_col] = minority_label
         method = "noise_oversampling"
-        print(f"  ✅ Generated {len(synthetic)} samples via noise-oversampling fallback.")
+        print(f"  ✅ Generated {len(synthetic)} synthetic {minority_name} samples via noise-oversampling fallback.")
     except Exception as exc:
         print(f"  ❌ Balancing failed: {exc}.")
         kb.log_event("balance", "balance_failed", {"error": str(exc)})
@@ -147,6 +162,7 @@ def balance_agent(state: dict) -> dict:
     report = {
         "action": "balanced",
         "method": method,
+        "minority_class": minority_name,
         "original_fraud": n_fraud,
         "original_non_fraud": n_non_fraud,
         "original_class_ratio": class_ratio,

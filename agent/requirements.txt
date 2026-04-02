@@ -7,3 +7,4 @@ langgraph>=0.2
 langchain-core>=0.2
 ctgan>=0.10
 xgboost>=2.0
+matplotlib>=3.8

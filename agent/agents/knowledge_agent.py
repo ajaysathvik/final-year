@@ -52,6 +52,7 @@ def knowledge_agent(state: dict) -> dict:
             "knowledge_stage": "post_evaluation_logged",
             "l5_count": l5_count + 1,
             "kb_loop_count": state.get("kb_loop_count", 0),
+            "timestamp": timestamp,
         }
 
     # ── Build comprehensive full-run summary (L5 logs everything) ──
@@ -118,6 +119,7 @@ def knowledge_agent(state: dict) -> dict:
         "knowledge_stage": "final",
         "l5_count": l5_count,
         "kb_loop_count": state.get("kb_loop_count", 0), # retain backward compat
+        "timestamp": timestamp,
     }
 
 

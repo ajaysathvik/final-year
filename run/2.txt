@@ -1,0 +1,132 @@
+ python main.py 
+
+🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 
+  STARTING MAPE-K FRAUD DETECTION PIPELINE
+🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 🚀 
+
+📂 Loading dataset: /home/norm/Projects/Reddit-dataset/9k-dataset/data.csv
+/home/norm/Projects/Reddit-dataset/agent/graph.py:72: DtypeWarning: Columns (51,52,53,54,55,57,59,60,61,62,63,65,75,76,82) have mixed types. Specify dtype option on import or set low_memory=False.
+  df = pd.read_csv(csv_path)
+  Rows: 9628, Columns: 89
+  Available features: 9
+  Fraud: 5432, Non-fraud: 4196
+  Train: 7702, Test: 1926
+  📥 Found scraped data in /home/norm/Projects/Reddit-dataset/agent/output/scraped_data
+    - Loaded drift_test_dataset.csv (24 rows)
+  📊 Total scraped data available: 24 rows
+
+============================================================
+ [ DRIFT AGENT ] Detecting feature drift (PSI / KS)...
+============================================================
+  ℹ️  Prior drift record found: 2026-04-02T06:15:34.574917+00:00
+  📥 Using scraped data (24 rows) for current distribution vs original (7702).
+  🔧 Drift remediation: appended 24 scraped rows to training data (7726 rows total).
+  ✅ Analyzed 9 features.
+  ⚠️  Drift detected in 6 feature(s)
+
+============================================================
+ [ BALANCE AGENT ] Handling class imbalance (CTGAN / SMOTE)...
+============================================================
+  📖 KB context: prior balance action=unknown, method=n/a
+  Fraud: 4357, Non-fraud: 3369
+  Class ratio (fraud:non-fraud): 1.29:1
+  ✅ No balancing needed (ratio=1.29, class_ratio=1.29:1).
+
+============================================================
+ [ SUPERVISOR ] Anomaly check & validation...
+============================================================
+  Health: data=0.7, balance=1.0, combined=0.82 (min=0.5)
+  Decision: proceed
+
+============================================================
+ [ POLICY AGENT ] Decision / Governance...
+============================================================
+  📦 Loaded previously promoted model from KB: /home/norm/Projects/Reddit-dataset/agent/output/models/promoted_model.joblib
+  📖 KB context: F1 trend over last 1 runs = [0.8974] (➡ stable/improving)
+  📊 Last known F1 = 0.8974 (source: kb_evaluation_history)
+  Retrain: True | Rebalance: False | Skip: False
+  Reasons: ['drift_detected']
+
+============================================================
+ [ STRATEGY AGENT ] Planning model & adversarial strategy...
+============================================================
+  📖 KB context: prior eval F1=0.8974
+  Model: XGBoost (best_cv_score=0.9097)
+  Candidate scores: XGBoost=0.9097, RandomForest=0.9049, LogisticRegression=0.8985
+  Adversarial: method=fgsm_style_random_sign, epsilon=0.05
+  Use adversarial strengthening: True
+  Next step: training (policy_requested_retraining)
+  ▶️  Strategy: route to Training
+
+============================================================
+ [ TRAINING AGENT ] Training candidate model...
+============================================================
+  Training rows: 15452 (fraud=8714, non-fraud=6738)
+  ℹ️  Drift remediation enabled with 24 appended scraped rows
+  ℹ️  FGSM-style adversarial strengthening enabled (epsilon=0.05, generated=7726)
+  Using XGBoost (n_estimators=200)...
+/home/norm/Projects/Reddit-dataset/.venv/lib/python3.12/site-packages/xgboost/training.py:200: UserWarning: [11:47:38] WARNING: /__w/xgboost/xgboost/src/learner.cc:782: 
+Parameters: { "use_label_encoder" } are not used.
+
+  bst.update(dtrain, iteration=i, fobj=obj)
+  ✅ Training complete. Train-set F1=0.9278 (XGBoost)
+  💾 Saved model: /home/norm/Projects/Reddit-dataset/agent/output/models/candidate_xgboost_20260402_061738.joblib
+
+============================================================
+ [ STRATEGY AGENT ] Planning model & adversarial strategy...
+============================================================
+  📖 KB context: prior eval F1=0.8974
+  Model: XGBoost (best_cv_score=0.9097)
+  Candidate scores: XGBoost=0.9097, RandomForest=0.9049, LogisticRegression=0.8985
+  Adversarial: method=fgsm_style_random_sign, epsilon=0.05
+  Use adversarial strengthening: True
+  Next step: evaluation (candidate_requires_evaluation)
+  ▶️  Strategy: route to Evaluation
+
+============================================================
+ [ EVALUATION AGENT ] Computing test-set metrics...
+============================================================
+  🔄 Refreshed test set from latest data (9652 combined → 1931 test rows, seed=42)
+  📖 KB context: prior eval → F1=0.8974, recall=0.9073
+  ✅ Test-set metrics: {'f1': 0.8974, 'precision': 0.8877, 'recall': 0.9073, 'roc_auc': 0.9521, 'fpr': 0.1485}
+  🏆 New best F1: 0.8974
+
+============================================================
+ [ KNOWLEDGE AGENT ] L5 — logging full run to knowledge layer...
+============================================================
+  ✅ Logged post-evaluation handoff to knowledge base
+  ▶️  Knowledge: continue to Simulation
+
+============================================================
+ [ SIMULATION AGENT ] Running robustness simulation...
+============================================================
+  📖 KB context: prior robustness_score=0.8641
+    Sample perturbation (eps=0.3, row 0): orig=[0. 0. 0.] → attacked=[0.3 0.  0. ]
+  FGSM-style robustness curve: {'eps_0.0': 0.8974, 'eps_0.01': 0.9005, 'eps_0.03': 0.8971, 'eps_0.05': 0.8966, 'eps_0.08': 0.8405, 'eps_0.1': 0.8457, 'eps_0.15': 0.8476, 'eps_0.2': 0.8517, 'eps_0.25': 0.8496, 'eps_0.3': 0.8439}
+  Bootstrap F1: 0.8962 ± 0.0066 [0.8847, 0.907]
+  Robustness score: 0.8626 (threshold=0.6)
+  ✅ PASSED simulation.
+
+============================================================
+ [ DEPLOYMENT AGENT ] Deciding model promotion...
+============================================================
+  🏆 Model PROMOTED → /home/norm/Projects/Reddit-dataset/agent/output/models/promoted_model.joblib
+
+============================================================
+ PIPELINE COMPLETE
+============================================================
+  🏆 Model PROMOTED successfully.
+
+============================================================
+ RUN SUMMARY
+============================================================
+  Drift detected       : True
+  Balance action       : skipped
+  Supervisor decision  : proceed
+  Policy retrain       : True
+  Eval metrics         : {'f1': 0.8974, 'precision': 0.8877, 'recall': 0.9073, 'roc_auc': 0.9521, 'fpr': 0.1485}
+  Simulation passed    : True
+  Model promoted       : True
+  Feedback loops       : L1=0, L2=0, L3=0, L4=0, L5=1
+  Knowledge log        : /home/norm/Projects/Reddit-dataset/agent/output/logs/knowledge.jsonl
+  Summary saved        : /home/norm/Projects/Reddit-dataset/agent/output/run_summary.json

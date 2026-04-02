@@ -25,6 +25,7 @@ import json
 
 from graph import compile_and_run
 from config import KNOWLEDGE_LOG_PATH, OUTPUT_DIR
+from reporting import generate_run_reports
 
 
 def main() -> None:
@@ -57,11 +58,14 @@ def main() -> None:
 
     # Save final summary
     summary = {
+        "timestamp": final_state.get("timestamp"),
         "drift_detected": final_state.get("drift_detected"),
         "balance_report": _safe(final_state.get("balance_report")),
         "supervisor_decision": final_state.get("supervisor_decision"),
         "policy_decision": _safe(final_state.get("policy_decision")),
+        "training_metrics": _safe(final_state.get("training_metrics")),
         "eval_metrics": final_state.get("eval_metrics"),
+        "simulation_results": _safe(final_state.get("simulation_results")),
         "simulation_passed": final_state.get("simulation_passed"),
         "deployment_decision": _safe(final_state.get("deployment_decision")),
         "promoted": final_state.get("promoted"),
@@ -73,9 +77,15 @@ def main() -> None:
             "L5_eval_to_kb": final_state.get("l5_count", 0),
         },
     }
+    report_paths = generate_run_reports(summary)
+    summary["run_id"] = report_paths["run_id"]
+    summary["artifact_paths"] = report_paths
+
     summary_path = OUTPUT_DIR / "run_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
     print(f"  Summary saved        : {summary_path}")
+    print(f"  Run artifacts        : {report_paths['run_dir']}")
+    print(f"  Plot directory       : {report_paths['plots_dir']}")
 
 
 def _safe(obj):

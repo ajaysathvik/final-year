@@ -11,54 +11,25 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
 from config import MODELS_DIR, RANDOM_STATE, MAX_L3_ITERATIONS, F1_THRESHOLD
 
 
-def _noise_perturbation(X: np.ndarray, std: float) -> np.ndarray:
-    """Add Gaussian noise to all features."""
-    noise = np.random.normal(0, std, size=X.shape)
-    return X + noise
+def _fgsm_perturb(X: np.ndarray, epsilon: float, rng: np.random.RandomState) -> np.ndarray:
+    """
+    FGSM-style perturbation for tabular/tree models.
+    Since no gradient is available here, use random-sign steps on the
+    numeric feature vector, matching the reference implementation.
+    """
+    if epsilon <= 0 or X.size == 0:
+        return X.copy()
 
-
-def _boundary_attack(X_fraud: np.ndarray, X_non_fraud: np.ndarray, k: int) -> np.ndarray:
-    """Generate samples near the decision boundary via interpolation."""
-    from sklearn.neighbors import NearestNeighbors
-
-    if len(X_non_fraud) == 0:
-        return np.empty((0, X_fraud.shape[1]))
-
-    if len(X_non_fraud) < k:
-        k = max(1, len(X_non_fraud))
-
-    nn = NearestNeighbors(n_neighbors=k)
-    nn.fit(X_non_fraud)
-    _, indices = nn.kneighbors(X_fraud)
-
-    boundary_samples = []
-    for i in range(len(X_fraud)):
-        for j in range(min(k, len(indices[i]))):
-            alpha = np.random.uniform(0.3, 0.7)
-            sample = alpha * X_fraud[i] + (1 - alpha) * X_non_fraud[indices[i][j]]
-            boundary_samples.append(sample)
-
-    if not boundary_samples:
-        return np.empty((0, X_fraud.shape[1]))
-    return np.array(boundary_samples)
-
-
-def _evasion_mutation(X: np.ndarray, std: float) -> np.ndarray:
-    """Mutate a subset of features to mimic evasive behavior."""
-    mutated = X.copy()
-    n_features = X.shape[1]
-    n_mutate = max(1, n_features // 3)
-
-    for i in range(len(mutated)):
-        cols = np.random.choice(n_features, size=n_mutate, replace=False)
-        mutated[i, cols] += np.random.normal(0, std, size=n_mutate)
-
-    return mutated
+    perturbed = X.copy().astype(np.float32)
+    noise = epsilon * np.sign(rng.randn(*perturbed.shape))
+    perturbed += noise
+    return np.clip(perturbed, 0.0, None).astype(np.float32)
 
 
 def _generate_adversarial_samples(
@@ -67,50 +38,28 @@ def _generate_adversarial_samples(
     target_col: str,
     adv_strategy: dict,
 ) -> tuple[pd.DataFrame, dict[str, float | int | str]]:
-    """Generate adversarial fraud samples for training-time augmentation."""
+    """Generate FGSM-style adversarial copies of the training set."""
     noise_cfg = adv_strategy.get("noise_perturbation", {})
-    boundary_cfg = adv_strategy.get("boundary_attack", {})
-    evasion_cfg = adv_strategy.get("evasion_mutation", {})
-    noise_std = noise_cfg.get("std", 0.05)
-    boundary_k = boundary_cfg.get("k", 5)
-    evasion_std = evasion_cfg.get("std", round(noise_std * 0.6, 4))
+    epsilon = float(noise_cfg.get("std", 0.05))
 
-    fraud_mask = train_df[target_col] == 1
-    X_fraud = train_df.loc[fraud_mask, feature_cols].values.astype(float)
-    X_non_fraud = train_df.loc[~fraud_mask, feature_cols].values.astype(float)
+    if train_df.empty or not feature_cols:
+        return pd.DataFrame(), {"generated": 0, "reason": "no_train_features"}
 
-    if len(X_fraud) < 2:
-        return pd.DataFrame(), {"generated": 0, "reason": "too_few_fraud_samples"}
+    X_train = train_df[feature_cols].values.astype(np.float32)
+    y_train = train_df[target_col].values.astype(int)
 
-    noise_samples = (
-        _noise_perturbation(X_fraud, noise_std)
-        if noise_cfg.get("enabled", True)
-        else np.empty((0, X_fraud.shape[1]))
-    )
-    boundary_samples = (
-        _boundary_attack(X_fraud, X_non_fraud, boundary_k)
-        if boundary_cfg.get("enabled", True)
-        else np.empty((0, X_fraud.shape[1]))
-    )
-    evasion_samples = (
-        _evasion_mutation(X_fraud, evasion_std)
-        if evasion_cfg.get("enabled", True)
-        else np.empty((0, X_fraud.shape[1]))
-    )
+    rng = np.random.RandomState(RANDOM_STATE)
+    X_adv = _fgsm_perturb(X_train, epsilon=epsilon, rng=rng)
 
-    all_adv = np.vstack([noise_samples, boundary_samples, evasion_samples])
-    adv_df = pd.DataFrame(all_adv, columns=feature_cols)
-    adv_df[target_col] = 1
+    adv_df = pd.DataFrame(X_adv, columns=feature_cols)
+    adv_df[target_col] = y_train
 
     report = {
         "generated": int(len(adv_df)),
         "base_rows": int(len(train_df)),
-        "noise_samples": int(len(noise_samples)),
-        "boundary_samples": int(len(boundary_samples)),
-        "evasion_samples": int(len(evasion_samples)),
-        "noise_std": float(noise_std),
-        "boundary_k": int(boundary_k),
-        "evasion_std": float(evasion_std),
+        "method": "fgsm_style_random_sign",
+        "epsilon": epsilon,
+        "augmented_total": int(len(train_df) + len(adv_df)),
     }
     return adv_df, report
 
@@ -182,7 +131,10 @@ def training_agent(state: dict) -> dict:
         )
     if use_adversarial_training:
         if used_adversarial_samples:
-            print(f"  ℹ️  Adversarial strengthening enabled with {len(adv_samples)} generated samples")
+            print(
+                f"  ℹ️  FGSM-style adversarial strengthening enabled "
+                f"(epsilon={adv_report.get('epsilon', 'n/a')}, generated={len(adv_samples)})"
+            )
         else:
             print(f"  ℹ️  Adversarial strengthening requested but skipped: {adv_report.get('reason', 'no_samples_generated')}")
     if l3_count > 0:
@@ -215,7 +167,7 @@ def training_agent(state: dict) -> dict:
             model_type = "RandomForest"  # fall through
             print("  ⚠️  XGBoost not available, falling back to RandomForest.")
 
-    if model_type == "RandomForest":
+    elif model_type == "RandomForest":
         model = RandomForestClassifier(
             n_estimators=n_estimators,
             max_depth=hyper.get("max_depth", 10),
@@ -224,6 +176,20 @@ def training_agent(state: dict) -> dict:
             n_jobs=-1,
         )
         print(f"  Using RandomForest (n_estimators={n_estimators})...")
+    elif model_type == "LogisticRegression":
+        model = LogisticRegression(
+            C=hyper.get("C", 1.0),
+            max_iter=hyper.get("max_iter", 1000),
+            class_weight=hyper.get("class_weight", "balanced"),
+            solver=hyper.get("solver", "liblinear"),
+            random_state=RANDOM_STATE,
+        )
+        print(
+            f"  Using LogisticRegression "
+            f"(C={hyper.get('C', 1.0)}, max_iter={hyper.get('max_iter', 1000)})..."
+        )
+    else:
+        raise ValueError(f"Unsupported model_type from strategy plan: {model_type}")
 
     model.fit(X_train, y_train)
 
@@ -256,6 +222,8 @@ def training_agent(state: dict) -> dict:
         "drift_rows_added": int(drift_remediation.get("rows_added", 0)) if used_drift_remediation else 0,
         "used_adversarial_samples": used_adversarial_samples,
         "adversarial_sample_count": int(len(adv_samples)) if used_adversarial_samples else 0,
+        "adversarial_method": adv_report.get("method") if used_adversarial_samples else None,
+        "adversarial_epsilon": adv_report.get("epsilon") if used_adversarial_samples else None,
         "timestamp": timestamp,
     }
 
