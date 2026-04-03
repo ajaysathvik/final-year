@@ -1,5 +1,5 @@
 {
-  "timestamp": null,
+  "timestamp": "20260403_052812",
   "drift_detected": true,
   "balance_report": {
     "action": "skipped",
@@ -99,17 +99,5 @@
     "L4_supervisor_policy": 0,
     "L5_eval_to_kb": 1
   },
-  "run_id": "run_20260403052812",
-  "artifact_paths": {
-    "run_id": "run_20260403052812",
-    "run_dir": "/home/norm/Projects/Reddit-dataset/agent/output/runs/run_20260403052812",
-    "plots_dir": "/home/norm/Projects/Reddit-dataset/agent/output/plots",
-    "comparison_csv": "/home/norm/Projects/Reddit-dataset/agent/output/plots/run_comparison_metrics.csv",
-    "evaluation_plot": "/home/norm/Projects/Reddit-dataset/agent/output/runs/run_20260403052812/plots/evaluation_metrics_bar.png",
-    "robustness_plot": "/home/norm/Projects/Reddit-dataset/agent/output/runs/run_20260403052812/plots/robustness_curve.png",
-    "eval_comparison_plot": "/home/norm/Projects/Reddit-dataset/agent/output/plots/run_comparison_eval_metrics.png",
-    "fpr_comparison_plot": "/home/norm/Projects/Reddit-dataset/agent/output/plots/run_comparison_fpr.png",
-    "robustness_comparison_plot": "/home/norm/Projects/Reddit-dataset/agent/output/plots/run_comparison_robustness_metrics.png",
-    "attack_curve_plot": "/home/norm/Projects/Reddit-dataset/agent/output/plots/run_comparison_attack_curves.png"
-  }
+  "run_id": "run_20260403052812"
 }
