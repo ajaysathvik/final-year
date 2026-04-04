@@ -3,12 +3,12 @@ Evaluation Agent — Analyze phase of MAPE-K.
 Computes F1, precision, recall, ROC-AUC, and FPR on the test set.
 Sets feedback loop flags:
   L1 (needs_rebalance) — if recall is low, data may need rebalancing
-  L2 (needs_strategy_refinement) — if F1 is degrading, strategy needs Optuna HPO
+  L2 (needs_strategy_refinement) — if F1 is degrading, strategy needs refinement
   L5 — logs evaluation to KB
 
 Bug-2 fix: rebuilds test set from latest combined data when scraped data exists.
 Bug-5 fix: factors post_augmentation_imbalanced flag into L1 trigger.
-Bug-7 fix: detects F1 degradation across iterations → triggers L2 for Optuna HPO.
+Bug-7 fix: detects F1 degradation across iterations → triggers L2 for refinement.
 """
 from __future__ import annotations
 
@@ -139,10 +139,10 @@ def evaluation_agent(state: dict) -> dict:
         print("  ℹ️  Suppressing L1: Balance Agent already determined no rebalancing needed.")
         needs_rebalance = False
 
-    # ── L2 trigger: F1 degradation → strategy needs Optuna HPO ──
+    # ── L2 trigger: F1 degradation → strategy needs refinement ──
     needs_strategy = (
         metrics["f1"] < F1_THRESHOLD
-        or f1_degraded  # Bug-7: degradation triggers L2 with Optuna
+        or f1_degraded  # Bug-7: degradation triggers L2 refinement
     )
 
     # Don't loop if we've already looped enough

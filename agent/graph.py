@@ -47,6 +47,7 @@ from config import (
     MAX_L3_ITERATIONS,
     MAX_L4_ITERATIONS,
     F1_THRESHOLD,
+    GENERATE_RANDOM_DRIFT_DATA,
 )
 from state import PipelineState
 from knowledge_base import KnowledgeBase
@@ -66,6 +67,12 @@ from agents.knowledge_agent import knowledge_agent
 
 def ingest_node(state: dict) -> dict:
     """Load CSV, select features, split train/test, ingest scraped data, initialize KB."""
+
+    # ── Optionally regenerate drift test dataset before loading anything ──
+    if GENERATE_RANDOM_DRIFT_DATA:
+        from generate_random_drift_data import generate_and_save
+        generate_and_save()
+
     csv_path = Path(state.get("csv_path") or DATASET_PATH)
 
     print(f"\n📂 Loading dataset: {csv_path}")

@@ -11,8 +11,6 @@ from config import (
     ADVERSARIAL_BOUNDARY_K,
     F1_THRESHOLD,
     ROBUSTNESS_THRESHOLD,
-    OPTUNA_MAX_TRIALS,
-    OPTUNA_TIMEOUT_SECONDS,
 )
 
 
@@ -72,6 +70,8 @@ def _score_model_candidates(
     state: dict,
     n_estimators: int,
     l2_count: int,
+    max_depth: int = 6,
+    learning_rate: float = 0.1,
 ) -> tuple[str, dict, list[dict[str, object]]]:
     """Evaluate a small model family set and return the best candidate."""
     from sklearn.model_selection import StratifiedKFold, cross_val_score
@@ -92,8 +92,8 @@ def _score_model_candidates(
             "model_type": "XGBoost",
             "hyperparameters": {
                 "n_estimators": n_estimators,
-                "max_depth": 6,
-                "learning_rate": 0.1,
+                "max_depth": max_depth,
+                "learning_rate": learning_rate,
                 "class_weight": None,
             },
         })
@@ -105,7 +105,7 @@ def _score_model_candidates(
             "model_type": "RandomForest",
             "hyperparameters": {
                 "n_estimators": n_estimators,
-                "max_depth": 10,
+                "max_depth": max_depth,
                 "learning_rate": None,
                 "class_weight": "balanced",
             },
@@ -167,7 +167,7 @@ def _score_model_candidates(
     if not valid_results:
         fallback_hyperparameters = {
             "n_estimators": n_estimators,
-            "max_depth": 10,
+            "max_depth": max_depth,
             "learning_rate": None,
             "class_weight": "balanced",
         }
@@ -211,89 +211,34 @@ def strategy_agent(state: dict) -> dict:
     optuna_used = False
     tuned_model_type: str | None = None
     selected_hyperparameters: dict[str, object] | None = None
+
+    l2_search_grid = [
+        {"n_estimators": 200, "max_depth": 8, "learning_rate": 0.05, "noise_std": 0.06},
+        {"n_estimators": 300, "max_depth": 10, "learning_rate": 0.1, "noise_std": 0.07},
+        {"n_estimators": 500, "max_depth": 12, "learning_rate": 0.15, "noise_std": 0.08},
+        {"n_estimators": 150, "max_depth": 6, "learning_rate": 0.2, "noise_std": 0.1},
+    ]
+
     if l2_count > 0 and needs_strategy_refinement and not candidate_needs_evaluation:
-        print(
-            f"  ℹ️  L2 refinement iteration #{l2_count} "
-            f"— using Optuna HPO ({OPTUNA_MAX_TRIALS} trials, {OPTUNA_TIMEOUT_SECONDS}s timeout)"
-        )
-        # Bug-7 fix: use Optuna to find optimal hyperparameters
-        try:
-            import optuna
-            from sklearn.model_selection import cross_val_score
-            from sklearn.ensemble import RandomForestClassifier
-
-            optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-            # Get training data for HPO validation
-            train_df, feature_cols, target_col = _get_strategy_training_data(state)
-            X = train_df[feature_cols].values
-            y = train_df[target_col].values.astype(int)
-
-            # Determine model type
-            try:
-                import xgboost  # noqa: F401
-                use_xgb = True
-            except ImportError:
-                use_xgb = False
-
-            def objective(trial):
-                n_est = trial.suggest_int("n_estimators", 100, 500, step=50)
-                max_d = trial.suggest_int("max_depth", 3, 12)
-                if use_xgb:
-                    from xgboost import XGBClassifier
-                    lr = trial.suggest_float("learning_rate", 0.01, 0.3, log=True)
-                    clf = XGBClassifier(
-                        n_estimators=n_est, max_depth=max_d, learning_rate=lr,
-                        eval_metric="logloss", random_state=42,
-                        scale_pos_weight=max(1, int((y == 0).sum() / max(1, (y == 1).sum()))),
-                    )
-                else:
-                    clf = RandomForestClassifier(
-                        n_estimators=n_est, max_depth=max_d,
-                        class_weight="balanced", random_state=42, n_jobs=-1,
-                    )
-                scores = cross_val_score(clf, X, y, cv=3, scoring="f1", n_jobs=-1)
-                return scores.mean()
-
-            study = optuna.create_study(direction="maximize")
-            study.optimize(
-                objective,
-                n_trials=OPTUNA_MAX_TRIALS,
-                timeout=OPTUNA_TIMEOUT_SECONDS,
-                show_progress_bar=False,
-            )
-
-            best = study.best_params
-            n_estimators = best["n_estimators"]
-            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
-            selected_hyperparameters = {
-                "n_estimators": n_estimators,
-                "max_depth": best["max_depth"],
-                "learning_rate": best.get("learning_rate", 0.1) if use_xgb else None,
-                "class_weight": None if use_xgb else "balanced",
-            }
-            tuned_model_type = "XGBoost" if use_xgb else "RandomForest"
-            optuna_used = True
-            print(
-                f"  🔬 Optuna selected {tuned_model_type} "
-                f"(best F1={study.best_value:.4f}, params={best})"
-            )
-
-        except ImportError:
-            print("  ⚠️  Optuna not installed. Falling back to static L2 adaptation.")
-            n_estimators = N_ESTIMATORS + (50 * l2_count)
-            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
-        except Exception as exc:
-            print(f"  ⚠️  Optuna HPO failed ({exc}). Falling back to static L2 adaptation.")
-            n_estimators = N_ESTIMATORS + (50 * l2_count)
-            noise_std = ADVERSARIAL_NOISE_STD * (1 + 0.5 * l2_count)
+        print(f"  ℹ️  L2 refinement iteration #{l2_count} — Grid Search L2 adaptation.")
+        grid_idx = min(l2_count - 1, len(l2_search_grid) - 1)
+        params = l2_search_grid[grid_idx]
+        
+        n_estimators = params["n_estimators"]
+        max_depth = params["max_depth"]
+        learning_rate = params["learning_rate"]
+        noise_std = params["noise_std"]
     elif kb_prior_f1 is not None and kb_prior_f1 < 0.6:
         # KB shows prior run had low F1 — pre-emptively boost estimators
         n_estimators = N_ESTIMATORS + 50
+        max_depth = 6
+        learning_rate = 0.1
         noise_std = ADVERSARIAL_NOISE_STD
         print(f"  ℹ️  KB-informed boost: prior F1={kb_prior_f1} → n_estimators+50")
     else:
         n_estimators = N_ESTIMATORS
+        max_depth = 6
+        learning_rate = 0.1
         noise_std = ADVERSARIAL_NOISE_STD
 
     # ── Model selection ─────────────────────────────────────────
@@ -301,6 +246,8 @@ def strategy_agent(state: dict) -> dict:
         state=state,
         n_estimators=n_estimators,
         l2_count=l2_count,
+        max_depth=max_depth,
+        learning_rate=learning_rate,
     )
 
     if selected_hyperparameters is None:

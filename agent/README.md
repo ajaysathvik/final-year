@@ -39,6 +39,25 @@ python main.py
 
 # Or specify a custom CSV path
 python main.py --data /path/to/your/data.csv
+
+### 4. Common Development Commands
+
+#### Generate Random Drift Data
+Regenerate a fresh procedural drift dataset before running the pipeline:
+```bash
+GENERATE_RANDOM_DRIFT_DATA=true python main.py
+```
+Or run the generator standalone:
+```bash
+python generate_random_drift_data.py
+```
+
+#### Ignore Drift Detection
+Bypass drift detection by setting extreme thresholds:
+```bash
+PSI_THRESHOLD=100.0 KS_THRESHOLD=0.0 python main.py
+```
+
 ```
 
 ### 3. Environment Variables (Optional)
@@ -53,6 +72,8 @@ python main.py --data /path/to/your/data.csv
 | `KS_THRESHOLD` | `0.05` | KS test p-value threshold |
 | `CTGAN_EPOCHS` | `100` | CTGAN training epochs |
 | `N_ESTIMATORS` | `200` | Number of trees |
+| `USE_SCRAPED_DRIFT_DATA` | `true` | Set to `false` to train on `data.csv` only — drift CSV is **not** appended to training data |
+| `GENERATE_RANDOM_DRIFT_DATA` | `false` | Set to `true` to regenerate `drift_test_dataset.csv` with fresh random patterns before each run |
 
 ## Output
 
@@ -109,6 +130,8 @@ training_data = clean_data + drifted_scraped_data + ctgan_data + adversarial_dat
 
 Set `USE_SCRAPED_DRIFT_DATA=false` to force the pipeline to train from
 `data.csv` only, without appending rows from `agent/output/scraped_data`.
+To skip drift detection entirely, set `PSI_THRESHOLD=100.0 KS_THRESHOLD=0.0`.
+
 
 The training agent generates adversarial samples using:
 1. **Noise perturbation** — Gaussian noise on all features

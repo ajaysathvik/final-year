@@ -34,6 +34,19 @@ USE_SCRAPED_DRIFT_DATA = os.getenv("USE_SCRAPED_DRIFT_DATA", "true").strip().low
     "1", "true", "yes", "on"
 }
 
+# ── Random drift data generation ──────────────────────────────────
+# When GENERATE_RANDOM_DRIFT_DATA=true, the pipeline regenerates
+# drift_test_dataset.csv before each run using procedural scenarios so
+# drift patterns and class balance shift continuously across runs.
+GENERATE_RANDOM_DRIFT_DATA = os.getenv("GENERATE_RANDOM_DRIFT_DATA", "false").strip().lower() in {
+    "1", "true", "yes", "on"
+}
+# How many rows to generate (default 300 is a good balance of diversity/speed)
+RANDOM_DRIFT_N_SAMPLES = int(os.getenv("RANDOM_DRIFT_N_SAMPLES", "300"))
+# Optional fixed seed (leave unset to get a new distribution every run)
+_rds = os.getenv("RANDOM_DRIFT_SEED", "")
+RANDOM_DRIFT_SEED: int | None = int(_rds) if _rds.strip() else None
+
 # ── CTGAN ──────────────────────────────────────────────────────────
 CTGAN_EPOCHS       = int(os.getenv("CTGAN_EPOCHS", "100"))
 CTGAN_SAMPLE_RATIO = float(os.getenv("CTGAN_SAMPLE_RATIO", "1.0"))
@@ -47,8 +60,6 @@ ADVERSARIAL_EVASION_STD = float(os.getenv("ADV_EVASION_STD", "0.03"))
 TEST_SIZE        = float(os.getenv("TEST_SIZE", "0.2"))
 RANDOM_STATE     = int(os.getenv("RANDOM_STATE", "42"))
 N_ESTIMATORS     = int(os.getenv("N_ESTIMATORS", "200"))
-OPTUNA_MAX_TRIALS = int(os.getenv("OPTUNA_MAX_TRIALS", "8"))
-OPTUNA_TIMEOUT_SECONDS = int(os.getenv("OPTUNA_TIMEOUT_SECONDS", "45"))
 
 # ── Supervisor ─────────────────────────────────────────────────────
 SUPERVISOR_HEALTH_MIN = float(os.getenv("SUPERVISOR_HEALTH_MIN", "0.50"))

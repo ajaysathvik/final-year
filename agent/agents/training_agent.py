@@ -79,6 +79,7 @@ def training_agent(state: dict) -> dict:
     feature_cols = state["feature_cols"]
     target_col = state["target_col"]
     l3_count = state.get("l3_count", 0)
+    f1_history: list[float] = list(state.get("f1_history") or [])
     strategy_decision = state.get("strategy_decision")
 
     # Prefer drift-remediated data, then balanced data built from it.
@@ -210,9 +211,13 @@ def training_agent(state: dict) -> dict:
         new_l3_count = l3_count + 1
         print(f"  🔄 L3: Train-set F1={train_f1} < {F1_THRESHOLD}, will retrain (count={new_l3_count})")
 
+    # Append the real F1 measured this iteration to the history list.
+    f1_history.append(train_f1)
+
     metrics = {
         "model_type": model_type,
         "train_f1": train_f1,
+        "f1_history": f1_history,
         "total_rows": len(train_data),
         "n_fraud": int(y_train.sum()),
         "n_non_fraud": int(len(y_train) - y_train.sum()),
@@ -244,6 +249,7 @@ def training_agent(state: dict) -> dict:
         "needs_strategy_refinement": False,
         "needs_rebalance": False,
         "l3_count": new_l3_count,
+        "f1_history": f1_history,
         "adversarial_samples": adv_samples if use_adversarial_training else pd.DataFrame(),
         "adversarial_report": adv_report if use_adversarial_training else {},
         "adversarial_trained": used_adversarial_samples,

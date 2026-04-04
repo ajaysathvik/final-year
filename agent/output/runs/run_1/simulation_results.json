@@ -1,0 +1,37 @@
+{
+  "noise_stress_test": {
+    "eps_0.0": 0.9058,
+    "eps_0.01": 0.8494,
+    "eps_0.03": 0.8503,
+    "eps_0.05": 0.8452,
+    "eps_0.08": 0.8445,
+    "eps_0.1": 0.8432,
+    "eps_0.15": 0.8419,
+    "eps_0.2": 0.8467,
+    "eps_0.25": 0.8542,
+    "eps_0.3": 0.8418
+  },
+  "attack_method": "fgsm_style_random_sign",
+  "attack_epsilons": [
+    0.0,
+    0.01,
+    0.03,
+    0.05,
+    0.08,
+    0.1,
+    0.15,
+    0.2,
+    0.25,
+    0.3
+  ],
+  "bootstrap_mean_f1": 0.9065,
+  "bootstrap_std": 0.0054,
+  "bootstrap_ci_95": [
+    0.8958,
+    0.9159
+  ],
+  "worst_noise_f1": 0.8418,
+  "robustness_score": 0.8688,
+  "threshold": 0.6,
+  "passed": true
+}

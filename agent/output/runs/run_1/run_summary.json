@@ -1,0 +1,106 @@
+{
+  "timestamp": "20260404_083839",
+  "drift_detected": false,
+  "balance_report": {
+    "action": "skipped",
+    "reason": "already_balanced",
+    "ratio": 1.2943,
+    "class_ratio": "1.29:1"
+  },
+  "supervisor_decision": "proceed",
+  "policy_decision": {
+    "should_retrain": true,
+    "should_rebalance": false,
+    "should_skip": false,
+    "should_validate_existing": false,
+    "reasons": [
+      "no_existing_model"
+    ],
+    "supervisor_health": 1.0,
+    "current_f1": 0.0,
+    "l4_count": 0
+  },
+  "training_metrics": {
+    "model_type": "XGBoost",
+    "train_f1": 0.9193,
+    "f1_history": [
+      0.9193
+    ],
+    "total_rows": 7702,
+    "n_fraud": 4345,
+    "n_non_fraud": 3357,
+    "n_estimators": 200,
+    "l3_count": 0,
+    "used_drift_remediation": false,
+    "drift_rows_added": 0,
+    "used_adversarial_samples": false,
+    "adversarial_sample_count": 0,
+    "adversarial_method": null,
+    "adversarial_epsilon": null,
+    "timestamp": "20260404_083839"
+  },
+  "eval_metrics": {
+    "f1": 0.9058,
+    "precision": 0.89,
+    "recall": 0.9222,
+    "roc_auc": 0.9596,
+    "fpr": 0.143
+  },
+  "simulation_results": {
+    "noise_stress_test": {
+      "eps_0.0": 0.9058,
+      "eps_0.01": 0.8494,
+      "eps_0.03": 0.8503,
+      "eps_0.05": 0.8452,
+      "eps_0.08": 0.8445,
+      "eps_0.1": 0.8432,
+      "eps_0.15": 0.8419,
+      "eps_0.2": 0.8467,
+      "eps_0.25": 0.8542,
+      "eps_0.3": 0.8418
+    },
+    "attack_method": "fgsm_style_random_sign",
+    "attack_epsilons": [
+      0.0,
+      0.01,
+      0.03,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3
+    ],
+    "bootstrap_mean_f1": 0.9065,
+    "bootstrap_std": 0.0054,
+    "bootstrap_ci_95": [
+      0.8958,
+      0.9159
+    ],
+    "worst_noise_f1": 0.8418,
+    "robustness_score": 0.8688,
+    "threshold": 0.6,
+    "passed": true
+  },
+  "simulation_passed": true,
+  "deployment_decision": {
+    "promoted": true,
+    "reasons": [
+      "all_checks_passed"
+    ],
+    "simulation_passed": true,
+    "policy_retrain": true,
+    "candidate_path": "/home/norm/Projects/Reddit-dataset/agent/output/models/candidate_xgboost_20260404_083839.joblib",
+    "promoted_model_path": "/home/norm/Projects/Reddit-dataset/agent/output/models/promoted_model.joblib"
+  },
+  "promoted": true,
+  "feedback_loops": {
+    "L1_eval_to_balance": 0,
+    "L2_eval_to_strategy": 0,
+    "L3_training_self_loop": 0,
+    "L4_supervisor_policy": 0,
+    "L5_eval_to_kb": 1
+  },
+  "run_id": "run_1"
+}

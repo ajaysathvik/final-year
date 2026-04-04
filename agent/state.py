@@ -48,7 +48,8 @@ class PipelineState(TypedDict, total=False):
     current_model_path: str
     candidate_model: Any
     candidate_model_path: str
-    training_metrics: dict[str, float]
+    training_metrics: dict[str, Any]
+    f1_history: list[float]           # real Train-F1 recorded at each L3 iteration
     adversarial_samples: pd.DataFrame
     adversarial_report: dict[str, Any]
     adversarial_trained: bool

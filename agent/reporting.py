@@ -53,6 +53,10 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
     if _plot_single_run_robustness(summary, robustness_plot):
         per_run_paths["robustness_plot"] = str(robustness_plot)
 
+    lr_plot = run_plots_dir / "learning_rate_curve.png"
+    if _plot_single_run_learning_rate(summary, lr_plot):
+        per_run_paths["learning_rate_plot"] = str(lr_plot)
+
     historical_runs = _load_historical_runs()
     historical_runs = _merge_current_run(historical_runs, summary)
     historical_runs.sort(key=lambda item: (_resolve_timestamp(item), item.get("run_id", "")))
@@ -76,6 +80,10 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
     attack_cmp = PLOTS_DIR / "run_comparison_attack_curves.png"
     if _plot_attack_curve_comparison(historical_runs, attack_cmp):
         comparison_paths["attack_curve_plot"] = str(attack_cmp)
+
+    lr_cmp = PLOTS_DIR / "run_comparison_learning_rate.png"
+    if _plot_learning_rate_comparison(historical_runs, lr_cmp):
+        comparison_paths["learning_rate_comparison_plot"] = str(lr_cmp)
 
     return {
         "run_id": run_id,
@@ -176,18 +184,20 @@ def _merge_current_run(runs: list[dict[str, Any]], current: dict[str, Any]) -> l
 
 
 def _resolve_run_id(summary: dict[str, Any]) -> str:
-    for value in (
-        summary.get("run_id"),
-        summary.get("timestamp"),
-        (summary.get("training_metrics") or {}).get("timestamp"),
-    ):
-        if not value:
-            continue
-        text = str(value)
-        digits = "".join(ch for ch in text if ch.isdigit())
-        if len(digits) >= 14:
-            return f"run_{digits[:14]}"
-    return f"run_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    """Return the run_id from the summary if already set, otherwise assign the
+    next sequential number (run_1, run_2, …) based on existing folders in RUNS_DIR."""
+    existing = summary.get("run_id")
+    if existing and str(existing).startswith("run_"):
+        return str(existing)
+    # Count existing run_<N> folders to determine the next number.
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    existing_nums = [
+        int(p.name[4:])
+        for p in RUNS_DIR.iterdir()
+        if p.is_dir() and p.name.startswith("run_") and p.name[4:].isdigit()
+    ]
+    next_num = max(existing_nums, default=0) + 1
+    return f"run_{next_num}"
 
 
 def _resolve_timestamp(summary: dict[str, Any]) -> str:
@@ -206,6 +216,11 @@ def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[st
     """
     Build approximate per-run summaries from the sequential event log when
     explicit full_run_summary entries are not available.
+
+    Run IDs are assigned sequentially (run_1, run_2, …) by their order in the
+    log, NOT by counting existing folders on disk.  Counting folders always
+    produces the same value for every reconstructed run (max_existing+1), which
+    causes all of them to collapse into a single entry after deduplication.
     """
     runs: list[dict[str, Any]] = []
     current: dict[str, Any] = {}
@@ -221,6 +236,8 @@ def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[st
 
         if agent == "policy" and event_type == "policy_decision":
             current["policy_decision"] = data
+        elif agent == "strategy" and event_type == "strategy_plan":
+            current["strategy_plan"] = data
         elif agent == "training" and event_type == "model_trained":
             current["training_metrics"] = data
             current["timestamp"] = timestamp
@@ -234,7 +251,9 @@ def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[st
             current["promoted"] = data.get("promoted")
             current["simulation_passed"] = data.get("simulation_passed")
             current["timestamp"] = timestamp or current.get("timestamp")
-            current["run_id"] = _resolve_run_id(current)
+            # Assign sequential ID based on position in the log so that each
+            # reconstructed run gets a unique, stable identifier.
+            current["run_id"] = f"run_{len(runs) + 1}"
             runs.append(current)
             current = {}
 
@@ -364,6 +383,12 @@ def _plot_single_run_robustness(summary: dict[str, Any], output_path: Path) -> b
 
 
 def _plot_eval_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+    """Grouped bar chart with zoomed y-axis to highlight small metric changes."""
+    try:
+        import numpy as np  # noqa: PLC0415
+    except ModuleNotFoundError:
+        np = None  # type: ignore[assignment]
+
     plt = _load_pyplot()
     if plt is None:
         return False
@@ -372,19 +397,74 @@ def _plot_eval_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool
 
     run_labels = [run["run_id"] for run in runs]
     metrics = ["f1", "precision", "recall", "roc_auc"]
-    fig, ax = plt.subplots(figsize=(10, 5))
-    for metric, color in zip(metrics, ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"]):
-        values = [(run.get("eval_metrics") or {}).get(metric) for run in runs]
-        if any(value is not None for value in values):
-            ax.plot(run_labels, [float("nan") if value is None else float(value) for value in values], marker="o", linewidth=2, label=metric.upper(), color=color)
+    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"]
 
-    ax.set_ylim(0, 1.05)
+    # Collect all values per metric
+    metric_values: dict[str, list[float]] = {}
+    for metric in metrics:
+        values = [(run.get("eval_metrics") or {}).get(metric) for run in runs]
+        if any(v is not None for v in values):
+            metric_values[metric] = [float(v) if v is not None else 0.0 for v in values]
+
+    if not metric_values:
+        return False
+
+    n_runs = len(run_labels)
+    n_metrics = len(metric_values)
+    bar_width = 0.7 / n_metrics
+
+    fig, ax = plt.subplots(figsize=(max(10, n_runs * 2), 6))
+
+    if np is not None:
+        x = np.arange(n_runs)
+    else:
+        x = list(range(n_runs))
+
+    all_vals = [v for vals in metric_values.values() for v in vals if v > 0]
+    if all_vals:
+        y_min = max(0, min(all_vals) - 0.03)
+        y_max = min(1.0, max(all_vals) + 0.02)
+    else:
+        y_min, y_max = 0, 1.0
+
+    for idx, (metric, vals) in enumerate(metric_values.items()):
+        offset = (idx - (n_metrics - 1) / 2) * bar_width
+        if np is not None:
+            positions = x + offset
+        else:
+            positions = [xi + offset for xi in x]
+        bars = ax.bar(
+            positions,
+            vals,
+            width=bar_width * 0.88,
+            label=metric.upper(),
+            color=colors[idx % len(colors)],
+            edgecolor="black",
+            linewidth=0.4,
+        )
+        # Annotate each bar with its value
+        for bar, val in zip(bars, vals):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + (y_max - y_min) * 0.01,
+                f"{val:.4f}",
+                ha="center",
+                va="bottom",
+                fontsize=7,
+                rotation=90,
+            )
+
+    if np is not None:
+        ax.set_xticks(x)
+    else:
+        ax.set_xticks(list(range(n_runs)))
+    ax.set_xticklabels(run_labels, rotation=30, ha="right")
+    ax.set_ylim(y_min, y_max + (y_max - y_min) * 0.15)
     ax.set_xlabel("Run")
     ax.set_ylabel("Score")
     ax.set_title("Evaluation Metrics Across Runs")
-    ax.grid(True, linestyle="--", alpha=0.35)
-    ax.legend(frameon=False, ncol=4)
-    ax.tick_params(axis="x", rotation=30)
+    ax.grid(axis="y", linestyle="--", alpha=0.35)
+    ax.legend(frameon=False, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.12))
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -421,6 +501,16 @@ def _plot_fpr_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
 
 
 def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+    """
+    Robustness comparison with *persistence lines*: solid segments denote runs
+    where a new model was trained; dashed segments denote runs where the
+    previous model was re-used (training_metrics is None).
+
+    For Train F1, the last successful value is carried forward on re-used runs
+    so the line remains continuous.
+    """
+    from matplotlib.lines import Line2D  # noqa: PLC0415
+
     plt = _load_pyplot()
     if plt is None:
         return False
@@ -434,26 +524,105 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
         ("simulation.robustness_score", "Robustness Score", "#9467bd"),
     ]
 
+    # Determine which runs re-used the previous model (no new training).
+    model_reused = [
+        (run.get("training_metrics") is None) for run in runs
+    ]
+
     fig, ax = plt.subplots(figsize=(10, 5))
     plotted = False
     run_labels = [run["run_id"] for run in runs]
+    x_indices = list(range(len(runs)))
+
     for metric_key, label, color in metric_specs:
-        values = [_build_scalar_snapshot(run).get(metric_key) for run in runs]
-        if any(value is not None for value in values):
-            ax.plot(run_labels, [float("nan") if value is None else float(value) for value in values], marker="o", linewidth=2, label=label, color=color)
-            plotted = True
+        raw_values = [_build_scalar_snapshot(run).get(metric_key) for run in runs]
+
+        # For Train F1, carry forward the last known value on re-used runs.
+        if metric_key == "training.train_f1":
+            filled_values: list[float | None] = []
+            last_known: float | None = None
+            for i, val in enumerate(raw_values):
+                if val is not None:
+                    last_known = float(val)
+                    filled_values.append(last_known)
+                elif model_reused[i] and last_known is not None:
+                    filled_values.append(last_known)
+                else:
+                    filled_values.append(None)
+            values = filled_values
+        else:
+            values = [float(v) if v is not None else None for v in raw_values]
+
+        if not any(v is not None for v in values):
+            continue
+
+        # Draw segment-by-segment: solid for trained, dashed for re-used.
+        for i in range(len(runs) - 1):
+            y0, y1 = values[i], values[i + 1]
+            if y0 is None or y1 is None:
+                continue
+            # A segment is "re-used" if the *destination* run re-used the model.
+            is_reused_segment = model_reused[i + 1]
+            ax.plot(
+                [x_indices[i], x_indices[i + 1]],
+                [y0, y1],
+                linestyle="--" if is_reused_segment else "-",
+                linewidth=2,
+                color=color,
+            )
+
+        # Draw markers: filled circle for trained, open circle for re-used.
+        for i, val in enumerate(values):
+            if val is None:
+                continue
+            ax.plot(
+                x_indices[i],
+                val,
+                marker="o",
+                markersize=7,
+                color=color,
+                markerfacecolor="white" if model_reused[i] else color,
+                markeredgewidth=1.8 if model_reused[i] else 1.2,
+                markeredgecolor=color,
+            )
+
+        # Invisible full line just for the primary legend entry.
+        ax.plot([], [], marker="o", linewidth=2, color=color, label=label)
+        plotted = True
 
     if not plotted:
         plt.close(fig)
         return False
 
+    ax.set_xticks(x_indices)
+    ax.set_xticklabels(run_labels)
     ax.set_ylim(0, 1.05)
     ax.set_xlabel("Run")
     ax.set_ylabel("Score")
     ax.set_title("Training and Robustness Metrics Across Runs")
     ax.grid(True, linestyle="--", alpha=0.35)
-    ax.legend(frameon=False)
     ax.tick_params(axis="x", rotation=30)
+
+    # Primary legend (metric names).
+    primary_legend = ax.legend(frameon=False, loc="lower left")
+    ax.add_artist(primary_legend)
+
+    # Secondary legend explaining line styles.
+    style_handles = [
+        Line2D([0], [0], color="grey", linewidth=2, linestyle="-",
+               marker="o", markersize=6, label="New Model Trained"),
+        Line2D([0], [0], color="grey", linewidth=2, linestyle="--",
+               marker="o", markerfacecolor="white", markeredgewidth=1.8,
+               markersize=6, label="Previous Model Re-used"),
+    ]
+    ax.legend(
+        handles=style_handles, frameon=True, fancybox=True,
+        framealpha=0.85, edgecolor="#ccc", fontsize=8,
+        loc="upper right",
+    )
+    # Re-add primary legend (adding second legend removes the first).
+    ax.add_artist(primary_legend)
+
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -461,6 +630,12 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
 
 
 def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+    """Grouped bar chart: x-axis = attack epsilon level, bars = runs."""
+    try:
+        import numpy as np  # noqa: PLC0415
+    except ModuleNotFoundError:
+        np = None  # type: ignore[assignment]
+
     plt = _load_pyplot()
     if plt is None:
         return False
@@ -468,30 +643,225 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
     if len(eligible) < 2:
         return False
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    # Collect all epsilon levels and per-run scores
+    all_eps: set[float] = set()
+    run_data: list[tuple[str, dict[float, float]]] = []
     for run in eligible:
         attack_scores = (run.get("simulation_results") or {}).get("noise_stress_test", {})
-        eps_vals = []
-        scores = []
-        for key, value in sorted(attack_scores.items(), key=lambda item: float(item[0].split("_", 1)[1])):
+        eps_map: dict[float, float] = {}
+        for key, value in attack_scores.items():
             try:
-                eps_vals.append(float(key.split("_", 1)[1]))
-                scores.append(float(value))
+                eps = float(key.split("_", 1)[1])
+                eps_map[eps] = float(value)
+                all_eps.add(eps)
             except (IndexError, ValueError, TypeError):
                 continue
-        if eps_vals:
-            ax.plot(eps_vals, scores, marker="o", linewidth=1.8, label=run["run_id"])
+        if eps_map:
+            run_data.append((run["run_id"], eps_map))
 
-    if not ax.lines:
-        plt.close(fig)
+    if not run_data:
+        plt.close("all")
         return False
 
+    eps_levels = sorted(all_eps)
+    n_runs = len(run_data)
+    n_eps = len(eps_levels)
+    bar_width = 0.7 / n_runs
+
+    colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+    ]
+
+    fig, ax = plt.subplots(figsize=(max(8, n_eps * n_runs * 0.5 + 2), 5))
+
+    if np is not None:
+        x = np.arange(n_eps)
+        offsets = [(i - (n_runs - 1) / 2) * bar_width for i in range(n_runs)]
+        for idx, (run_id, eps_map) in enumerate(run_data):
+            heights = [eps_map.get(eps, 0.0) for eps in eps_levels]
+            ax.bar(
+                x + offsets[idx],
+                heights,
+                width=bar_width * 0.9,
+                label=run_id,
+                color=colors[idx % len(colors)],
+                edgecolor="black",
+                linewidth=0.4,
+            )
+        ax.set_xticks(x)
+    else:
+        # Fallback without numpy: simple side-by-side using plain floats
+        offsets = [(i - (n_runs - 1) / 2) * bar_width for i in range(n_runs)]
+        for idx, (run_id, eps_map) in enumerate(run_data):
+            heights = [eps_map.get(eps, 0.0) for eps in eps_levels]
+            xs = [j + offsets[idx] for j in range(n_eps)]
+            ax.bar(
+                xs,
+                heights,
+                width=bar_width * 0.9,
+                label=run_id,
+                color=colors[idx % len(colors)],
+                edgecolor="black",
+                linewidth=0.4,
+            )
+        ax.set_xticks(list(range(n_eps)))
+
+    ax.set_xticklabels([str(e) for e in eps_levels])
     ax.set_xlabel("Attack Epsilon")
     ax.set_ylabel("F1 Score")
     ax.set_ylim(0, 1.05)
-    ax.set_title("FGSM-Style Robustness Curves Across Runs")
-    ax.grid(True, linestyle="--", alpha=0.35)
-    ax.legend(frameon=False, fontsize=8)
+    ax.set_title("FGSM-Style Robustness Comparison Across Runs")
+    ax.grid(axis="y", linestyle="--", alpha=0.35)
+    ax.legend(frameon=False, fontsize=8, ncol=min(n_runs, 5))
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
+def _plot_single_run_learning_rate(summary: dict[str, Any], output_path: Path) -> bool:
+    """
+    Plot a per-run training progression chart using real F1 values from each
+    L3 self-loop iteration.  Falls back gracefully when only one iteration ran.
+
+    Primary axis  : Real Train-F1 per L3 iteration (measured, not interpolated)
+    Secondary axis: n_estimators used at each iteration (bar)
+    """
+    plt = _load_pyplot()
+    if plt is None:
+        return False
+
+    tm = summary.get("training_metrics") or {}
+    f1_history: list[float] = tm.get("f1_history") or []
+    train_f1 = tm.get("train_f1")
+
+    # Fall back: if the history list wasn't persisted use the single final value.
+    if not f1_history and train_f1 is not None:
+        f1_history = [float(train_f1)]
+
+    if not f1_history:
+        return False
+
+    n_est_final: int = int(tm.get("n_estimators", 0))
+    model_type: str = str(tm.get("model_type", "Model"))
+    l3_iterations = len(f1_history)  # 1 = no L3 loops, 2+ = self-loop ran
+
+    # Reconstruct per-iteration n_estimators.  The final value already
+    # includes 50 * (l3_iterations - 1) boosts; reverse-engineer the base.
+    n_boosts = l3_iterations - 1
+    base_n_est = n_est_final - (50 * n_boosts)
+    iterations = list(range(l3_iterations))
+    n_est_per_iter = [base_n_est + 50 * i for i in iterations]
+
+    fig, ax1 = plt.subplots(figsize=(8, 4.5))
+
+    color_f1 = "#1f77b4"
+    marker = "o" if l3_iterations > 1 else "s"
+    ax1.plot(iterations, f1_history, marker=marker, linewidth=2, color=color_f1, label="Train F1 (real)")
+    ax1.set_xlabel("Training Iteration (L3 Loop)")
+    ax1.set_ylabel("Train F1", color=color_f1)
+    ax1.tick_params(axis="y", labelcolor=color_f1)
+    ax1.set_ylim(0, 1.05)
+    ax1.set_xticks(iterations)
+    ax1.grid(True, linestyle="--", alpha=0.4)
+
+    if l3_iterations == 1:
+        ax1.annotate(
+            f"Single run (no L3 iterations)\nF1 = {f1_history[0]:.4f}",
+            xy=(0, f1_history[0]),
+            xytext=(0.15, f1_history[0] - 0.12),
+            textcoords="data",
+            fontsize=8,
+            color="#555",
+        )
+
+    # Secondary axis: n_estimators per iteration
+    ax2 = ax1.twinx()
+    color_n = "#ff7f0e"
+    ax2.bar(iterations, n_est_per_iter, alpha=0.25, color=color_n, label="n_estimators")
+    ax2.set_ylabel("n_estimators", color=color_n)
+    ax2.tick_params(axis="y", labelcolor=color_n)
+
+    run_id = summary.get("run_id", "run")
+    ax1.set_title(f"L3 Training Progression — {model_type} ({run_id})")
+
+    # Combined legend
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, frameon=False, loc="lower right")
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
+def _plot_learning_rate_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+    """
+    Cross-run chart comparing learning-related hyperparameters.
+
+    Primary axis  : Train F1 across runs (line)
+    Secondary axis: learning_rate across runs (bar)
+    """
+    plt = _load_pyplot()
+    if plt is None:
+        return False
+    if len(runs) < 2:
+        return False
+
+    run_labels: list[str] = []
+    train_f1_vals: list[float] = []
+    lr_vals: list[float] = []
+
+    for run in runs:
+        tm = run.get("training_metrics") or {}
+        train_f1 = tm.get("train_f1")
+        strategy = run.get("strategy_plan") or {}
+        hyper = strategy.get("hyperparameters") or {}
+        lr = hyper.get("learning_rate")
+        
+        if train_f1 is None or lr is None:
+            continue
+            
+        run_labels.append(run.get("run_id", "?"))
+        train_f1_vals.append(float(train_f1))
+        lr_vals.append(float(lr))
+
+    if len(run_labels) < 2:
+        return False
+
+    x = list(range(len(run_labels)))
+
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+
+    color_lr = "#ff7f0e"
+    color_f1 = "#1f77b4"
+
+    ax1.bar(x, lr_vals, alpha=0.35, color=color_lr, label="Learning Rate")
+    ax1.set_ylabel("Learning Rate", color=color_lr)
+    ax1.tick_params(axis="y", labelcolor=color_lr)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(run_labels, rotation=30, ha="right")
+
+    for xi, val in zip(x, lr_vals):
+        ax1.text(xi, val + max(lr_vals) * 0.02, f"lr={val:.3f}",
+                 ha="center", va="bottom", fontsize=8, color="#555")
+
+    ax2 = ax1.twinx()
+    ax2.plot(x, train_f1_vals, marker="o", linewidth=2, color=color_f1, label="Train F1")
+    ax2.set_ylabel("Train F1", color=color_f1)
+    ax2.tick_params(axis="y", labelcolor=color_f1)
+    ax2.set_ylim(0, 1.05)
+
+    ax1.set_xlabel("Run")
+    ax1.set_title("Learning Rate vs. Train F1 Across Runs")
+    ax1.grid(axis="y", linestyle="--", alpha=0.3)
+
+    lines_1, labels_1 = ax1.get_legend_handles_labels()
+    lines_2, labels_2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines_1 + lines_2, labels_1 + labels_2, frameon=False, loc="upper left")
+
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
@@ -516,7 +886,7 @@ def _write_plot_readme(path: Path) -> None:
             "Plots are generated automatically when matplotlib is installed in the active Python "
             "environment.\n"
             "Cross-run comparison files are stored in this folder.\n"
-            "Per-run artifacts are stored in subfolders named run_<YYYYMMDDHHMMSS>/.\n"
+            "Per-run artifacts are stored in subfolders named run_<N>/ (run_1, run_2, …).\n"
         ),
         encoding="utf-8",
     )
