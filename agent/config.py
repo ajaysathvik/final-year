@@ -3,6 +3,7 @@ Configuration: paths, thresholds, and constants for the fraud detection pipeline
 """
 from __future__ import annotations
 
+import csv
 import os
 from pathlib import Path
 
@@ -12,6 +13,9 @@ REPO_ROOT  = AGENT_ROOT.parent
 DATA_ROOT  = REPO_ROOT / "9k-dataset"
 
 DATASET_PATH = DATA_ROOT / "data.csv"
+TRAIN_BALANCED_SCHEMA_PATH = (
+    DATA_ROOT / "artifacts" / "xgb_balanced_train_imbalanced_test_3k" / "train_balanced.csv"
+)
 
 OUTPUT_DIR   = AGENT_ROOT / "output"
 MODELS_DIR   = OUTPUT_DIR / "models"
@@ -72,7 +76,27 @@ MAX_L4_ITERATIONS = int(os.getenv("MAX_L4_ITERATIONS", "2"))  # Supervisor ↔ P
 MAX_L5_ITERATIONS = int(os.getenv("MAX_L5_ITERATIONS", "1"))  # Eval → KB validation
 MAX_KB_LOOPS     = int(os.getenv("MAX_KB_LOOPS", "3"))        # KB → Drift closed loop re-cycles
 
-# ── Feature columns (numeric ones suitable for ML) ─────────────────
+# ── Feature columns ────────────────────────────────────────────────
+# Full training schema derived from train_balanced.csv. The runtime
+# pipeline uses every feature column from that file except the target,
+# then one-hot encodes non-numeric values during ingestion so the model
+# still receives an all-numeric matrix.
+TARGET_COL = "annotation.is_fraud"
+
+
+def _load_schema_feature_cols() -> list[str]:
+    if not TRAIN_BALANCED_SCHEMA_PATH.exists():
+        return []
+
+    with TRAIN_BALANCED_SCHEMA_PATH.open("r", encoding="utf-8", newline="") as f:
+        header = next(csv.reader(f), [])
+
+    return [col for col in header if col and col != TARGET_COL]
+
+
+TRAIN_BALANCED_FEATURE_COLS = _load_schema_feature_cols()
+
+# Legacy numeric-only feature set retained for synthetic drift generation.
 NUMERIC_FEATURE_COLS = [
     # Psychological content signals (style of post, not fraud label)
     "annotation.psychological_tactics.urgency",
@@ -90,8 +114,6 @@ NUMERIC_FEATURE_COLS = [
     # are EXCLUDED — they directly encode the target label and cause
     # data leakage (F1=1.0 on every run).
 ]
-
-TARGET_COL = "annotation.is_fraud"
 
 # ── Ensure output directories exist ───────────────────────────────
 for _d in (OUTPUT_DIR, MODELS_DIR, LOGS_DIR, METRICS_DIR, RUNS_DIR, PLOTS_DIR):

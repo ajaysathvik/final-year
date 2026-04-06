@@ -25,7 +25,12 @@ import argparse
 import json
 
 from graph import compile_and_run
-from config import KNOWLEDGE_LOG_PATH, OUTPUT_DIR
+from config import (
+    GENERATE_RANDOM_DRIFT_DATA,
+    KNOWLEDGE_LOG_PATH,
+    OUTPUT_DIR,
+    USE_SCRAPED_DRIFT_DATA,
+)
 from reporting import generate_run_reports
 
 
@@ -61,6 +66,10 @@ def main() -> None:
     summary = {
         "timestamp": final_state.get("timestamp"),
         "drift_detected": final_state.get("drift_detected"),
+        "run_context": {
+            "use_scraped_drift_data": USE_SCRAPED_DRIFT_DATA,
+            "generate_random_drift_data": GENERATE_RANDOM_DRIFT_DATA,
+        },
         "balance_report": _safe(final_state.get("balance_report")),
         "supervisor_decision": final_state.get("supervisor_decision"),
         "policy_decision": _safe(final_state.get("policy_decision")),

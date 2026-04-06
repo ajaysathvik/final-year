@@ -38,7 +38,7 @@ from langgraph.graph import END, START, StateGraph
 
 from config import (
     DATASET_PATH,
-    NUMERIC_FEATURE_COLS,
+    TRAIN_BALANCED_FEATURE_COLS,
     TARGET_COL,
     TEST_SIZE,
     RANDOM_STATE,
@@ -65,6 +65,61 @@ from agents.knowledge_agent import knowledge_agent
 
 # ── Data Ingestion (first graph node) ──────────────────────────────
 
+def _prepare_selected_frame(
+    df: pd.DataFrame,
+    base_feature_cols: list[str],
+    target_col: str,
+) -> pd.DataFrame:
+    """Keep configured feature columns, adding missing ones as empty values."""
+    prepared = df.copy()
+    for col in base_feature_cols:
+        if col not in prepared.columns:
+            prepared[col] = pd.NA
+    return prepared[base_feature_cols + [target_col]].copy()
+
+
+def _encode_feature_frames(
+    frames: list[pd.DataFrame | None],
+    base_feature_cols: list[str],
+    target_col: str,
+) -> tuple[list[pd.DataFrame | None], list[str]]:
+    """One-hot encode all configured features consistently across frames."""
+    prepared_frames: list[pd.DataFrame | None] = []
+    feature_frames: list[pd.DataFrame] = []
+
+    for frame in frames:
+        if frame is None:
+            prepared_frames.append(None)
+            continue
+        prepared = _prepare_selected_frame(frame, base_feature_cols, target_col)
+        prepared_frames.append(prepared)
+        feature_frames.append(prepared[base_feature_cols].copy())
+
+    if not feature_frames:
+        return prepared_frames, []
+
+    encoded_features = pd.get_dummies(
+        pd.concat(feature_frames, ignore_index=True),
+        dummy_na=True,
+    )
+    encoded_features = encoded_features.apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    encoded_feature_cols = list(encoded_features.columns)
+
+    encoded_frames: list[pd.DataFrame | None] = []
+    start = 0
+    for prepared in prepared_frames:
+        if prepared is None:
+            encoded_frames.append(None)
+            continue
+
+        stop = start + len(prepared)
+        encoded_part = encoded_features.iloc[start:stop].reset_index(drop=True).copy()
+        encoded_part[target_col] = prepared[target_col].reset_index(drop=True).astype(int)
+        encoded_frames.append(encoded_part)
+        start = stop
+
+    return encoded_frames, encoded_feature_cols
+
 def ingest_node(state: dict) -> dict:
     """Load CSV, select features, split train/test, ingest scraped data, initialize KB."""
 
@@ -84,23 +139,8 @@ def ingest_node(state: dict) -> dict:
     # Map -1 (non-fraud) to 0 for binary classification
     df[TARGET_COL] = df[TARGET_COL].map({1: 1, 0: 0, -1: 0})
 
-    # Keep only numeric features that exist in the dataframe
-    available_cols = [c for c in NUMERIC_FEATURE_COLS if c in df.columns]
-    print(f"  Available features: {len(available_cols)}")
-
-    # Fill NaN with 0 for numeric features
-    df[available_cols] = df[available_cols].fillna(0).astype(float)
-
-    # Train/test split
-    train_df, test_df = train_test_split(
-        df, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=df[TARGET_COL]
-    )
-    train_df = train_df.reset_index(drop=True)
-    test_df = test_df.reset_index(drop=True)
-
-    fraud_count = int(df[TARGET_COL].sum())
-    print(f"  Fraud: {fraud_count}, Non-fraud: {len(df) - fraud_count}")
-    print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
+    available_base_cols = [c for c in TRAIN_BALANCED_FEATURE_COLS if c in df.columns]
+    print(f"  Base features from train_balanced.csv: {len(available_base_cols)}")
 
     # Handle scraped data ingestion
     drift_file = _AGENT_ROOT / "drift_test_dataset.csv"
@@ -111,12 +151,31 @@ def ingest_node(state: dict) -> dict:
             sdf = pd.read_csv(drift_file)
             sdf = sdf[sdf[TARGET_COL].isin([0, 1, -1])].copy()
             sdf[TARGET_COL] = sdf[TARGET_COL].map({1: 1, 0: 0, -1: 0})
-            sdf[available_cols] = sdf[available_cols].fillna(0).astype(float)
             scraped_df = sdf
             print(f"    - Loaded {drift_file.name} ({len(sdf)} rows)")
             print(f"  📊 Total scraped data available: {len(scraped_df)} rows")
         except Exception as e:
             print(f"    - Failed to load {drift_file.name}: {e}")
+
+    encoded_frames, encoded_feature_cols = _encode_feature_frames(
+        [df, scraped_df],
+        base_feature_cols=available_base_cols,
+        target_col=TARGET_COL,
+    )
+    df = encoded_frames[0]
+    scraped_df = encoded_frames[1]
+
+    # Train/test split
+    train_df, test_df = train_test_split(
+        df, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=df[TARGET_COL]
+    )
+    train_df = train_df.reset_index(drop=True)
+    test_df = test_df.reset_index(drop=True)
+
+    fraud_count = int(df[TARGET_COL].sum())
+    print(f"  Encoded features used at runtime: {len(encoded_feature_cols)}")
+    print(f"  Fraud: {fraud_count}, Non-fraud: {len(df) - fraud_count}")
+    print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
 
     # Initialize Knowledge Base
     kb = state.get("knowledge_base")
@@ -129,7 +188,7 @@ def ingest_node(state: dict) -> dict:
         "train_df": train_df,
         "test_df": test_df,
         "scraped_df": scraped_df,
-        "feature_cols": available_cols,
+        "feature_cols": encoded_feature_cols,
         "target_col": TARGET_COL,
 
         "current_model": None,

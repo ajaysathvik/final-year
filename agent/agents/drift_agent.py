@@ -55,8 +55,13 @@ def _distribution_fingerprint(df: pd.DataFrame, n_buckets: int = 20) -> str:
     """
     sig_parts = []
     for col in sorted(df.columns):
-        series = df[col]
-        if pd.api.types.is_numeric_dtype(series):
+        series = df[col].dropna()
+        if pd.api.types.is_bool_dtype(series):
+            # Treat booleans as categorical values. Quantiles on bool series
+            # can fail in newer NumPy/Pandas combinations.
+            freq = series.value_counts(normalize=True).round(3).to_dict()
+            sig_parts.append(f"{col}:B:{sorted(freq.items())}")
+        elif pd.api.types.is_numeric_dtype(series):
             # Quantile-based bucketing
             quantiles = series.quantile(
                 [i / n_buckets for i in range(n_buckets + 1)]

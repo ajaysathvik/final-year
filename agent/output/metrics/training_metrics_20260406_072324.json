@@ -1,0 +1,19 @@
+{
+  "model_type": "LightGBM",
+  "train_f1": 0.9996,
+  "f1_history": [
+    0.9996
+  ],
+  "total_rows": 7462,
+  "n_fraud": 4205,
+  "n_non_fraud": 3257,
+  "n_estimators": 200,
+  "l3_count": 0,
+  "used_drift_remediation": false,
+  "drift_rows_added": 0,
+  "used_adversarial_samples": false,
+  "adversarial_sample_count": 0,
+  "adversarial_method": null,
+  "adversarial_epsilon": null,
+  "timestamp": "20260406_072324"
+}

@@ -177,7 +177,7 @@ def _load_historical_runs() -> list[dict[str, Any]]:
     for run in runs:
         unique_runs[run["run_id"]] = run
     if unique_runs:
-        return list(unique_runs.values())
+        return _assign_descriptive_run_ids(list(unique_runs.values()))
     return _reconstruct_runs_from_events(entries)
 
 
@@ -188,27 +188,21 @@ def _merge_current_run(runs: list[dict[str, Any]], current: dict[str, Any]) -> l
 
 
 def _resolve_run_id(summary: dict[str, Any]) -> str:
-    """Return the run_id from the summary if already set, otherwise assign the
-    next sequential number (run_1, run_2, …) based on existing folders in RUNS_DIR."""
+    """Return a descriptive run_id for the summary.
+
+    Existing descriptive IDs are preserved. Legacy numeric IDs such as
+    run_1 are upgraded to condition-based labels like normal_data_run.
+    """
     existing = summary.get("run_id")
-    if existing and str(existing).startswith("run_"):
+    if existing and not _is_legacy_numeric_run_id(str(existing)):
         return str(existing)
-    # Count existing run_<N> folders to determine the next number.
-    RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    existing_nums = [
-        int(p.name[4:])
-        for p in RUNS_DIR.iterdir()
-        if p.is_dir() and p.name.startswith("run_") and p.name[4:].isdigit()
-    ]
-    next_num = max(existing_nums, default=0) + 1
-    return f"run_{next_num}"
+    return _ensure_unique_run_id(_derive_run_label(summary))
 
 
 def _resolve_timestamp(summary: dict[str, Any]) -> str:
     for value in (
         summary.get("timestamp"),
         (summary.get("training_metrics") or {}).get("timestamp"),
-        summary.get("run_id"),
     ):
         if not value:
             continue
@@ -221,10 +215,8 @@ def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[st
     Build approximate per-run summaries from the sequential event log when
     explicit full_run_summary entries are not available.
 
-    Run IDs are assigned sequentially (run_1, run_2, …) by their order in the
-    log, NOT by counting existing folders on disk.  Counting folders always
-    produces the same value for every reconstructed run (max_existing+1), which
-    causes all of them to collapse into a single entry after deduplication.
+    Run IDs are assigned descriptive labels based on run conditions, with
+    numeric suffixes added only when the same condition appears multiple times.
     """
     runs: list[dict[str, Any]] = []
     current: dict[str, Any] = {}
@@ -255,16 +247,63 @@ def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[st
             current["promoted"] = data.get("promoted")
             current["simulation_passed"] = data.get("simulation_passed")
             current["timestamp"] = timestamp or current.get("timestamp")
-            # Assign sequential ID based on position in the log so that each
-            # reconstructed run gets a unique, stable identifier.
-            current["run_id"] = f"run_{len(runs) + 1}"
             runs.append(current)
             current = {}
 
-    unique_runs: dict[str, dict[str, Any]] = {}
-    for run in runs:
-        unique_runs[run["run_id"]] = run
-    return list(unique_runs.values())
+    return _assign_descriptive_run_ids(runs)
+
+
+def _is_legacy_numeric_run_id(run_id: str) -> bool:
+    return run_id.startswith("run_") and run_id[4:].isdigit()
+
+
+def _derive_run_label(summary: dict[str, Any]) -> str:
+    run_context = summary.get("run_context") or {}
+    training_metrics = summary.get("training_metrics") or {}
+    policy_decision = summary.get("policy_decision") or {}
+
+    if run_context.get("generate_random_drift_data") is True:
+        return "random_drift_run"
+    if run_context.get("use_scraped_drift_data") is False:
+        return "normal_data_run"
+    if policy_decision.get("should_validate_existing") and summary.get("training_metrics") is None:
+        return "validation_run"
+    if (
+        summary.get("drift_detected")
+        or training_metrics.get("used_drift_remediation")
+        or float(training_metrics.get("drift_rows_added", 0) or 0) > 0
+    ):
+        return "scraped_drift_run"
+    return "normal_data_run"
+
+
+def _ensure_unique_run_id(base_id: str) -> str:
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    existing_ids = {p.name for p in RUNS_DIR.iterdir() if p.is_dir()}
+    if base_id not in existing_ids:
+        return base_id
+
+    suffix = 2
+    while f"{base_id}_{suffix}" in existing_ids:
+        suffix += 1
+    return f"{base_id}_{suffix}"
+
+
+def _assign_descriptive_run_ids(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not runs:
+        return []
+
+    counts: dict[str, int] = {}
+    labeled_runs: list[dict[str, Any]] = []
+
+    for run in sorted(runs, key=lambda item: (_resolve_timestamp(item), str(item.get("run_id", "")))):
+        normalized = dict(run)
+        base_id = _derive_run_label(normalized)
+        counts[base_id] = counts.get(base_id, 0) + 1
+        normalized["run_id"] = base_id if counts[base_id] == 1 else f"{base_id}_{counts[base_id]}"
+        labeled_runs.append(normalized)
+
+    return labeled_runs
 
 
 def _build_scalar_snapshot(summary: dict[str, Any]) -> dict[str, float]:
@@ -1009,7 +1048,8 @@ def _write_plot_readme(path: Path) -> None:
             "Plots are generated automatically when matplotlib is installed in the active Python "
             "environment.\n"
             "Cross-run comparison files are stored in this folder.\n"
-            "Per-run artifacts are stored in subfolders named run_<N>/ (run_1, run_2, …).\n"
+            "Per-run artifacts are stored in descriptive subfolders such as "
+            "normal_data_run, scraped_drift_run, or random_drift_run.\n"
         ),
         encoding="utf-8",
     )
