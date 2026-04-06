@@ -88,6 +88,12 @@ def main() -> None:
     print(f"  Run artifacts        : {report_paths['run_dir']}")
     print(f"  Plot directory       : {report_paths['plots_dir']}")
 
+    try:
+        import plot_lr
+        plot_lr.generate_plot()
+    except Exception as e:
+        print(f"  Failed to generate learning rate plot: {e}")
+
 
 def _safe(obj):
     if obj is None:

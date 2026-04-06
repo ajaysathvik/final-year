@@ -77,6 +77,10 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
     if _plot_robustness_comparison(historical_runs, robust_cmp):
         comparison_paths["robustness_comparison_plot"] = str(robust_cmp)
 
+    robust_criteria = PLOTS_DIR / "run_comparison_robustness_criteria.png"
+    if _plot_robustness_criteria(historical_runs, robust_criteria):
+        comparison_paths["robustness_criteria_plot"] = str(robust_criteria)
+
     attack_cmp = PLOTS_DIR / "run_comparison_attack_curves.png"
     if _plot_attack_curve_comparison(historical_runs, attack_cmp):
         comparison_paths["attack_curve_plot"] = str(attack_cmp)
@@ -310,6 +314,13 @@ def _write_comparison_csv(path: Path, runs: list[dict[str, Any]]) -> None:
         for key, value in noise_stress.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 row[f"simulation.{key}"] = value
+        bootstrap_std = row.get("simulation.bootstrap_std")
+        if isinstance(bootstrap_std, (int, float)):
+            row["simulation.bootstrap_variance"] = float(bootstrap_std) ** 2
+
+        worst_eps = _resolve_worst_case_epsilon(run)
+        if worst_eps is not None:
+            row["simulation.worst_noise_epsilon"] = worst_eps
         rows.append(row)
 
     fieldnames = ["run_id", "timestamp"]
@@ -629,6 +640,104 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
     return True
 
 
+def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> bool:
+    plt = _load_pyplot()
+    if plt is None:
+        return False
+
+    robust_rows = []
+    for run in runs:
+        sim = run.get("simulation_results") or {}
+        mean_f1 = sim.get("bootstrap_mean_f1")
+        std_f1 = sim.get("bootstrap_std")
+        worst_f1 = sim.get("worst_noise_f1")
+        if any(value is not None for value in (mean_f1, std_f1, worst_f1)):
+            robust_rows.append(
+                {
+                    "run_id": run.get("run_id", "?"),
+                    "mean_f1": float(mean_f1) if mean_f1 is not None else None,
+                    "variance": float(std_f1) ** 2 if std_f1 is not None else None,
+                    "worst_f1": float(worst_f1) if worst_f1 is not None else None,
+                    "worst_eps": _resolve_worst_case_epsilon(run),
+                }
+            )
+
+    if len(robust_rows) < 2:
+        return False
+
+    run_labels = [row["run_id"] for row in robust_rows]
+    x = list(range(len(run_labels)))
+
+    metric_panels = [
+        ("mean_f1", "Average Robustness (Higher Better)", "#1f77b4", True),
+        ("variance", "Variance Across Resamples (Lower Better)", "#e45756", False),
+        ("worst_f1", "Worst-Case Attacked F1 (Higher Better)", "#2ca02c", True),
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.8), sharex=False)
+
+    for ax, (metric_key, title, color, higher_better) in zip(axes, metric_panels):
+        values = [row[metric_key] for row in robust_rows]
+        valid_values = [value for value in values if value is not None]
+        if not valid_values:
+            ax.set_visible(False)
+            continue
+
+        if higher_better:
+            best_value = max(valid_values)
+        else:
+            best_value = min(valid_values)
+
+        bar_colors = []
+        for value in values:
+            if value is None:
+                bar_colors.append("#cfcfcf")
+            elif abs(value - best_value) < 1e-12:
+                bar_colors.append("#111111")
+            else:
+                bar_colors.append(color)
+
+        heights = [float(value) if value is not None else 0.0 for value in values]
+        bars = ax.bar(x, heights, color=bar_colors, edgecolor="black", linewidth=0.4)
+        ax.set_xticks(x)
+        ax.set_xticklabels(run_labels, rotation=25, ha="right")
+        ax.set_title(title, fontsize=10)
+        ax.grid(axis="y", linestyle="--", alpha=0.3)
+
+        if metric_key == "variance":
+            top = max(valid_values) * 1.25 if max(valid_values) > 0 else 1.0
+            ax.set_ylim(0, top)
+            label_fmt = "{:.6f}"
+        else:
+            ymin = max(0.0, min(valid_values) - 0.03)
+            ymax = min(1.0, max(valid_values) + 0.05)
+            if ymax <= ymin:
+                ymax = min(1.0, ymin + 0.05)
+            ax.set_ylim(ymin, ymax)
+            label_fmt = "{:.4f}"
+
+        for idx, (bar, value) in enumerate(zip(bars, values)):
+            if value is None:
+                continue
+            label = label_fmt.format(value)
+            if metric_key == "worst_f1" and robust_rows[idx]["worst_eps"] is not None:
+                label = f"{label}\n@ eps={robust_rows[idx]['worst_eps']:.2f}"
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.02,
+                label,
+                ha="center",
+                va="bottom",
+                fontsize=8,
+            )
+
+    fig.suptitle("Robustness Criteria Across Experimental Configurations", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+    return True
+
+
 def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
     """Grouped bar chart: x-axis = attack epsilon level, bars = runs."""
     try:
@@ -718,6 +827,20 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return True
+
+
+def _resolve_worst_case_epsilon(run: dict[str, Any]) -> float | None:
+    attack_scores = (run.get("simulation_results") or {}).get("noise_stress_test") or {}
+    worst_pair: tuple[float, float] | None = None
+    for key, value in attack_scores.items():
+        try:
+            eps = float(key.split("_", 1)[1])
+            score = float(value)
+        except (IndexError, ValueError, TypeError):
+            continue
+        if worst_pair is None or score < worst_pair[1]:
+            worst_pair = (eps, score)
+    return None if worst_pair is None else worst_pair[0]
 
 
 def _plot_single_run_learning_rate(summary: dict[str, Any], output_path: Path) -> bool:

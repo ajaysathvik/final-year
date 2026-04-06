@@ -48,20 +48,57 @@ def _fingerprint_df(df: pd.DataFrame) -> str:
     return hashlib.sha256(csv_bytes).hexdigest()
 
 
-def _get_remediated_fingerprints(kb) -> set[str]:
-    """Collect all drift-data fingerprints that were previously remediated.
-
-    Scans the full drift_history in the Knowledge Base for entries whose
-    remediation was applied and that carry a ``drift_data_fingerprint``.
+def _distribution_fingerprint(df: pd.DataFrame, n_buckets: int = 20) -> str:
     """
-    fps: set[str] = set()
+    Hash the statistical distribution of the dataframe,
+    not its raw content. Catches same-distribution, different-sample cases.
+    """
+    sig_parts = []
+    for col in sorted(df.columns):
+        series = df[col]
+        if pd.api.types.is_numeric_dtype(series):
+            # Quantile-based bucketing
+            quantiles = series.quantile(
+                [i / n_buckets for i in range(n_buckets + 1)]
+            ).round(4).tolist()
+            sig_parts.append(f"{col}:Q:{quantiles}")
+        else:
+            # Top-N value frequency distribution
+            freq = series.value_counts(normalize=True).head(20).round(3).to_dict()
+            sig_parts.append(f"{col}:C:{sorted(freq.items())}")
+    
+    combined = "|".join(sig_parts).encode("utf-8")
+    return hashlib.sha256(combined).hexdigest()
+
+
+def _get_row_hashes(df: pd.DataFrame) -> list[str]:
+    """Returns a list of per-row hashes."""
+    def row_hash(row):
+        return hashlib.sha256(str(tuple(row)).encode("utf-8")).hexdigest()
+    if df.empty:
+        return []
+    return df.apply(row_hash, axis=1).tolist()
+
+
+def _get_remediated_fingerprints(kb) -> tuple[set[str], set[str], set[str]]:
+    """Collect all drift-data fingerprints that were previously remediated."""
+    content_fps = set()
+    dist_fps = set()
+    row_fps = set()
     for entry in kb.get_history("drift_history", limit=100):
         data = entry.get("data", {})
         remediation = data.get("drift_remediation", {})
-        fp = data.get("drift_data_fingerprint")
-        if fp and remediation.get("applied"):
-            fps.add(fp)
-    return fps
+        if remediation.get("applied"):
+            fp = data.get("drift_data_fingerprint")
+            if fp:
+                content_fps.add(fp)
+            dfp = data.get("drift_dist_fingerprint")
+            if dfp:
+                dist_fps.add(dfp)
+            rfps = data.get("drift_row_fingerprints", [])
+            if rfps:
+                row_fps.update(rfps)
+    return content_fps, dist_fps, row_fps
 
 
 # ── main agent function ───────────────────────────────────────────
@@ -100,13 +137,23 @@ def drift_agent(state: dict) -> dict:
 
     # ── Fingerprint check: skip drift if same data was already remediated ──
     drift_data_fingerprint: str | None = None
+    drift_dist_fingerprint: str | None = None
+    drift_row_fingerprints: list[str] = []
+    
     if effective_scraped_df is not None and len(effective_scraped_df) > 0:
         drift_data_fingerprint = _fingerprint_df(effective_scraped_df)
-        previously_remediated = _get_remediated_fingerprints(kb)
+        drift_dist_fingerprint = _distribution_fingerprint(effective_scraped_df)
+        drift_row_fingerprints = _get_row_hashes(effective_scraped_df)
+        
+        content_fps, dist_fps, seen_row_hashes = _get_remediated_fingerprints(kb)
 
-        if drift_data_fingerprint in previously_remediated:
-            print(f"  🔁 Drift data fingerprint {drift_data_fingerprint[:12]}… matches a "
-                  f"previously remediated run — skipping drift detection.")
+        # 1. Content or Distribution match check
+        exact_match = drift_data_fingerprint in content_fps
+        dist_match = drift_dist_fingerprint in dist_fps
+        
+        if exact_match or dist_match:
+            match_type = "content" if exact_match else "distribution"
+            print(f"  🔁 Drift data {match_type} matches a previously remediated run — skipping drift detection.")
             print(f"  ✅ No new drift (model already adapted to this distribution).")
 
             # Still append the scraped rows so the model trains on the
@@ -131,7 +178,9 @@ def drift_agent(state: dict) -> dict:
                 "drifted_features": [],
                 "drift_detected": False,
                 "drift_data_fingerprint": drift_data_fingerprint,
-                "skipped_reason": "already_remediated",
+                "drift_dist_fingerprint": drift_dist_fingerprint,
+                "drift_row_fingerprints": drift_row_fingerprints,
+                "skipped_reason": f"already_remediated_{match_type}",
                 "drift_remediation": drift_remediation,
             })
 
@@ -142,6 +191,54 @@ def drift_agent(state: dict) -> dict:
                 "drift_remediation": drift_remediation,
                 "remediated_train_df": remediated_train_df,
             }
+
+        # 2. Row-level overlap check
+        unseen_mask = [rfp not in seen_row_hashes for rfp in drift_row_fingerprints]
+        new_rows_df = effective_scraped_df[unseen_mask]
+        
+        if new_rows_df.empty:
+            print(f"  🔁 All {len(effective_scraped_df)} scraped rows were previously remediated — skipping drift detection.")
+            print(f"  ✅ No new drift (100% row overlap).")
+            
+            required_cols = feature_cols + [state["target_col"]]
+            usable_scraped = effective_scraped_df[required_cols].copy()
+            remediated_train_df = pd.concat([train_df, usable_scraped], ignore_index=True)
+
+            drift_remediation = {
+                "applied": True,
+                "method": "reuse_prior_remediation",
+                "base_rows": int(len(train_df)),
+                "scraped_rows_available": int(len(scraped_df)) if scraped_df is not None else 0,
+                "rows_added": int(len(usable_scraped)),
+                "total_rows_after": int(len(remediated_train_df)),
+                "use_scraped_drift_data": allow_scraped_drift_data,
+            }
+
+            kb.log_event("drift", "drift_detection", {
+                "features_analyzed": 0,
+                "drifted_features": [],
+                "drift_detected": False,
+                "drift_data_fingerprint": drift_data_fingerprint,
+                "drift_dist_fingerprint": drift_dist_fingerprint,
+                "drift_row_fingerprints": drift_row_fingerprints,
+                "skipped_reason": "already_remediated_rows",
+                "drift_remediation": drift_remediation,
+            })
+
+            return {
+                **state,
+                "drift_report": {},
+                "drift_detected": False,
+                "drift_remediation": drift_remediation,
+                "remediated_train_df": remediated_train_df,
+            }
+
+        overlap_pct = 1 - (len(new_rows_df) / len(effective_scraped_df))
+        if overlap_pct > 0.8:
+            print(f"  🔁 {overlap_pct:.0%} of scraped rows previously remediated. Testing drift on {len(new_rows_df)} novel rows.")
+            effective_scraped_df = new_rows_df
+        elif overlap_pct > 0:
+            print(f"  📥 {overlap_pct:.0%} overlap. Enough novel data, testing the full batch of {len(effective_scraped_df)} rows.")
 
     # ── Normal drift detection path ────────────────────────────────
     if effective_scraped_df is not None and len(effective_scraped_df) > 0:
@@ -217,6 +314,8 @@ def drift_agent(state: dict) -> dict:
         "drifted_features": drifted_features,
         "drift_detected": any_drift,
         "drift_data_fingerprint": drift_data_fingerprint,
+        "drift_dist_fingerprint": drift_dist_fingerprint,
+        "drift_row_fingerprints": drift_row_fingerprints,
         "drift_remediation": drift_remediation,
     })
 

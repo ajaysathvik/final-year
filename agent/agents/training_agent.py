@@ -10,8 +10,6 @@ import joblib
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
 from config import MODELS_DIR, RANDOM_STATE, MAX_L3_ITERATIONS, F1_THRESHOLD
@@ -143,7 +141,7 @@ def training_agent(state: dict) -> dict:
 
     # ── Build model from strategy plan ──────────────────────────
     hyper = strategy.get("hyperparameters", {})
-    model_type = strategy.get("model_type", "RandomForest")
+    model_type = strategy.get("model_type", "XGBoost")
     n_estimators = hyper.get("n_estimators", 200)
 
     # On L3 retrain, boost estimators
@@ -165,30 +163,38 @@ def training_agent(state: dict) -> dict:
             )
             print(f"  Using XGBoost (n_estimators={n_estimators})...")
         except ImportError:
-            model_type = "RandomForest"  # fall through
-            print("  ⚠️  XGBoost not available, falling back to RandomForest.")
+            model_type = "LightGBM"  # fall through
+            print("  ⚠️  XGBoost not available, falling back to LightGBM.")
 
-    elif model_type == "RandomForest":
-        model = RandomForestClassifier(
-            n_estimators=n_estimators,
-            max_depth=hyper.get("max_depth", 10),
-            class_weight=hyper.get("class_weight", "balanced"),
-            random_state=RANDOM_STATE,
-            n_jobs=-1,
-        )
-        print(f"  Using RandomForest (n_estimators={n_estimators})...")
-    elif model_type == "LogisticRegression":
-        model = LogisticRegression(
-            C=hyper.get("C", 1.0),
-            max_iter=hyper.get("max_iter", 1000),
-            class_weight=hyper.get("class_weight", "balanced"),
-            solver=hyper.get("solver", "liblinear"),
-            random_state=RANDOM_STATE,
-        )
-        print(
-            f"  Using LogisticRegression "
-            f"(C={hyper.get('C', 1.0)}, max_iter={hyper.get('max_iter', 1000)})..."
-        )
+    elif model_type == "LightGBM":
+        try:
+            import lightgbm as lgb
+            model = lgb.LGBMClassifier(
+                n_estimators=n_estimators,
+                max_depth=hyper.get("max_depth", 6),
+                learning_rate=hyper.get("learning_rate", 0.1),
+                class_weight=hyper.get("class_weight", "balanced"),
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                verbose=-1,
+            )
+            print(f"  Using LightGBM (n_estimators={n_estimators})...")
+        except ImportError:
+            raise ImportError("LightGBM not available.")
+    elif model_type == "CatBoost":
+        try:
+            from catboost import CatBoostClassifier
+            model = CatBoostClassifier(
+                iterations=n_estimators,
+                depth=hyper.get("max_depth", 6),
+                learning_rate=hyper.get("learning_rate", 0.1),
+                auto_class_weights="Balanced",
+                random_state=RANDOM_STATE,
+                verbose=0,
+            )
+            print(f"  Using CatBoost (iterations={n_estimators})...")
+        except ImportError:
+            raise ImportError("CatBoost not available.")
     else:
         raise ValueError(f"Unsupported model_type from strategy plan: {model_type}")
 

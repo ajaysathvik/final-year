@@ -2,7 +2,7 @@
 generate_random_drift_data.py
 ─────────────────────────────
 Procedurally generates a large, diverse drift test dataset and saves it to
-  agent/output/scraped_data/drift_test_dataset.csv
+  agent/drift_test_dataset.csv
 
 Activated via:
     GENERATE_RANDOM_DRIFT_DATA=true python agent/main.py
@@ -33,7 +33,7 @@ from config import (
     RANDOM_DRIFT_SEED,
 )
 
-DRIFT_CSV = _AGENT_ROOT / "output" / "scraped_data" / "drift_test_dataset.csv"
+DRIFT_CSV = _AGENT_ROOT / "drift_test_dataset.csv"
 
 # ── Columns we'll generate ────────────────────────────────────────────────────
 # Matches NUMERIC_FEATURE_COLS + TARGET_COL exactly.

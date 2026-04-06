@@ -103,24 +103,20 @@ def ingest_node(state: dict) -> dict:
     print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
 
     # Handle scraped data ingestion
-    scraped_dir = _AGENT_ROOT / "output" / "scraped_data"
+    drift_file = _AGENT_ROOT / "drift_test_dataset.csv"
     scraped_df = None
-    if scraped_dir.exists() and any(scraped_dir.iterdir()):
-        print(f"  📥 Found scraped data in {scraped_dir}")
-        dfs = []
-        for file_path in scraped_dir.glob("*.csv"):
-            try:
-                sdf = pd.read_csv(file_path)
-                sdf = sdf[sdf[TARGET_COL].isin([0, 1, -1])].copy()
-                sdf[TARGET_COL] = sdf[TARGET_COL].map({1: 1, 0: 0, -1: 0})
-                sdf[available_cols] = sdf[available_cols].fillna(0).astype(float)
-                dfs.append(sdf)
-                print(f"    - Loaded {file_path.name} ({len(sdf)} rows)")
-            except Exception as e:
-                print(f"    - Failed to load {file_path.name}: {e}")
-        if dfs:
-            scraped_df = pd.concat(dfs, ignore_index=True)
+    if drift_file.exists():
+        print(f"  📥 Found scraped data in {drift_file}")
+        try:
+            sdf = pd.read_csv(drift_file)
+            sdf = sdf[sdf[TARGET_COL].isin([0, 1, -1])].copy()
+            sdf[TARGET_COL] = sdf[TARGET_COL].map({1: 1, 0: 0, -1: 0})
+            sdf[available_cols] = sdf[available_cols].fillna(0).astype(float)
+            scraped_df = sdf
+            print(f"    - Loaded {drift_file.name} ({len(sdf)} rows)")
             print(f"  📊 Total scraped data available: {len(scraped_df)} rows")
+        except Exception as e:
+            print(f"    - Failed to load {drift_file.name}: {e}")
 
     # Initialize Knowledge Base
     kb = state.get("knowledge_base")

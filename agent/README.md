@@ -9,7 +9,7 @@ A **drift-aware, adversarially trained, policy-governed, multi-agent fraud detec
 | **Monitor** | `drift_agent` — PSI/KS feature drift        |
 | **Analyze** | `evaluation_agent` — F1, precision, recall, ROC-AUC, FPR |
 | **Plan**    | `policy_agent` → `strategy_agent`            |
-| **Execute** | `augmentation_agent` (CTGAN) → `training_agent` (XGBoost/RF + integrated adversarial augmentation) → `simulation_agent` |
+| **Execute** | `augmentation_agent` (CTGAN) → `training_agent` (XGBoost/LightGBM/CatBoost + integrated adversarial augmentation) → `simulation_agent` |
 | **Knowledge** | `knowledge_agent` — JSONL logs             |
 
 ## LangGraph Flow
@@ -107,7 +107,7 @@ agent/
     ├── policy_agent.py         # Plan: retrain/promote decisions
     ├── strategy_agent.py       # Plan: adaptation plan builder
     ├── augmentation_agent.py   # Execute: CTGAN synthetic data
-    ├── training_agent.py       # Execute: XGBoost/RandomForest + adversarial augmentation
+    ├── training_agent.py       # Execute: XGBoost/LightGBM/CatBoost + adversarial augmentation
     ├── simulation_agent.py     # Execute: robustness stress testing
     └── knowledge_agent.py      # Knowledge: JSONL logging + model promotion
 ```

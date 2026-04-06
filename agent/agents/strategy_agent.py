@@ -41,29 +41,88 @@ def _build_model_candidate(
             random_state=42,
         )
 
-    if model_type == "RandomForest":
-        from sklearn.ensemble import RandomForestClassifier
+    if model_type == "LightGBM":
+        import lightgbm as lgb
 
-        return RandomForestClassifier(
+        return lgb.LGBMClassifier(
             n_estimators=hyperparameters["n_estimators"],
             max_depth=hyperparameters["max_depth"],
+            learning_rate=hyperparameters["learning_rate"],
             class_weight=hyperparameters.get("class_weight", "balanced"),
             random_state=42,
             n_jobs=-1,
+            verbose=-1,
         )
 
-    if model_type == "LogisticRegression":
-        from sklearn.linear_model import LogisticRegression
+    if model_type == "CatBoost":
+        from catboost import CatBoostClassifier
 
-        return LogisticRegression(
-            C=hyperparameters["C"],
-            max_iter=hyperparameters["max_iter"],
-            class_weight=hyperparameters.get("class_weight", "balanced"),
-            solver=hyperparameters.get("solver", "liblinear"),
+        return CatBoostClassifier(
+            iterations=hyperparameters.get("n_estimators", 100),
+            depth=hyperparameters.get("max_depth", 6),
+            learning_rate=hyperparameters.get("learning_rate", 0.1),
+            auto_class_weights="Balanced",
             random_state=42,
+            verbose=0,
         )
 
     raise ValueError(f"Unsupported model_type: {model_type}")
+
+
+def _get_candidate_specs(
+    n_estimators: int,
+    max_depth: int,
+    learning_rate: float,
+) -> list[dict[str, object]]:
+    """Return the available model families with baseline hyperparameters."""
+    candidate_specs: list[dict[str, object]] = []
+
+    try:
+        import xgboost  # noqa: F401
+
+        candidate_specs.append({
+            "model_type": "XGBoost",
+            "hyperparameters": {
+                "n_estimators": n_estimators,
+                "max_depth": max_depth,
+                "learning_rate": learning_rate,
+                "class_weight": None,
+            },
+        })
+    except ImportError:
+        pass
+
+    try:
+        import lightgbm  # noqa: F401
+
+        candidate_specs.append({
+            "model_type": "LightGBM",
+            "hyperparameters": {
+                "n_estimators": n_estimators,
+                "max_depth": max_depth,
+                "learning_rate": learning_rate,
+                "class_weight": "balanced",
+            },
+        })
+    except ImportError:
+        pass
+
+    try:
+        import catboost  # noqa: F401
+
+        candidate_specs.append({
+            "model_type": "CatBoost",
+            "hyperparameters": {
+                "n_estimators": n_estimators,
+                "max_depth": max_depth,
+                "learning_rate": learning_rate,
+                "class_weight": "balanced",
+            },
+        })
+    except ImportError:
+        pass
+
+    return candidate_specs
 
 
 def _score_model_candidates(
@@ -83,46 +142,11 @@ def _score_model_candidates(
     negative_count = int((y == 0).sum())
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42 + l2_count)
 
-    candidate_specs = []
-
-    try:
-        import xgboost  # noqa: F401
-
-        candidate_specs.append({
-            "model_type": "XGBoost",
-            "hyperparameters": {
-                "n_estimators": n_estimators,
-                "max_depth": max_depth,
-                "learning_rate": learning_rate,
-                "class_weight": None,
-            },
-        })
-    except ImportError:
-        pass
-
-    candidate_specs.extend([
-        {
-            "model_type": "RandomForest",
-            "hyperparameters": {
-                "n_estimators": n_estimators,
-                "max_depth": max_depth,
-                "learning_rate": None,
-                "class_weight": "balanced",
-            },
-        },
-        {
-            "model_type": "LogisticRegression",
-            "hyperparameters": {
-                "n_estimators": None,
-                "max_depth": None,
-                "learning_rate": None,
-                "class_weight": "balanced",
-                "C": 1.0,
-                "max_iter": 1000,
-                "solver": "liblinear",
-            },
-        },
-    ])
+    candidate_specs = _get_candidate_specs(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        learning_rate=learning_rate,
+    )
 
     candidate_results: list[dict[str, object]] = []
     for order, spec in enumerate(candidate_specs):
@@ -168,13 +192,57 @@ def _score_model_candidates(
         fallback_hyperparameters = {
             "n_estimators": n_estimators,
             "max_depth": max_depth,
-            "learning_rate": None,
-            "class_weight": "balanced",
+            "learning_rate": learning_rate,
+            "class_weight": None,
         }
-        return "RandomForest", fallback_hyperparameters, candidate_results
+        return "XGBoost", fallback_hyperparameters, candidate_results
 
     best = max(valid_results, key=lambda result: (result["selection_score"], -result["rank_order"]))
     return best["model_type"], best["hyperparameters"], candidate_results
+
+
+def _optuna_tune_selected_model(
+    state: dict,
+    model_type: str,
+    baseline_hyperparameters: dict[str, object],
+) -> dict[str, object]:
+    """Tune only the already-selected model family."""
+    import optuna
+    from sklearn.model_selection import StratifiedKFold, cross_val_score
+
+    train_df, feature_cols, target_col = _get_strategy_training_data(state)
+    X_opt = train_df[feature_cols].values
+    y_opt = train_df[target_col].values.astype(int)
+    positive_count = int((y_opt == 1).sum())
+    negative_count = int((y_opt == 0).sum())
+
+    def objective(trial: optuna.Trial) -> float:
+        hyperparameters = {
+            "n_estimators": trial.suggest_int("n_estimators", 50, 300, step=50),
+            "max_depth": trial.suggest_int("max_depth", 3, 10),
+            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+            "class_weight": baseline_hyperparameters.get("class_weight"),
+        }
+        model = _build_model_candidate(
+            model_type=model_type,
+            hyperparameters=hyperparameters,
+            positive_count=positive_count,
+            negative_count=negative_count,
+        )
+        cv_opt = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        scores = cross_val_score(model, X_opt, y_opt, cv=cv_opt, scoring="f1", n_jobs=-1)
+        return float(scores.mean())
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study = optuna.create_study(direction="maximize")
+    study.optimize(objective, n_trials=5)
+
+    tuned_hyperparameters = {
+        **baseline_hyperparameters,
+        **study.best_params,
+    }
+    tuned_hyperparameters["optuna_best_f1"] = round(float(study.best_value), 4)
+    return tuned_hyperparameters
 
 
 def strategy_agent(state: dict) -> dict:
@@ -207,67 +275,11 @@ def strategy_agent(state: dict) -> dict:
         kb_prior_f1 = prior_eval.get("data", {}).get("f1", None)
         print(f"  📖 KB context: prior eval F1={kb_prior_f1}")
 
-    # ── Check if this is an L2 refinement ──────────────────────
-    optuna_used = False
-    tuned_model_type: str | None = None
-    selected_hyperparameters: dict[str, object] | None = None
-
-    l2_search_grid = [
-        {"n_estimators": 200, "max_depth": 8, "learning_rate": 0.05, "noise_std": 0.06},
-        {"n_estimators": 300, "max_depth": 10, "learning_rate": 0.1, "noise_std": 0.07},
-        {"n_estimators": 500, "max_depth": 12, "learning_rate": 0.15, "noise_std": 0.08},
-        {"n_estimators": 150, "max_depth": 6, "learning_rate": 0.2, "noise_std": 0.1},
-    ]
-
-    if l2_count > 0 and needs_strategy_refinement and not candidate_needs_evaluation:
-        print(f"  ℹ️  L2 refinement iteration #{l2_count} — Grid Search L2 adaptation.")
-        grid_idx = min(l2_count - 1, len(l2_search_grid) - 1)
-        params = l2_search_grid[grid_idx]
-        
-        n_estimators = params["n_estimators"]
-        max_depth = params["max_depth"]
-        learning_rate = params["learning_rate"]
-        noise_std = params["noise_std"]
-    elif kb_prior_f1 is not None and kb_prior_f1 < 0.6:
-        # KB shows prior run had low F1 — pre-emptively boost estimators
-        n_estimators = N_ESTIMATORS + 50
-        max_depth = 6
-        learning_rate = 0.1
-        noise_std = ADVERSARIAL_NOISE_STD
-        print(f"  ℹ️  KB-informed boost: prior F1={kb_prior_f1} → n_estimators+50")
-    else:
-        n_estimators = N_ESTIMATORS
-        max_depth = 6
-        learning_rate = 0.1
-        noise_std = ADVERSARIAL_NOISE_STD
-
-    # ── Model selection ─────────────────────────────────────────
-    model_type, candidate_hyperparameters, model_candidates = _score_model_candidates(
-        state=state,
-        n_estimators=n_estimators,
-        l2_count=l2_count,
-        max_depth=max_depth,
-        learning_rate=learning_rate,
-    )
-
-    if selected_hyperparameters is None:
-        selected_hyperparameters = candidate_hyperparameters
-    elif tuned_model_type == model_type:
-        selected_hyperparameters = {
-            **candidate_hyperparameters,
-            **selected_hyperparameters,
-        }
-    else:
-        selected_hyperparameters = candidate_hyperparameters
-
-    best_candidate = next(
-        (candidate for candidate in model_candidates if candidate.get("model_type") == model_type and candidate.get("status") == "ok"),
-        None,
-    )
-
     eval_f1 = eval_metrics.get("f1")
     robustness_score = simulation_results.get("robustness_score")
 
+    # Decide the next step first. This lets Strategy skip expensive search/tuning
+    # when it is only routing an existing plan to Training/Evaluation.
     if not model_available:
         strategy_decision = "training"
         decision_reason = "no_model_available"
@@ -289,15 +301,79 @@ def strategy_agent(state: dict) -> dict:
         strategy_decision = "evaluation"
         decision_reason = "evaluation_refresh"
 
+    existing_plan = state.get("strategy_plan") or {}
+    reuse_existing_plan = (
+        bool(existing_plan.get("model_type"))
+        and bool(existing_plan.get("hyperparameters"))
+        and not needs_strategy_refinement
+    )
+
+    optuna_used = False
+    model_candidates = list(existing_plan.get("model_candidates") or [])
+    selection_reason = existing_plan.get("selection_reason", "reused_existing_plan")
+    model_type = existing_plan.get("model_type", "XGBoost")
+    selected_hyperparameters = dict(existing_plan.get("hyperparameters") or {})
+    noise_std = ADVERSARIAL_NOISE_STD
+
+    if reuse_existing_plan:
+        print(
+            f"  ℹ️  Reusing existing strategy plan for "
+            f"{strategy_decision} routing; skipping search/tuning."
+        )
+    else:
+        # ── Base search space for model comparison ─────────────────
+        if kb_prior_f1 is not None and kb_prior_f1 < 0.6:
+            # KB shows prior run had low F1 — pre-emptively boost estimators
+            n_estimators = N_ESTIMATORS + 50
+            max_depth = 6
+            learning_rate = 0.1
+            print(f"  ℹ️  KB-informed boost: prior F1={kb_prior_f1} → n_estimators+50")
+        else:
+            n_estimators = N_ESTIMATORS
+            max_depth = 6
+            learning_rate = 0.1
+
+        # ── Model selection ─────────────────────────────────────────
+        model_type, candidate_hyperparameters, model_candidates = _score_model_candidates(
+            state=state,
+            n_estimators=n_estimators,
+            l2_count=l2_count,
+            max_depth=max_depth,
+            learning_rate=learning_rate,
+        )
+        selected_hyperparameters = candidate_hyperparameters
+
+        if l2_count > 0 and needs_strategy_refinement and not candidate_needs_evaluation:
+            print(
+                f"  ℹ️  L2 refinement iteration #{l2_count} — "
+                f"benchmarking selected {model_type} with Optuna tuning."
+            )
+            selected_hyperparameters = _optuna_tune_selected_model(
+                state=state,
+                model_type=model_type,
+                baseline_hyperparameters=candidate_hyperparameters,
+            )
+            optuna_used = True
+            print(f"  ✅ Optuna tuned {model_type}: {selected_hyperparameters}")
+
+        best_candidate = next(
+            (
+                candidate for candidate in model_candidates
+                if candidate.get("model_type") == model_type and candidate.get("status") == "ok"
+            ),
+            None,
+        )
+        selection_reason = (
+            f"best_cv_score={best_candidate['selection_score']}"
+            if best_candidate is not None
+            else "fallback_xgboost"
+        )
+
     plan = {
         "model_type": model_type,
         "hyperparameters": selected_hyperparameters,
         "model_candidates": model_candidates,
-        "selection_reason": (
-            f"best_cv_score={best_candidate['selection_score']}"
-            if best_candidate is not None
-            else "fallback_random_forest"
-        ),
+        "selection_reason": selection_reason,
         "adversarial_strategy": {
             "noise_perturbation": {"enabled": True, "std": round(noise_std, 4)},
             "boundary_attack": {"enabled": False, "k": ADVERSARIAL_BOUNDARY_K},
