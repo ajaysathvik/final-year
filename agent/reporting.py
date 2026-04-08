@@ -684,8 +684,10 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
     if plt is None:
         return False
 
+    selected_runs = _select_robustness_criteria_runs(runs)
+
     robust_rows = []
-    for run in runs:
+    for run in selected_runs:
         sim = run.get("simulation_results") or {}
         mean_f1 = sim.get("bootstrap_mean_f1")
         std_f1 = sim.get("bootstrap_std")
@@ -693,7 +695,7 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
         if any(value is not None for value in (mean_f1, std_f1, worst_f1)):
             robust_rows.append(
                 {
-                    "run_id": run.get("run_id", "?"),
+                    "run_id": _display_run_label(run),
                     "mean_f1": float(mean_f1) if mean_f1 is not None else None,
                     "variance": float(std_f1) ** 2 if std_f1 is not None else None,
                     "worst_f1": float(worst_f1) if worst_f1 is not None else None,
@@ -715,6 +717,7 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.8), sharex=False)
 
+    plotted = False
     for ax, (metric_key, title, color, higher_better) in zip(axes, metric_panels):
         values = [row[metric_key] for row in robust_rows]
         valid_values = [value for value in values if value is not None]
@@ -722,11 +725,7 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
             ax.set_visible(False)
             continue
 
-        if higher_better:
-            best_value = max(valid_values)
-        else:
-            best_value = min(valid_values)
-
+        best_value = max(valid_values) if higher_better else min(valid_values)
         bar_colors = []
         for value in values:
             if value is None:
@@ -741,11 +740,14 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
         ax.set_xticks(x)
         ax.set_xticklabels(run_labels, rotation=25, ha="right")
         ax.set_title(title, fontsize=10)
+        ax.set_ylabel("Robustness")
         ax.grid(axis="y", linestyle="--", alpha=0.3)
+        plotted = True
 
         if metric_key == "variance":
             top = max(valid_values) * 1.25 if max(valid_values) > 0 else 1.0
             ax.set_ylim(0, top)
+            label_offset = top * 0.025
             label_fmt = "{:.6f}"
         else:
             ymin = max(0.0, min(valid_values) - 0.03)
@@ -753,28 +755,69 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
             if ymax <= ymin:
                 ymax = min(1.0, ymin + 0.05)
             ax.set_ylim(ymin, ymax)
+            label_offset = (ymax - ymin) * 0.02
             label_fmt = "{:.4f}"
 
         for idx, (bar, value) in enumerate(zip(bars, values)):
             if value is None:
                 continue
-            label = label_fmt.format(value)
+            text_label = label_fmt.format(float(value))
             if metric_key == "worst_f1" and robust_rows[idx]["worst_eps"] is not None:
-                label = f"{label}\n@ eps={robust_rows[idx]['worst_eps']:.2f}"
+                text_label = f"{text_label}\n@ eps={robust_rows[idx]['worst_eps']:.2f}"
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
-                bar.get_height() + (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.02,
-                label,
+                bar.get_height() + label_offset,
+                text_label,
                 ha="center",
                 va="bottom",
                 fontsize=8,
             )
+
+    if not plotted:
+        plt.close(fig)
+        return False
 
     fig.suptitle("Robustness Criteria Across Experimental Configurations", fontsize=13)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
     return True
+
+
+def _select_robustness_criteria_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Keep only the latest baseline and baseline-with-drift runs for the
+    robustness criteria comparison plot.
+    """
+    latest_by_label: dict[str, dict[str, Any]] = {}
+    sort_key = lambda run: (_resolve_timestamp(run), str(run.get("run_id", "")))
+
+    for run in sorted(runs, key=sort_key):
+        label = _display_run_label(run)
+        if label not in {"Baseline", "Baseline with Drift"}:
+            continue
+        latest_by_label[label] = run
+
+    ordered = []
+    for label in ("Baseline", "Baseline with Drift"):
+        run = latest_by_label.get(label)
+        if run is not None:
+            ordered.append(run)
+    return ordered
+
+
+def _display_run_label(run: dict[str, Any]) -> str:
+    run_id = str(run.get("run_id", ""))
+    mapping = {
+        "normal_data_run": "Baseline",
+        "scraped_drift_run": "Baseline with Drift",
+        "random_drift_run": "Random Drift",
+        "validation_run": "Validation",
+    }
+    for prefix, label in mapping.items():
+        if run_id == prefix or run_id.startswith(f"{prefix}_"):
+            return label
+    return run_id or "Run"
 
 
 def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:

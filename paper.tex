@@ -90,7 +90,7 @@ The primary role of this component is not classification but data augmentation. 
 \begin{itemize}
     \item \textbf{Data Preparation:} Cleans the dataset by dropping uncertain rows (\texttt{is\_fraud}), replacing unknown values, and selecting the target class (non-fraud).
     \item \textbf{Metadata Creation (SDV):} Using the Synthetic Data Vault (SDV), the table schema is automatically inferred (numerical, categorical). This metadata guides CTGAN on how each column should be encoded and generated.
-    \item \textbf{Optuna Optimization:} Automatically searches for the best hyperparameters (epochs, batch size, learning rate, network dimensions, PAC) to maximize the statistical similarity between real and synthetic data.
+    \item \textbf{Hyperparameter Optimization:} Automatically searches for the best hyperparameters (epochs, batch size, learning rate, network dimensions, PAC) to maximize the statistical similarity between real and synthetic data.
     \item \textbf{CTGAN Synthesis:} The SDV CTGAN model trains a conditional GAN to learn complex feature distributions and inter-column correlations, then generates 500 realistic synthetic non-fraud records.
     \item \textbf{Class Rebalancing:} Synthetic rows are appended to the original dataset, increasing the non-fraud count and reducing class imbalance, thereby helping downstream ML models train with less bias.
 \end{itemize}
@@ -151,7 +151,7 @@ To accurately label this massive influx of unstructured data at scale, we implem
 The prompt engineering strategy directed the LLM to act as an expert fraud analyst, rigorously analyzing the primary post format while utilizing community comments restrictively as contextual evidence. The system structures the extraction of distinct components, identifying primary payment methods, fraud channels, psychological manipulation tactics (urgency, fear, authority), and aggregating continuous community signals to provide a definitive classification output. This ensures the resulting tabular dataset encompasses rich, transaction-like characteristics combined with sophisticated qualitative signals, establishing a potent empirical foundation for synthetic operations.
 
 \subsection{CTGAN Augmentation Optimization Phase}
-Before evaluating the adversarial robustness, we systematically validated the standard CTGAN generation logic by comparing real versus synthetic data density constraints. The optimal hyperparameters discovered via Optuna trials were: 600 epochs, a batch size of 16, a learning rate of 0.00038, 32 hidden dimensions, 2 generator layers, and 3 discriminator layers.
+Before evaluating the adversarial robustness, we systematically validated the standard CTGAN generation logic by comparing real versus synthetic data density constraints. The optimal hyperparameters used were: 600 epochs, a batch size of 16, a learning rate of 0.00038, 32 hidden dimensions, 2 generator layers, and 3 discriminator layers.
 
 Under these configured parameters, the underlying CTGAN model mathematically achieved a $98.5\%$ overall statistical fidelity score, maintaining exceptional alignment with the original dataset. For categorical features (e.g., \texttt{fraud\_type} and \texttt{payment\_method}), the synthetic data achieved a $100\%$ pass rate on Chi-Squared variance tests. Numerical consistency operated similarly strong, showing a $97.1\%$ pass rate on Kolmogorov-Smirnov (KS) tests to guarantee realistic statistical shape for features like structured urgency and financial severity. 
 
@@ -194,7 +194,7 @@ Duplicate Rate (Memorization) & 1.44\% & 1.29\% & \textbf{1.11\%} \\
 \subsection{Adversarial Training Evaluation Phase}
 Once empirical generation pipelines were verified, we evaluated the resilience of the generated Adv-CTGAN classifiers against simulated feature-level evasion attacks via Fast Gradient Sign Method (FGSM) and Projected Gradient Descent (PGD). 
 
-As shown in Table \ref{tab:robustness}, models inherently trained on the unstructured Original Imbalanced dataset suffered severe performance degradation under FGSM attacks (collapsing to $78.57\%$ accuracy metric tracking). While standard CTGAN generation reduced this vulnerability drop dynamically, scoring an FGSM accuracy of $68.23\%$, the proposed Adv-CTGAN (CTGAN + Adversarial Training) implementation heavily delivered powerful computational resistance. Securing a PGD defense accuracy of $90.6\%$, the architecture successfully balanced robustness while maintaining standard clean accuracy. Figure \ref{fig:robustness} visually summarizes the defense scaling.
+The run artifacts support a more detailed robustness analysis than clean versus attacked accuracy alone. In particular, we evaluated robustness using three complementary criteria: average attacked performance, stability across resamples, and worst-case attacked performance. Figures \ref{fig:attack_curves_actual} and \ref{fig:robustness_criteria_actual} summarize the two recorded experimental configurations extracted from the pipeline logs. Run 1 achieved the slightly higher bootstrap mean attacked F1 ($0.9062$ versus $0.9057$) and the lower bootstrap variance ($3.48\times10^{-5}$ versus $4.49\times10^{-5}$), indicating marginally better average robustness and stability. However, Run 2 achieved the clearly better worst-case attacked F1 ($0.8695$ versus $0.8310$), with its worst point occurring at $\epsilon=0.15$, and also the higher aggregate robustness score ($0.8819$ versus $0.8632$). This indicates that the later adversarially hardened configuration traded a negligible amount of average robustness for substantially stronger resilience under the most challenging attack settings.
 
 \begin{table}[htbp]
 \caption{Adversarial Robustness Evaluation}
@@ -218,6 +218,18 @@ Adv-CTGAN (Custom) & 0.9850 & 0.7744 & 0.9060 \\
 \centerline{\includegraphics[width=0.45\textwidth]{outputs/robustness_comparison.png}}
 \caption{Adversarial Robustness Under Evasion Attacks.}
 \label{fig:robustness}
+\end{figure}
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=0.48\textwidth]{agent/output/plots/run_comparison_attack_curves.png}}
+\caption{Recorded attacked F1 curves across the two experimental configurations.}
+\label{fig:attack_curves_actual}
+\end{figure}
+
+\begin{figure}[htbp]
+\centerline{\includegraphics[width=0.49\textwidth]{agent/output/plots/run_comparison_robustness_criteria.png}}
+\caption{Robustness comparison using average attacked F1, variance across resamples, and worst-case attacked F1.}
+\label{fig:robustness_criteria_actual}
 \end{figure}
 
 \subsection{Target Classifiers Output Evaluation}

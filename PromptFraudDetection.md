@@ -55,7 +55,7 @@ Generate synthetic fraud samples using CTGAN.
 Generate adversarial fraud samples (noise, boundary, evasion).
 
 ### training_agent
-Train model (XGBoost preferred, RandomForest fallback).
+Train model (XGBoost preferred, LightGBM/CatBoost fallback).
 
 ### simulation_agent
 Test robustness before deployment.

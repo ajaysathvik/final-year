@@ -175,7 +175,7 @@ ingestion_meta: dict             # {rows_loaded, rows_dropped, source_file, time
 ### `training_agent`
 - Training data = `clean_data + ctgan_data (if any) + adversarial_data (if any)`
 - Primary model: **XGBoost** (`xgboost.XGBClassifier`)
-- Fallback: `sklearn.ensemble.RandomForestClassifier` if XGBoost is not installed
+- Fallback: `LightGBM` or `CatBoost` if XGBoost is not installed
 - Train with `scale_pos_weight` from strategy config
 - Save model to `./models/candidate_model_{timestamp}.joblib`
 - Output: trained model object + training metadata
@@ -279,7 +279,7 @@ If promotion is rejected, log the reason and keep the existing active model unch
 - `scikit-learn`
 - `langgraph`
 - `ctgan`
-- `xgboost` (primary), `scikit-learn RandomForest` (fallback)
+- `xgboost` (primary), `LightGBM/CatBoost` (fallback)
 - `joblib` (model persistence)
 - Optional: `mlflow`, `shap`
 

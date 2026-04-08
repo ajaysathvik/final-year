@@ -37,7 +37,7 @@ from sklearn.metrics import (
     roc_auc_score,
     ConfusionMatrixDisplay,
 )
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
 from config import (
     DATASET_PATH,
@@ -84,15 +84,16 @@ def compute_metrics(y_true, y_pred, y_proba):
 # ── build baseline model (no adversarial augmentation, plain RF) ─────────────
 
 def build_baseline(X, y):
-    """Train a simple RF on the raw imbalanced data — no CTGAN, no Adv samples."""
+    """Train a simple XGBoost on the raw imbalanced data — no CTGAN, no Adv samples."""
     X_train, _, y_train, _ = train_test_split(
         X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y
     )
-    clf = RandomForestClassifier(
+    clf = XGBClassifier(
         n_estimators=200,
-        class_weight="balanced",      # only basic class_weight, no synthetic data
+        scale_pos_weight=max(1, int((y_train == 0).sum() / max(1, (y_train == 1).sum()))),
         random_state=RANDOM_STATE,
         n_jobs=-1,
+        eval_metric="logloss"
     )
     clf.fit(X_train, y_train)
     return clf
@@ -165,7 +166,7 @@ def generate_comparison_plot(baseline_cm, baseline_m, mapek_cm, mapek_m, out_pat
     ax1 = fig.add_subplot(gs[0])
     ax2 = fig.add_subplot(gs[1])
 
-    plot_single_cm(ax1, baseline_cm, "Baseline (RF — No Augmentation)", FRAUD_CMAP, baseline_m)
+    plot_single_cm(ax1, baseline_cm, "Baseline (XGBoost — No Augmentation)", FRAUD_CMAP, baseline_m)
     plot_single_cm(ax2, mapek_cm,    "MAPE-K + Adv-CTGAN (XGBoost)",    MAPEK_CMAP,  mapek_m)
 
     # Delta annotations
@@ -216,7 +217,7 @@ def main():
     print(f"      Test split: {len(X_test)} samples")
 
     # 2. Baseline
-    print("\n[2/4] Training baseline model (RF, no augmentation) …")
+    print("\n[2/4] Training baseline model (XGBoost, no augmentation) …")
     baseline_model = build_baseline(X, y)
     bl_pred  = baseline_model.predict(X_test)
     bl_proba = baseline_model.predict_proba(X_test)[:, 1]

@@ -49,7 +49,7 @@
 ### Bug 4 — Strategy agent is fully static (Plan)
 - **Where:** `strategy_agent`
 - **Issue:** The strategy is hardcoded: always `XGBoost n_estimators=200`, always `noise_std=0.05`, always `boundary_k=5`. It reads from the KB but never adapts based on what it finds there. Even when the KB shows a degrading F1 trend, the strategy is unchanged.
-- **Fix:** Implement basic adaptive rules in the strategy agent — e.g. increase `n_estimators` after degradation, try a different model type (RandomForest) after two consecutive F1 drops, or reduce adversarial noise if FPR is rising.
+- **Fix:** Implement basic adaptive rules in the strategy agent — e.g. increase `n_estimators` after degradation, try a different model type (CatBoost) after two consecutive F1 drops, or reduce adversarial noise if FPR is rising.
 
 ---
 
