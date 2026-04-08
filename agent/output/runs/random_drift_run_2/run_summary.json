@@ -1,0 +1,110 @@
+{
+  "timestamp": "20260408_071027",
+  "drift_detected": true,
+  "run_context": {
+    "use_scraped_drift_data": true,
+    "generate_random_drift_data": true
+  },
+  "balance_report": {
+    "action": "skipped",
+    "reason": "already_balanced",
+    "ratio": 1.2803,
+    "class_ratio": "1.28:1"
+  },
+  "supervisor_decision": "proceed",
+  "policy_decision": {
+    "should_retrain": true,
+    "should_rebalance": false,
+    "should_skip": false,
+    "should_validate_existing": false,
+    "reasons": [
+      "no_existing_model"
+    ],
+    "supervisor_health": 0.82,
+    "current_f1": 0.9823,
+    "l4_count": 0
+  },
+  "training_metrics": {
+    "model_type": "LightGBM",
+    "train_f1": 0.9998,
+    "f1_history": [
+      0.9998
+    ],
+    "total_rows": 15000,
+    "n_fraud": 8422,
+    "n_non_fraud": 6578,
+    "n_estimators": 200,
+    "l3_count": 0,
+    "used_drift_remediation": true,
+    "drift_rows_added": 38,
+    "used_adversarial_samples": true,
+    "adversarial_sample_count": 7500,
+    "adversarial_method": "fgsm_style_random_sign",
+    "adversarial_epsilon": 0.05,
+    "timestamp": "20260408_071027"
+  },
+  "eval_metrics": {
+    "f1": 0.9778,
+    "precision": 0.9679,
+    "recall": 0.9879,
+    "roc_auc": 0.9959,
+    "fpr": 0.0409
+  },
+  "simulation_results": {
+    "noise_stress_test": {
+      "eps_0.0": 0.9778,
+      "eps_0.01": 0.9796,
+      "eps_0.03": 0.9796,
+      "eps_0.05": 0.9796,
+      "eps_0.08": 0.98,
+      "eps_0.1": 0.981,
+      "eps_0.15": 0.9764,
+      "eps_0.2": 0.9787,
+      "eps_0.25": 0.9769,
+      "eps_0.3": 0.9761
+    },
+    "attack_method": "fgsm_style_random_sign",
+    "attack_epsilons": [
+      0.0,
+      0.01,
+      0.03,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3
+    ],
+    "bootstrap_mean_f1": 0.9783,
+    "bootstrap_std": 0.0033,
+    "bootstrap_ci_95": [
+      0.9718,
+      0.9827
+    ],
+    "worst_noise_f1": 0.9761,
+    "robustness_score": 0.9739,
+    "threshold": 0.6,
+    "passed": true
+  },
+  "simulation_passed": true,
+  "deployment_decision": {
+    "promoted": true,
+    "reasons": [
+      "all_checks_passed"
+    ],
+    "simulation_passed": true,
+    "policy_retrain": true,
+    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_lightgbm_20260408_071027.joblib",
+    "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
+  },
+  "promoted": true,
+  "feedback_loops": {
+    "L1_eval_to_balance": 0,
+    "L2_eval_to_strategy": 0,
+    "L3_training_self_loop": 0,
+    "L4_supervisor_policy": 0,
+    "L5_eval_to_kb": 1
+  },
+  "run_id": "random_drift_run_2"
+}
