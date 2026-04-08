@@ -1,6 +1,7 @@
 """
 Reporting helpers for per-run artifacts and cross-run comparison plots.
 """
+
 from __future__ import annotations
 
 import csv
@@ -37,9 +38,15 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
         encoding="utf-8",
     )
 
-    _write_json_if_present(run_dir / "evaluation_metrics.json", summary.get("eval_metrics"))
-    _write_json_if_present(run_dir / "training_metrics.json", summary.get("training_metrics"))
-    _write_json_if_present(run_dir / "simulation_results.json", summary.get("simulation_results"))
+    _write_json_if_present(
+        run_dir / "evaluation_metrics.json", summary.get("eval_metrics")
+    )
+    _write_json_if_present(
+        run_dir / "training_metrics.json", summary.get("training_metrics")
+    )
+    _write_json_if_present(
+        run_dir / "simulation_results.json", summary.get("simulation_results")
+    )
 
     scalar_snapshot = _build_scalar_snapshot(summary)
     _write_scalar_csv(run_dir / "scalar_metrics.csv", scalar_snapshot)
@@ -59,7 +66,9 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
 
     historical_runs = _load_historical_runs()
     historical_runs = _merge_current_run(historical_runs, summary)
-    historical_runs.sort(key=lambda item: (_resolve_timestamp(item), item.get("run_id", "")))
+    historical_runs.sort(
+        key=lambda item: (_resolve_timestamp(item), item.get("run_id", ""))
+    )
 
     comparison_csv = PLOTS_DIR / "run_comparison_metrics.csv"
     _write_comparison_csv(comparison_csv, historical_runs)
@@ -115,21 +124,33 @@ def _write_individual_run_bundle(summary: dict[str, Any]) -> dict[str, str]:
         json.dumps(normalized, indent=2, default=str),
         encoding="utf-8",
     )
-    _write_json_if_present(run_plot_dir / "evaluation_metrics.json", normalized.get("eval_metrics"))
-    _write_json_if_present(run_plot_dir / "training_metrics.json", normalized.get("training_metrics"))
-    _write_json_if_present(run_plot_dir / "simulation_results.json", normalized.get("simulation_results"))
-    _write_scalar_csv(run_plot_dir / "scalar_metrics.csv", _build_scalar_snapshot(normalized))
+    _write_json_if_present(
+        run_plot_dir / "evaluation_metrics.json", normalized.get("eval_metrics")
+    )
+    _write_json_if_present(
+        run_plot_dir / "training_metrics.json", normalized.get("training_metrics")
+    )
+    _write_json_if_present(
+        run_plot_dir / "simulation_results.json", normalized.get("simulation_results")
+    )
+    _write_scalar_csv(
+        run_plot_dir / "scalar_metrics.csv", _build_scalar_snapshot(normalized)
+    )
 
     path_info = {
         "individual_run_dir": str(run_plot_dir),
     }
 
     eval_plot = run_plot_dir / "evaluation_metrics_bar.png"
-    if _plot_single_run_eval(normalized, eval_plot) or _copy_existing_run_plot(run_id, eval_plot.name, eval_plot):
+    if _plot_single_run_eval(normalized, eval_plot) or _copy_existing_run_plot(
+        run_id, eval_plot.name, eval_plot
+    ):
         path_info["evaluation_plot"] = str(eval_plot)
 
     robustness_plot = run_plot_dir / "robustness_curve.png"
-    if _plot_single_run_robustness(normalized, robustness_plot) or _copy_existing_run_plot(run_id, robustness_plot.name, robustness_plot):
+    if _plot_single_run_robustness(
+        normalized, robustness_plot
+    ) or _copy_existing_run_plot(run_id, robustness_plot.name, robustness_plot):
         path_info["robustness_plot"] = str(robustness_plot)
 
     return path_info
@@ -166,8 +187,7 @@ def _load_historical_runs() -> list[dict[str, Any]]:
             payload = dict(entry.get("data", {}))
             if not payload:
                 payload = {
-                    k: v for k, v in entry.items()
-                    if k not in {"agent", "event_type"}
+                    k: v for k, v in entry.items() if k not in {"agent", "event_type"}
                 }
             payload.setdefault("timestamp", entry.get("timestamp"))
             payload["run_id"] = _resolve_run_id(payload)
@@ -181,8 +201,25 @@ def _load_historical_runs() -> list[dict[str, Any]]:
     return _reconstruct_runs_from_events(entries)
 
 
-def _merge_current_run(runs: list[dict[str, Any]], current: dict[str, Any]) -> list[dict[str, Any]]:
-    merged = {run["run_id"]: run for run in runs if run.get("run_id")}
+def _merge_current_run(
+    runs: list[dict[str, Any]], current: dict[str, Any]
+) -> list[dict[str, Any]]:
+    current_timestamp = _resolve_timestamp(current)
+    current_base_label = _derive_run_label(current)
+
+    merged: dict[str, dict[str, Any]] = {}
+    for run in runs:
+        run_id = run.get("run_id")
+        if not run_id:
+            continue
+
+        same_timestamp = _resolve_timestamp(run) == current_timestamp
+        same_condition = _derive_run_label(run) == current_base_label
+        if same_timestamp and same_condition:
+            continue
+
+        merged[run_id] = run
+
     merged[current["run_id"]] = current
     return list(merged.values())
 
@@ -210,7 +247,9 @@ def _resolve_timestamp(summary: dict[str, Any]) -> str:
     return datetime.utcnow().isoformat()
 
 
-def _reconstruct_runs_from_events(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _reconstruct_runs_from_events(
+    entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """
     Build approximate per-run summaries from the sequential event log when
     explicit full_run_summary entries are not available.
@@ -266,7 +305,10 @@ def _derive_run_label(summary: dict[str, Any]) -> str:
         return "random_drift_run"
     if run_context.get("use_scraped_drift_data") is False:
         return "normal_data_run"
-    if policy_decision.get("should_validate_existing") and summary.get("training_metrics") is None:
+    if (
+        policy_decision.get("should_validate_existing")
+        and summary.get("training_metrics") is None
+    ):
         return "validation_run"
     if (
         summary.get("drift_detected")
@@ -296,11 +338,15 @@ def _assign_descriptive_run_ids(runs: list[dict[str, Any]]) -> list[dict[str, An
     counts: dict[str, int] = {}
     labeled_runs: list[dict[str, Any]] = []
 
-    for run in sorted(runs, key=lambda item: (_resolve_timestamp(item), str(item.get("run_id", "")))):
+    for run in sorted(
+        runs, key=lambda item: (_resolve_timestamp(item), str(item.get("run_id", "")))
+    ):
         normalized = dict(run)
         base_id = _derive_run_label(normalized)
         counts[base_id] = counts.get(base_id, 0) + 1
-        normalized["run_id"] = base_id if counts[base_id] == 1 else f"{base_id}_{counts[base_id]}"
+        normalized["run_id"] = (
+            base_id if counts[base_id] == 1 else f"{base_id}_{counts[base_id]}"
+        )
         labeled_runs.append(normalized)
 
     return labeled_runs
@@ -346,7 +392,9 @@ def _write_comparison_csv(path: Path, runs: list[dict[str, Any]]) -> None:
         }
         row.update(_build_scalar_snapshot(run))
         eval_metrics = run.get("eval_metrics") or {}
-        noise_stress = (run.get("simulation_results") or {}).get("noise_stress_test", {})
+        noise_stress = (run.get("simulation_results") or {}).get(
+            "noise_stress_test", {}
+        )
         for key, value in eval_metrics.items():
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 row[f"eval.{key}"] = value
@@ -363,10 +411,14 @@ def _write_comparison_csv(path: Path, runs: list[dict[str, Any]]) -> None:
         rows.append(row)
 
     fieldnames = ["run_id", "timestamp"]
-    extra_fields = sorted({
-        key for row in rows for key in row.keys()
-        if key not in {"run_id", "timestamp"}
-    })
+    extra_fields = sorted(
+        {
+            key
+            for row in rows
+            for key in row.keys()
+            if key not in {"run_id", "timestamp"}
+        }
+    )
     fieldnames.extend(extra_fields)
 
     with open(path, "w", newline="", encoding="utf-8") as handle:
@@ -387,10 +439,17 @@ def _plot_single_run_eval(summary: dict[str, Any], output_path: Path) -> bool:
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     colors = ["#1f77b4", "#4c78a8", "#54a24b", "#72b7b2", "#e45756"]
-    ax.bar(ordered_keys, [float(v or 0.0) for v in values], color=colors, edgecolor="black", linewidth=0.5)
+    ax.bar(
+        ordered_keys,
+        [float(v or 0.0) for v in values],
+        color=colors,
+        edgecolor="black",
+        linewidth=0.5,
+    )
     ax.set_ylim(0, 1.05)
-    ax.set_ylabel("Score")
-    ax.set_title(f"Evaluation Metrics ({summary.get('run_id', 'run')})")
+    ax.set_ylabel("Score", fontsize=11)
+    ax.set_xlabel("Metric", fontsize=11)
+    ax.set_title(f"Evaluation Metrics - {summary.get('run_id', 'run')}")
     ax.grid(axis="y", linestyle="--", alpha=0.4)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -409,7 +468,9 @@ def _plot_single_run_robustness(summary: dict[str, Any], output_path: Path) -> b
 
     eps_vals = []
     scores = []
-    for key, value in sorted(attack_scores.items(), key=lambda item: float(item[0].split("_", 1)[1])):
+    for key, value in sorted(
+        attack_scores.items(), key=lambda item: float(item[0].split("_", 1)[1])
+    ):
         try:
             eps_vals.append(float(key.split("_", 1)[1]))
             scores.append(float(value))
@@ -421,10 +482,10 @@ def _plot_single_run_robustness(summary: dict[str, Any], output_path: Path) -> b
 
     fig, ax = plt.subplots(figsize=(8, 4.5))
     ax.plot(eps_vals, scores, marker="o", linewidth=2, color="#1f77b4")
-    ax.set_xlabel("Attack Epsilon")
-    ax.set_ylabel("F1 Score")
+    ax.set_xlabel("Attack Epsilon", fontsize=11)
+    ax.set_ylabel("F1 Score", fontsize=11)
     ax.set_ylim(0, 1.05)
-    ax.set_title(f"Robustness Curve ({summary.get('run_id', 'run')})")
+    ax.set_title(f"Robustness Curve - {summary.get('run_id', 'run')}")
     ax.grid(True, linestyle="--", alpha=0.4)
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -445,7 +506,7 @@ def _plot_eval_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool
     if len(runs) < 2:
         return False
 
-    run_labels = [run["run_id"] for run in runs]
+    run_labels = [_display_run_label(run) for run in runs]
     metrics = ["f1", "precision", "recall", "roc_auc"]
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd"]
 
@@ -510,9 +571,9 @@ def _plot_eval_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool
         ax.set_xticks(list(range(n_runs)))
     ax.set_xticklabels(run_labels, rotation=30, ha="right")
     ax.set_ylim(y_min, y_max + (y_max - y_min) * 0.15)
-    ax.set_xlabel("Run")
-    ax.set_ylabel("Score")
-    ax.set_title("Evaluation Metrics Across Runs")
+    ax.set_xlabel("Experiment Configuration", fontsize=11)
+    ax.set_ylabel("Metric Score", fontsize=11)
+    ax.set_title("Evaluation Metrics Comparison")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.legend(frameon=False, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.12))
     fig.tight_layout()
@@ -533,15 +594,15 @@ def _plot_fpr_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
 
     fig, ax = plt.subplots(figsize=(10, 4.5))
     ax.plot(
-        [run["run_id"] for run in runs],
+        [_display_run_label(run) for run in runs],
         [float(value or 0.0) for value in values],
         marker="o",
         linewidth=2,
         color="#e45756",
     )
-    ax.set_xlabel("Run")
-    ax.set_ylabel("False Positive Rate")
-    ax.set_title("False Positive Rate Across Runs")
+    ax.set_xlabel("Experiment Configuration", fontsize=11)
+    ax.set_ylabel("False Positive Rate", fontsize=11)
+    ax.set_title("False Positive Rate Comparison")
     ax.grid(True, linestyle="--", alpha=0.35)
     ax.tick_params(axis="x", rotation=30)
     fig.tight_layout()
@@ -575,13 +636,11 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
     ]
 
     # Determine which runs re-used the previous model (no new training).
-    model_reused = [
-        (run.get("training_metrics") is None) for run in runs
-    ]
+    model_reused = [(run.get("training_metrics") is None) for run in runs]
 
     fig, ax = plt.subplots(figsize=(10, 5))
     plotted = False
-    run_labels = [run["run_id"] for run in runs]
+    run_labels = [_display_run_label(run) for run in runs]
     x_indices = list(range(len(runs)))
 
     for metric_key, label, color in metric_specs:
@@ -647,9 +706,9 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
     ax.set_xticks(x_indices)
     ax.set_xticklabels(run_labels)
     ax.set_ylim(0, 1.05)
-    ax.set_xlabel("Run")
-    ax.set_ylabel("Score")
-    ax.set_title("Training and Robustness Metrics Across Runs")
+    ax.set_xlabel("Experiment Configuration", fontsize=11)
+    ax.set_ylabel("Metric Score", fontsize=11)
+    ax.set_title("Training and Robustness Metrics Comparison")
     ax.grid(True, linestyle="--", alpha=0.35)
     ax.tick_params(axis="x", rotation=30)
 
@@ -659,15 +718,36 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
 
     # Secondary legend explaining line styles.
     style_handles = [
-        Line2D([0], [0], color="grey", linewidth=2, linestyle="-",
-               marker="o", markersize=6, label="New Model Trained"),
-        Line2D([0], [0], color="grey", linewidth=2, linestyle="--",
-               marker="o", markerfacecolor="white", markeredgewidth=1.8,
-               markersize=6, label="Previous Model Re-used"),
+        Line2D(
+            [0],
+            [0],
+            color="grey",
+            linewidth=2,
+            linestyle="-",
+            marker="o",
+            markersize=6,
+            label="New Model Trained",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="grey",
+            linewidth=2,
+            linestyle="--",
+            marker="o",
+            markerfacecolor="white",
+            markeredgewidth=1.8,
+            markersize=6,
+            label="Previous Model Re-used",
+        ),
     ]
     ax.legend(
-        handles=style_handles, frameon=True, fancybox=True,
-        framealpha=0.85, edgecolor="#ccc", fontsize=8,
+        handles=style_handles,
+        frameon=True,
+        fancybox=True,
+        framealpha=0.85,
+        edgecolor="#ccc",
+        fontsize=8,
         loc="upper right",
     )
     # Re-add primary legend (adding second legend removes the first).
@@ -784,7 +864,23 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
     return True
 
 
-def _select_robustness_criteria_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _display_run_label(run: dict[str, Any]) -> str:
+    run_id = str(run.get("run_id", ""))
+    mapping = {
+        "normal_data_run": "baseline",
+        "scraped_drift_run": "baseline with drift",
+        "random_drift_run": "baseline with drift",
+        "validation_run": "validation",
+    }
+    for prefix, label in mapping.items():
+        if run_id == prefix or run_id.startswith(f"{prefix}_"):
+            return label
+    return run_id or "Run"
+
+
+def _select_robustness_criteria_runs(
+    runs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """
     Keep only the latest baseline and baseline-with-drift runs for the
     robustness criteria comparison plot.
@@ -794,33 +890,21 @@ def _select_robustness_criteria_runs(runs: list[dict[str, Any]]) -> list[dict[st
 
     for run in sorted(runs, key=sort_key):
         label = _display_run_label(run)
-        if label not in {"Baseline", "Baseline with Drift"}:
+        if label not in {"baseline", "baseline with drift"}:
             continue
         latest_by_label[label] = run
 
     ordered = []
-    for label in ("Baseline", "Baseline with Drift"):
+    for label in ("baseline", "baseline with drift"):
         run = latest_by_label.get(label)
         if run is not None:
             ordered.append(run)
     return ordered
 
 
-def _display_run_label(run: dict[str, Any]) -> str:
-    run_id = str(run.get("run_id", ""))
-    mapping = {
-        "normal_data_run": "Baseline",
-        "scraped_drift_run": "Baseline with Drift",
-        "random_drift_run": "Random Drift",
-        "validation_run": "Validation",
-    }
-    for prefix, label in mapping.items():
-        if run_id == prefix or run_id.startswith(f"{prefix}_"):
-            return label
-    return run_id or "Run"
-
-
-def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+def _plot_attack_curve_comparison(
+    runs: list[dict[str, Any]], output_path: Path
+) -> bool:
     """Grouped bar chart: x-axis = attack epsilon level, bars = runs."""
     try:
         import numpy as np  # noqa: PLC0415
@@ -830,7 +914,11 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
     plt = _load_pyplot()
     if plt is None:
         return False
-    eligible = [run for run in runs if (run.get("simulation_results") or {}).get("noise_stress_test")]
+    eligible = [
+        run
+        for run in runs
+        if (run.get("simulation_results") or {}).get("noise_stress_test")
+    ]
     if len(eligible) < 2:
         return False
 
@@ -838,7 +926,9 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
     all_eps: set[float] = set()
     run_data: list[tuple[str, dict[float, float]]] = []
     for run in eligible:
-        attack_scores = (run.get("simulation_results") or {}).get("noise_stress_test", {})
+        attack_scores = (run.get("simulation_results") or {}).get(
+            "noise_stress_test", {}
+        )
         eps_map: dict[float, float] = {}
         for key, value in attack_scores.items():
             try:
@@ -848,7 +938,7 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
             except (IndexError, ValueError, TypeError):
                 continue
         if eps_map:
-            run_data.append((run["run_id"], eps_map))
+            run_data.append((_display_run_label(run), eps_map))
 
     if not run_data:
         plt.close("all")
@@ -860,8 +950,16 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
     bar_width = 0.7 / n_runs
 
     colors = [
-        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
     ]
 
     fig, ax = plt.subplots(figsize=(max(8, n_eps * n_runs * 0.5 + 2), 5))
@@ -899,10 +997,10 @@ def _plot_attack_curve_comparison(runs: list[dict[str, Any]], output_path: Path)
         ax.set_xticks(list(range(n_eps)))
 
     ax.set_xticklabels([str(e) for e in eps_levels])
-    ax.set_xlabel("Attack Epsilon")
-    ax.set_ylabel("F1 Score")
+    ax.set_xlabel("Attack Epsilon", fontsize=11)
+    ax.set_ylabel("F1 Score", fontsize=11)
     ax.set_ylim(0, 1.05)
-    ax.set_title("FGSM-Style Robustness Comparison Across Runs")
+    ax.set_title("FGSM-Style Robustness Comparison")
     ax.grid(axis="y", linestyle="--", alpha=0.35)
     ax.legend(frameon=False, fontsize=8, ncol=min(n_runs, 5))
     fig.tight_layout()
@@ -963,7 +1061,14 @@ def _plot_single_run_learning_rate(summary: dict[str, Any], output_path: Path) -
 
     color_f1 = "#1f77b4"
     marker = "o" if l3_iterations > 1 else "s"
-    ax1.plot(iterations, f1_history, marker=marker, linewidth=2, color=color_f1, label="Train F1 (real)")
+    ax1.plot(
+        iterations,
+        f1_history,
+        marker=marker,
+        linewidth=2,
+        color=color_f1,
+        label="Train F1 (real)",
+    )
     ax1.set_xlabel("Training Iteration (L3 Loop)")
     ax1.set_ylabel("Train F1", color=color_f1)
     ax1.tick_params(axis="y", labelcolor=color_f1)
@@ -1002,7 +1107,9 @@ def _plot_single_run_learning_rate(summary: dict[str, Any], output_path: Path) -
     return True
 
 
-def _plot_learning_rate_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
+def _plot_learning_rate_comparison(
+    runs: list[dict[str, Any]], output_path: Path
+) -> bool:
     """
     Cross-run chart comparing learning-related hyperparameters.
 
@@ -1025,11 +1132,11 @@ def _plot_learning_rate_comparison(runs: list[dict[str, Any]], output_path: Path
         strategy = run.get("strategy_plan") or {}
         hyper = strategy.get("hyperparameters") or {}
         lr = hyper.get("learning_rate")
-        
+
         if train_f1 is None or lr is None:
             continue
-            
-        run_labels.append(run.get("run_id", "?"))
+
+        run_labels.append(_display_run_label(run))
         train_f1_vals.append(float(train_f1))
         lr_vals.append(float(lr))
 
@@ -1050,17 +1157,26 @@ def _plot_learning_rate_comparison(runs: list[dict[str, Any]], output_path: Path
     ax1.set_xticklabels(run_labels, rotation=30, ha="right")
 
     for xi, val in zip(x, lr_vals):
-        ax1.text(xi, val + max(lr_vals) * 0.02, f"lr={val:.3f}",
-                 ha="center", va="bottom", fontsize=8, color="#555")
+        ax1.text(
+            xi,
+            val + max(lr_vals) * 0.02,
+            f"lr={val:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=8,
+            color="#555",
+        )
 
     ax2 = ax1.twinx()
-    ax2.plot(x, train_f1_vals, marker="o", linewidth=2, color=color_f1, label="Train F1")
+    ax2.plot(
+        x, train_f1_vals, marker="o", linewidth=2, color=color_f1, label="Train F1"
+    )
     ax2.set_ylabel("Train F1", color=color_f1)
     ax2.tick_params(axis="y", labelcolor=color_f1)
     ax2.set_ylim(0, 1.05)
 
-    ax1.set_xlabel("Run")
-    ax1.set_title("Learning Rate vs. Train F1 Across Runs")
+    ax1.set_xlabel("Experiment Configuration", fontsize=11)
+    ax1.set_title("Learning Rate vs. Train F1 Comparison")
     ax1.grid(axis="y", linestyle="--", alpha=0.3)
 
     lines_1, labels_1 = ax1.get_legend_handles_labels()

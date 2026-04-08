@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260408_070849",
+  "timestamp": "20260408_120702",
   "drift_detected": false,
   "run_context": {
     "use_scraped_drift_data": false,
@@ -25,10 +25,10 @@
     "l4_count": 0
   },
   "training_metrics": {
-    "model_type": "LightGBM",
-    "train_f1": 0.9996,
+    "model_type": "XGBoost",
+    "train_f1": 0.9993,
     "f1_history": [
-      0.9996
+      0.9993
     ],
     "total_rows": 7462,
     "n_fraud": 4205,
@@ -41,27 +41,27 @@
     "adversarial_sample_count": 0,
     "adversarial_method": null,
     "adversarial_epsilon": null,
-    "timestamp": "20260408_070849"
+    "timestamp": "20260408_120702"
   },
   "eval_metrics": {
-    "f1": 0.9828,
-    "precision": 0.9661,
+    "f1": 0.9794,
+    "precision": 0.9596,
     "recall": 1.0,
-    "roc_auc": 0.9984,
-    "fpr": 0.0451
+    "roc_auc": 0.9988,
+    "fpr": 0.0524
   },
   "simulation_results": {
     "noise_stress_test": {
-      "eps_0.0": 0.9828,
-      "eps_0.01": 0.745,
-      "eps_0.03": 0.7583,
-      "eps_0.05": 0.7423,
-      "eps_0.08": 0.7326,
-      "eps_0.1": 0.6786,
-      "eps_0.15": 0.694,
-      "eps_0.2": 0.6695,
-      "eps_0.25": 0.6711,
-      "eps_0.3": 0.6471
+      "eps_0.0": 0.9794,
+      "eps_0.01": 0.8934,
+      "eps_0.03": 0.8934,
+      "eps_0.05": 0.8971,
+      "eps_0.08": 0.8884,
+      "eps_0.1": 0.8929,
+      "eps_0.15": 0.8895,
+      "eps_0.2": 0.8941,
+      "eps_0.25": 0.8906,
+      "eps_0.3": 0.8866
     },
     "attack_method": "fgsm_style_random_sign",
     "attack_epsilons": [
@@ -76,14 +76,14 @@
       0.25,
       0.3
     ],
-    "bootstrap_mean_f1": 0.9832,
-    "bootstrap_std": 0.0031,
+    "bootstrap_mean_f1": 0.9792,
+    "bootstrap_std": 0.0033,
     "bootstrap_ci_95": [
-      0.9785,
-      0.9894
+      0.9719,
+      0.9836
     ],
-    "worst_noise_f1": 0.6471,
-    "robustness_score": 0.8128,
+    "worst_noise_f1": 0.8866,
+    "robustness_score": 0.9293,
     "threshold": 0.6,
     "passed": true
   },
@@ -95,7 +95,7 @@
     ],
     "simulation_passed": true,
     "policy_retrain": true,
-    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_lightgbm_20260408_070849.joblib",
+    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260408_120702.joblib",
     "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
   },
   "promoted": true,

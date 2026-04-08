@@ -83,7 +83,7 @@ def _encode_feature_frames(
     base_feature_cols: list[str],
     target_col: str,
 ) -> tuple[list[pd.DataFrame | None], list[str]]:
-    """One-hot encode all configured features consistently across frames."""
+    """Normalize configured features without one-hot expansion."""
     prepared_frames: list[pd.DataFrame | None] = []
     feature_frames: list[pd.DataFrame] = []
 
@@ -98,12 +98,24 @@ def _encode_feature_frames(
     if not feature_frames:
         return prepared_frames, []
 
-    encoded_features = pd.get_dummies(
-        pd.concat(feature_frames, ignore_index=True),
-        dummy_na=True,
-    )
-    encoded_features = encoded_features.apply(pd.to_numeric, errors="coerce").fillna(0.0)
-    encoded_feature_cols = list(encoded_features.columns)
+    combined_features = pd.concat(feature_frames, ignore_index=True)
+    normalized_features = pd.DataFrame(index=combined_features.index)
+
+    for col in base_feature_cols:
+        series = combined_features[col]
+
+        if pd.api.types.is_bool_dtype(series):
+            normalized_features[col] = series.fillna(False).astype(int)
+            continue
+
+        if pd.api.types.is_numeric_dtype(series):
+            normalized_features[col] = pd.to_numeric(series, errors="coerce").fillna(0.0)
+            continue
+
+        category_codes = series.astype("category").cat.codes.astype("int32")
+        normalized_features[col] = category_codes
+
+    encoded_feature_cols = list(normalized_features.columns)
 
     encoded_frames: list[pd.DataFrame | None] = []
     start = 0
@@ -113,7 +125,7 @@ def _encode_feature_frames(
             continue
 
         stop = start + len(prepared)
-        encoded_part = encoded_features.iloc[start:stop].reset_index(drop=True).copy()
+        encoded_part = normalized_features.iloc[start:stop].reset_index(drop=True).copy()
         encoded_part[target_col] = prepared[target_col].reset_index(drop=True).astype(int)
         encoded_frames.append(encoded_part)
         start = stop
@@ -173,7 +185,7 @@ def ingest_node(state: dict) -> dict:
     test_df = test_df.reset_index(drop=True)
 
     fraud_count = int(df[TARGET_COL].sum())
-    print(f"  Encoded features used at runtime: {len(encoded_feature_cols)}")
+    print(f"  Runtime features used without one-hot expansion: {len(encoded_feature_cols)}")
     print(f"  Fraud: {fraud_count}, Non-fraud: {len(df) - fraud_count}")
     print(f"  Train: {len(train_df)}, Test: {len(test_df)}")
 

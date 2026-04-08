@@ -1,13 +1,13 @@
 metric,value
-eval.f1,0.9828
-eval.fpr,0.0451
-eval.precision,0.9661
+eval.f1,0.9794
+eval.fpr,0.0524
+eval.precision,0.9596
 eval.recall,1.0
-eval.roc_auc,0.9984
-simulation.bootstrap_mean_f1,0.9832
-simulation.bootstrap_std,0.0031
-simulation.robustness_score,0.8128
-simulation.worst_noise_f1,0.6471
+eval.roc_auc,0.9988
+simulation.bootstrap_mean_f1,0.9792
+simulation.bootstrap_std,0.0033
+simulation.robustness_score,0.9293
+simulation.worst_noise_f1,0.8866
 training.adversarial_sample_count,0.0
 training.drift_rows_added,0.0
 training.l3_count,0.0
@@ -15,4 +15,4 @@ training.n_estimators,200.0
 training.n_fraud,4205.0
 training.n_non_fraud,3257.0
 training.total_rows,7462.0
-training.train_f1,0.9996
+training.train_f1,0.9993

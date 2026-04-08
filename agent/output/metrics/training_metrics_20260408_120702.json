@@ -1,8 +1,8 @@
 {
-  "model_type": "LightGBM",
-  "train_f1": 0.9996,
+  "model_type": "XGBoost",
+  "train_f1": 0.9993,
   "f1_history": [
-    0.9996
+    0.9993
   ],
   "total_rows": 7462,
   "n_fraud": 4205,
@@ -15,5 +15,5 @@
   "adversarial_sample_count": 0,
   "adversarial_method": null,
   "adversarial_epsilon": null,
-  "timestamp": "20260408_070849"
+  "timestamp": "20260408_120702"
 }
