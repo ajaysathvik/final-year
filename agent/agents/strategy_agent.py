@@ -3,6 +3,7 @@ Strategy Agent — Plan phase of MAPE-K (Planning / Adaptation).
 Handles model selection, hyperparameters, and routing decisions between
 training and evaluation, with adversarial strengthening folded into training.
 """
+
 from __future__ import annotations
 
 from config import (
@@ -80,45 +81,51 @@ def _get_candidate_specs(
     try:
         import xgboost  # noqa: F401
 
-        candidate_specs.append({
-            "model_type": "XGBoost",
-            "hyperparameters": {
-                "n_estimators": n_estimators,
-                "max_depth": max_depth,
-                "learning_rate": learning_rate,
-                "class_weight": None,
-            },
-        })
+        candidate_specs.append(
+            {
+                "model_type": "XGBoost",
+                "hyperparameters": {
+                    "n_estimators": n_estimators,
+                    "max_depth": max_depth,
+                    "learning_rate": learning_rate,
+                    "class_weight": None,
+                },
+            }
+        )
     except ImportError:
         pass
 
     try:
         import lightgbm  # noqa: F401
 
-        candidate_specs.append({
-            "model_type": "LightGBM",
-            "hyperparameters": {
-                "n_estimators": n_estimators,
-                "max_depth": max_depth,
-                "learning_rate": learning_rate,
-                "class_weight": "balanced",
-            },
-        })
+        candidate_specs.append(
+            {
+                "model_type": "LightGBM",
+                "hyperparameters": {
+                    "n_estimators": n_estimators,
+                    "max_depth": max_depth,
+                    "learning_rate": learning_rate,
+                    "class_weight": "balanced",
+                },
+            }
+        )
     except ImportError:
         pass
 
     try:
         import catboost  # noqa: F401
 
-        candidate_specs.append({
-            "model_type": "CatBoost",
-            "hyperparameters": {
-                "n_estimators": n_estimators,
-                "max_depth": max_depth,
-                "learning_rate": learning_rate,
-                "class_weight": "balanced",
-            },
-        })
+        candidate_specs.append(
+            {
+                "model_type": "CatBoost",
+                "hyperparameters": {
+                    "n_estimators": n_estimators,
+                    "max_depth": max_depth,
+                    "learning_rate": learning_rate,
+                    "class_weight": "balanced",
+                },
+            }
+        )
     except ImportError:
         pass
 
@@ -160,32 +167,40 @@ def _score_model_candidates(
                 negative_count=negative_count,
             )
             f1_scores = cross_val_score(model, X, y, cv=cv, scoring="f1", n_jobs=-1)
-            recall_scores = cross_val_score(model, X, y, cv=cv, scoring="recall", n_jobs=-1)
-            precision_scores = cross_val_score(model, X, y, cv=cv, scoring="precision", n_jobs=-1)
+            recall_scores = cross_val_score(
+                model, X, y, cv=cv, scoring="recall", n_jobs=-1
+            )
+            precision_scores = cross_val_score(
+                model, X, y, cv=cv, scoring="precision", n_jobs=-1
+            )
             mean_f1 = float(f1_scores.mean())
             mean_recall = float(recall_scores.mean())
             mean_precision = float(precision_scores.mean())
             score = 0.6 * mean_f1 + 0.3 * mean_recall + 0.1 * mean_precision
 
-            candidate_results.append({
-                "model_type": model_type,
-                "hyperparameters": hyperparameters,
-                "cv_f1": round(mean_f1, 4),
-                "cv_recall": round(mean_recall, 4),
-                "cv_precision": round(mean_precision, 4),
-                "selection_score": round(score, 4),
-                "status": "ok",
-                "rank_order": order,
-            })
+            candidate_results.append(
+                {
+                    "model_type": model_type,
+                    "hyperparameters": hyperparameters,
+                    "cv_f1": round(mean_f1, 4),
+                    "cv_recall": round(mean_recall, 4),
+                    "cv_precision": round(mean_precision, 4),
+                    "selection_score": round(score, 4),
+                    "status": "ok",
+                    "rank_order": order,
+                }
+            )
         except Exception as exc:
-            candidate_results.append({
-                "model_type": model_type,
-                "hyperparameters": hyperparameters,
-                "status": "failed",
-                "error": str(exc),
-                "selection_score": float("-inf"),
-                "rank_order": order,
-            })
+            candidate_results.append(
+                {
+                    "model_type": model_type,
+                    "hyperparameters": hyperparameters,
+                    "status": "failed",
+                    "error": str(exc),
+                    "selection_score": float("-inf"),
+                    "rank_order": order,
+                }
+            )
 
     valid_results = [r for r in candidate_results if r["status"] == "ok"]
     if not valid_results:
@@ -197,7 +212,10 @@ def _score_model_candidates(
         }
         return "XGBoost", fallback_hyperparameters, candidate_results
 
-    best = max(valid_results, key=lambda result: (result["selection_score"], -result["rank_order"]))
+    best = max(
+        valid_results,
+        key=lambda result: (result["selection_score"], -result["rank_order"]),
+    )
     return best["model_type"], best["hyperparameters"], candidate_results
 
 
@@ -230,7 +248,9 @@ def _optuna_tune_selected_model(
             negative_count=negative_count,
         )
         cv_opt = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
-        scores = cross_val_score(model, X_opt, y_opt, cv=cv_opt, scoring="f1", n_jobs=-1)
+        scores = cross_val_score(
+            model, X_opt, y_opt, cv=cv_opt, scoring="f1", n_jobs=-1
+        )
         return float(scores.mean())
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -262,7 +282,9 @@ def strategy_agent(state: dict) -> dict:
     candidate_model = state.get("candidate_model")
     current_model = state.get("current_model")
     model_available = candidate_model is not None or current_model is not None
-    candidate_needs_evaluation = state.get("candidate_needs_evaluation", candidate_model is not None)
+    candidate_needs_evaluation = state.get(
+        "candidate_needs_evaluation", candidate_model is not None
+    )
     needs_strategy_refinement = state.get("needs_strategy_refinement", False)
     should_retrain = state.get("should_retrain", False)
     drift_detected = state.get("drift_detected", False)
@@ -334,16 +356,22 @@ def strategy_agent(state: dict) -> dict:
             learning_rate = 0.1
 
         # ── Model selection ─────────────────────────────────────────
-        model_type, candidate_hyperparameters, model_candidates = _score_model_candidates(
-            state=state,
-            n_estimators=n_estimators,
-            l2_count=l2_count,
-            max_depth=max_depth,
-            learning_rate=learning_rate,
+        model_type, candidate_hyperparameters, model_candidates = (
+            _score_model_candidates(
+                state=state,
+                n_estimators=n_estimators,
+                l2_count=l2_count,
+                max_depth=max_depth,
+                learning_rate=learning_rate,
+            )
         )
         selected_hyperparameters = candidate_hyperparameters
 
-        if l2_count > 0 and needs_strategy_refinement and not candidate_needs_evaluation:
+        if (
+            l2_count > 0
+            and needs_strategy_refinement
+            and not candidate_needs_evaluation
+        ):
             print(
                 f"  ℹ️  L2 refinement iteration #{l2_count} — "
                 f"benchmarking selected {model_type} with Optuna tuning."
@@ -358,8 +386,10 @@ def strategy_agent(state: dict) -> dict:
 
         best_candidate = next(
             (
-                candidate for candidate in model_candidates
-                if candidate.get("model_type") == model_type and candidate.get("status") == "ok"
+                candidate
+                for candidate in model_candidates
+                if candidate.get("model_type") == model_type
+                and candidate.get("status") == "ok"
             ),
             None,
         )
@@ -368,6 +398,13 @@ def strategy_agent(state: dict) -> dict:
             if best_candidate is not None
             else "fallback_xgboost"
         )
+
+    use_adversarial_training = (
+        model_available
+        and not candidate_needs_evaluation
+        and robustness_score is not None
+        and robustness_score < ROBUSTNESS_THRESHOLD
+    ) or (drift_detected and drift_remediation.get("applied", False))
 
     plan = {
         "model_type": model_type,
@@ -378,7 +415,18 @@ def strategy_agent(state: dict) -> dict:
             "noise_perturbation": {"enabled": True, "std": round(noise_std, 4)},
             "boundary_attack": {"enabled": False, "k": ADVERSARIAL_BOUNDARY_K},
             "evasion_mutation": {"enabled": False, "std": round(noise_std * 0.6, 4)},
-            "method": "fgsm_style_random_sign",
+            "method": "caa_attack"
+            if use_adversarial_training
+            else "fgsm_style_random_sign",
+            "use_advanced": False,
+            "advanced_config": {
+                "enable_apfe": False,
+                "enable_asc": False,
+                "enable_tla": False,
+                "enable_fraudgan": False,
+                "n_clusters": 5,
+                "triplet_weight": 0.1,
+            },
         },
         "use_adversarial_training": (
             (
@@ -409,10 +457,15 @@ def strategy_agent(state: dict) -> dict:
     )
     print(f"  Model: {model_type} ({plan['selection_reason']})")
     print(f"  Candidate scores: {candidate_summary}")
-    print(
-        f"  Adversarial: method={plan['adversarial_strategy']['method']}, "
-        f"epsilon={plan['adversarial_strategy']['noise_perturbation']['std']}"
-    )
+    adv_method = plan["adversarial_strategy"]["method"]
+    adv_eps = plan["adversarial_strategy"]["noise_perturbation"]["std"]
+    print(f"  Adversarial: method={adv_method}, epsilon={adv_eps}")
+    if use_adversarial_training:
+        ac = plan["adversarial_strategy"]["advanced_config"]
+        print(
+            f"    Advanced techniques: APFE={ac['enable_apfe']}, ASC={ac['enable_asc']}, "
+            f"TLA={ac['enable_tla']}, FraudGAN={ac['enable_fraudgan']}"
+        )
     print(f"  Use adversarial strengthening: {plan['use_adversarial_training']}")
     print(f"  Next step: {strategy_decision} ({decision_reason})")
 

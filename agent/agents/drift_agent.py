@@ -126,6 +126,7 @@ def drift_agent(state: dict) -> dict:
 
     kb = state["knowledge_base"]
     train_df: pd.DataFrame = state["train_df"]
+    reference_df: pd.DataFrame = state.get("raw_df", train_df)
     feature_cols: list[str] = state["feature_cols"]
 
     # Read prior drift history from KB
@@ -170,7 +171,7 @@ def drift_agent(state: dict) -> dict:
             drift_remediation = {
                 "applied": True,
                 "method": "reuse_prior_remediation",
-                "base_rows": int(len(train_df)),
+                "base_rows": int(len(reference_df)),
                 "scraped_rows_available": int(len(scraped_df)) if scraped_df is not None else 0,
                 "rows_added": int(len(usable_scraped)),
                 "total_rows_after": int(len(remediated_train_df)),
@@ -212,7 +213,7 @@ def drift_agent(state: dict) -> dict:
             drift_remediation = {
                 "applied": True,
                 "method": "reuse_prior_remediation",
-                "base_rows": int(len(train_df)),
+                "base_rows": int(len(reference_df)),
                 "scraped_rows_available": int(len(scraped_df)) if scraped_df is not None else 0,
                 "rows_added": int(len(usable_scraped)),
                 "total_rows_after": int(len(remediated_train_df)),
@@ -247,14 +248,14 @@ def drift_agent(state: dict) -> dict:
 
     # ── Normal drift detection path ────────────────────────────────
     if effective_scraped_df is not None and len(effective_scraped_df) > 0:
-        print(f"  📥 Using scraped data ({len(effective_scraped_df)} rows) for current distribution vs original ({len(train_df)}).")
-        ref = train_df
+        print(f"  📥 Using scraped data ({len(effective_scraped_df)} rows) for current distribution vs original ({len(reference_df)}).")
+        ref = reference_df
         cur = effective_scraped_df
     else:
-        print("  ℹ️  No scraped data. Using 70/30 split of training data for drift check.")
-        split_idx = int(len(train_df) * 0.7)
-        ref = train_df.iloc[:split_idx]
-        cur = train_df.iloc[split_idx:]
+        print("  ℹ️  No scraped data. Using 70/30 split of full reference data for drift check.")
+        split_idx = int(len(reference_df) * 0.7)
+        ref = reference_df.iloc[:split_idx]
+        cur = reference_df.iloc[split_idx:]
 
     drift_report: dict = {}
     any_drift = False
@@ -285,7 +286,7 @@ def drift_agent(state: dict) -> dict:
     drift_remediation = {
         "applied": False,
         "method": "none" if allow_scraped_drift_data else "disabled_by_env",
-        "base_rows": int(len(train_df)),
+        "base_rows": int(len(reference_df)),
         "scraped_rows_available": int(len(scraped_df)) if scraped_df is not None else 0,
         "rows_added": 0,
         "total_rows_after": int(len(train_df)),
@@ -299,7 +300,7 @@ def drift_agent(state: dict) -> dict:
         drift_remediation = {
             "applied": True,
             "method": "append_scraped_rows",
-            "base_rows": int(len(train_df)),
+            "base_rows": int(len(reference_df)),
             "scraped_rows_available": int(len(scraped_df)),
             "rows_added": int(len(usable_scraped)),
             "total_rows_after": int(len(remediated_train_df)),

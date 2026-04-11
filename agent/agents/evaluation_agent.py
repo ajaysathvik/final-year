@@ -139,10 +139,23 @@ def evaluation_agent(state: dict) -> dict:
         print("  ℹ️  Suppressing L1: Balance Agent already determined no rebalancing needed.")
         needs_rebalance = False
 
-    # ── L2 trigger: F1 degradation → strategy needs refinement ──
+    # ── L2 trigger: F1 degradation or robustness drop → strategy needs refinement ──
+    tb_metrics = state.get("tabularbench_metrics", {})
+    robustness_failed = False
+    
+    if tb_metrics:
+        asr_high = tb_metrics.get("asr", 0) > 20.0
+        acc_drop_high = tb_metrics.get("accuracy_drop", 0) > 10.0
+        is_not_robust = not tb_metrics.get("is_robust", True)
+        
+        if asr_high or acc_drop_high or is_not_robust:
+            print(f"  🚨 Robustness failed (ASR: {tb_metrics.get('asr', 0)}%, Drop: {tb_metrics.get('accuracy_drop', 0)}%). Triggering L2.")
+            robustness_failed = True
+
     needs_strategy = (
         metrics["f1"] < F1_THRESHOLD
         or f1_degraded  # Bug-7: degradation triggers L2 refinement
+        or robustness_failed
     )
 
     # Don't loop if we've already looped enough

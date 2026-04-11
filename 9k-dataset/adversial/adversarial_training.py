@@ -1,14 +1,14 @@
 """
-Adversarial Training — CTGAN 3k → FGSM → XGBoost
+Adversarial Training — CTGAN 3k → CAA → XGBoost
 ==================================================
 Input : CTGAN-augmented train_3k.csv + test_3k.csv
-Method: FGSM perturbation on numerical features only
+Method: Constrained Adaptive Attack (CAA) perturbation
 Steps :
   1. Load CTGAN train/test split
   2. Preprocess + label encode
-  3. Generate FGSM adversarial copies of training data (2× rows)
+  3. Generate CAA adversarial copies of training data (2× rows)
   4. Train Baseline XGB vs Adversarial XGB
-  5. Evaluate on Clean + FGSM-attacked test sets
+  5. Evaluate on Clean + CAA-attacked test sets
   6. Save summary_table.csv
 """
 
@@ -20,6 +20,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from xgboost import XGBClassifier
+from tabularbench_caa import caa_attack
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -35,7 +36,7 @@ ADVERSARIAL_MODEL_PATH = OUTPUT_DIR / "adversarial_xgb.json"
 TRAIN_PATH = ARTIFACT_DIR / "train_3k.csv"
 TEST_PATH = ARTIFACT_DIR / "test_3k.csv"
 TARGET_COL  = "annotation.is_fraud"
-EPSILON     = 0.05   # FGSM perturbation budget
+EPSILON     = 0.05   # Perturbation budget
 RANDOM_SEED = 42
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -128,40 +129,7 @@ numeric_indices = [feature_names.index(c) for c in NUMERIC_COLS if c in feature_
 print(f"  Numeric feature indices to perturb: {numeric_indices}")
 
 # ─────────────────────────────────────────────
-# 4. PERTURBATION FUNCTIONS
-# ─────────────────────────────────────────────
-
-def fgsm_perturb(X, epsilon=EPSILON, numeric_idx=None):
-    """
-    FGSM-style perturbation on tabular data.
-    Since tree models have no gradient, we use random sign perturbation
-    (equivalent to the 'gradient' direction being unknown — worst case random).
-    """
-    X_adv = X.copy()
-    noise = epsilon * np.sign(np.random.randn(X.shape[0], len(numeric_idx)))
-    X_adv[:, numeric_idx] = X_adv[:, numeric_idx] + noise
-    # Clip to [0, 1] range for normalized features
-    X_adv[:, numeric_idx] = np.clip(X_adv[:, numeric_idx], 0.0, None)
-    return X_adv.astype(np.float32)
-
-
-
-# ─────────────────────────────────────────────
-# 5. GENERATE ADVERSARIAL TRAINING DATA
-# ─────────────────────────────────────────────
-print("\nGenerating adversarial training examples (FGSM)...")
-X_train_adv = fgsm_perturb(X_train, epsilon=EPSILON, numeric_idx=numeric_indices)
-
-# Combine original + adversarial → 2× rows
-X_train_augmented = np.vstack([X_train, X_train_adv])
-y_train_augmented = np.hstack([y_train, y_train])
-
-print(f"  Original train rows : {X_train.shape[0]}")
-print(f"  Adversarial rows    : {X_train_adv.shape[0]}")
-print(f"  Augmented total     : {X_train_augmented.shape[0]}  ← 2×✅")
-
-# ─────────────────────────────────────────────
-# 6. TRAIN MODELS
+# 4. TRAIN BASELINE MODEL (For CAA)
 # ─────────────────────────────────────────────
 XGB_PARAMS = dict(
     n_estimators=200,
@@ -179,6 +147,24 @@ baseline_model.fit(X_train, y_train)
 baseline_model.save_model(str(BASELINE_MODEL_PATH))
 print("  ✅ Baseline trained")
 
+# ─────────────────────────────────────────────
+# 5. GENERATE ADVERSARIAL TRAINING DATA (CAA)
+# ─────────────────────────────────────────────
+print("\nGenerating adversarial training examples (CAA)...")
+X_train_adv, _, _ = caa_attack(X_train, y_train, baseline_model, feature_names, epsilon=EPSILON)
+
+# Combine original + adversarial → 2× rows
+X_train_augmented = np.vstack([X_train, X_train_adv])
+y_train_augmented = np.hstack([y_train, y_train])
+
+print(f"  Original train rows : {X_train.shape[0]}")
+print(f"  Adversarial rows    : {X_train_adv.shape[0]}")
+print(f"  Augmented total     : {X_train_augmented.shape[0]}  ← 2×✅")
+
+# ─────────────────────────────────────────────
+# 6. TRAIN ADVERSARIAL MODEL
+# ─────────────────────────────────────────────
+
 print("Training Adversarial XGBoost (original + perturbed data)...")
 adv_model = XGBClassifier(**XGB_PARAMS)
 adv_model.fit(X_train_augmented, y_train_augmented)
@@ -188,8 +174,8 @@ print("  ✅ Adversarial model trained")
 # ─────────────────────────────────────────────
 # 7. GENERATE TEST ATTACK SETS
 # ─────────────────────────────────────────────
-print("\nGenerating FGSM test attack set...")
-X_test_fgsm = fgsm_perturb(X_test, epsilon=EPSILON, numeric_idx=numeric_indices)
+print("\nGenerating CAA test attack set...")
+X_test_caa = caa_attack(X_test, y_test, baseline_model, feature_names, epsilon=EPSILON)[0]
 
 # ─────────────────────────────────────────────
 # 8. EVALUATION
@@ -212,11 +198,11 @@ results = []
 
 # Baseline evaluations
 results.append(evaluate(baseline_model, X_test,      y_test, "Baseline XGB",   "Clean"))
-results.append(evaluate(baseline_model, X_test_fgsm, y_test, "Baseline XGB",   "FGSM Attack"))
+results.append(evaluate(baseline_model, X_test_caa, y_test, "Baseline XGB",   "CAA Attack"))
 
 # Adversarial model evaluations
 results.append(evaluate(adv_model, X_test,           y_test, "Adversarial XGB", "Clean"))
-results.append(evaluate(adv_model, X_test_fgsm,      y_test, "Adversarial XGB", "FGSM Attack"))
+results.append(evaluate(adv_model, X_test_caa,      y_test, "Adversarial XGB", "CAA Attack"))
 
 # ─────────────────────────────────────────────
 # 9. PRINT RESULTS
@@ -230,13 +216,13 @@ print(results_df.to_string(index=False))
 print("=" * 70)
 
 # Highlight robustness gain
-baseline_fgsm = results_df[(results_df["Model"] == "Baseline XGB") & (results_df["Test Set"] == "FGSM Attack")]["F1"].values[0]
-adv_fgsm      = results_df[(results_df["Model"] == "Adversarial XGB") & (results_df["Test Set"] == "FGSM Attack")]["F1"].values[0]
+baseline_caa = results_df[(results_df["Model"] == "Baseline XGB") & (results_df["Test Set"] == "CAA Attack")]["F1"].values[0]
+adv_caa      = results_df[(results_df["Model"] == "Adversarial XGB") & (results_df["Test Set"] == "CAA Attack")]["F1"].values[0]
 
-print(f"\n📊 Robustness Gain (F1 — FGSM Attack):")
-print(f"   Baseline XGB  : {baseline_fgsm}")
-print(f"   Adversarial XGB: {adv_fgsm}")
-print(f"   Δ = {round(adv_fgsm - baseline_fgsm, 4):+}")
+print(f"\n📊 Robustness Gain (F1 — CAA Attack):")
+print(f"   Baseline XGB  : {baseline_caa}")
+print(f"   Adversarial XGB: {adv_caa}")
+print(f"   Δ = {round(adv_caa - baseline_caa, 4):+}")
 
 # ─────────────────────────────────────────────
 # 10. SAVE CSV + GENERATE VISUALIZATIONS
@@ -254,12 +240,12 @@ print(f"✅ Adversarial model saved to: {ADVERSARIAL_MODEL_PATH}")
 
 METRICS   = ["Accuracy", "Precision", "Recall", "F1", "AUC"]
 MODELS    = ["Baseline XGB", "Adversarial XGB"]
-TEST_SETS = ["Clean", "FGSM Attack"]
+TEST_SETS = ["Clean", "CAA Attack"]
 COLORS    = {
     ("Baseline XGB",   "Clean"):       "#4A90D9",
-    ("Baseline XGB",   "FGSM Attack"): "#E05C5C",
+    ("Baseline XGB",   "CAA Attack"): "#E05C5C",
     ("Adversarial XGB","Clean"):       "#27AE60",
-    ("Adversarial XGB","FGSM Attack"): "#F39C12",
+    ("Adversarial XGB","CAA Attack"): "#F39C12",
 }
 
 # ── Chart 1: Grouped bar — all metrics ────────────────────────
@@ -294,7 +280,7 @@ ax.set_xticks(x)
 ax.set_xticklabels(METRICS, color="white", fontsize=11)
 ax.set_ylim(0, 1.12)
 ax.set_ylabel("Score", color="white", fontsize=11)
-ax.set_title("Adversarial Training — CTGAN 3k | Baseline vs Adversarial XGB (FGSM)",
+ax.set_title("Adversarial Training — CTGAN 3k | Baseline vs Adversarial XGB (CAA)",
              color="white", fontsize=13, fontweight="bold", pad=14)
 ax.tick_params(colors="white")
 ax.spines[["top","right","left","bottom"]].set_color("#334155")
@@ -313,12 +299,12 @@ fig, ax = plt.subplots(figsize=(7, 5))
 fig.patch.set_facecolor("#1A1A2E")
 ax.set_facecolor("#16213E")
 
-labels = ["Baseline\n(Clean)", "Baseline\n(FGSM)", "Adversarial\n(Clean)", "Adversarial\n(FGSM)"]
+labels = ["Baseline\n(Clean)", "Baseline\n(CAA)", "Adversarial\n(Clean)", "Adversarial\n(CAA)"]
 f1_vals = [
     results_df[(results_df["Model"]=="Baseline XGB")    & (results_df["Test Set"]=="Clean")      ]["F1"].values[0],
-    results_df[(results_df["Model"]=="Baseline XGB")    & (results_df["Test Set"]=="FGSM Attack")]["F1"].values[0],
+    results_df[(results_df["Model"]=="Baseline XGB")    & (results_df["Test Set"]=="CAA Attack")]["F1"].values[0],
     results_df[(results_df["Model"]=="Adversarial XGB") & (results_df["Test Set"]=="Clean")      ]["F1"].values[0],
-    results_df[(results_df["Model"]=="Adversarial XGB") & (results_df["Test Set"]=="FGSM Attack")]["F1"].values[0],
+    results_df[(results_df["Model"]=="Adversarial XGB") & (results_df["Test Set"]=="CAA Attack")]["F1"].values[0],
 ]
 bar_colors = ["#4A90D9", "#E05C5C", "#27AE60", "#F39C12"]
 bars = ax.bar(labels, f1_vals, color=bar_colors, edgecolor="white", linewidth=0.5, width=0.55)
@@ -329,7 +315,7 @@ for bar, v in zip(bars, f1_vals):
 
 ax.set_ylim(0, 1.15)
 ax.set_ylabel("F1 Score", color="white", fontsize=11)
-ax.set_title("F1 Score — Robustness Under FGSM Attack", color="white",
+ax.set_title("F1 Score — Robustness Under CAA Attack", color="white",
              fontsize=12, fontweight="bold", pad=12)
 ax.tick_params(colors="white", labelsize=10)
 ax.spines[["top","right","left","bottom"]].set_color("#334155")
@@ -364,7 +350,7 @@ for i, (ax, col) in enumerate(zip(axes, sample_cols)):
     if i == 0:
         ax.legend(fontsize=8, framealpha=0.3, labelcolor="white")
 
-fig.suptitle("Feature Distribution: Original vs FGSM Perturbed (Training Data)",
+fig.suptitle("Feature Distribution: Original vs CAA Perturbed (Training Data)",
              color="white", fontsize=12, fontweight="bold", y=1.02)
 plt.tight_layout()
 p3 = OUTPUT_DIR / "chart3_feature_perturbation.png"

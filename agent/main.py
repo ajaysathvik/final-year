@@ -40,7 +40,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--data", type=str, default=None,
-        help="Path to the input CSV file (default: 9k-dataset/data.csv)"
+        help="Path to the input CSV file (default: agent/main_data.csv)"
     )
     args = parser.parse_args()
 

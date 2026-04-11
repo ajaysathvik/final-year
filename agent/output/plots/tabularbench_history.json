@@ -1,0 +1,17 @@
+[
+  {
+    "run": 1,
+    "timestamp": "20260411_115053",
+    "model_type": "XGBoost",
+    "standard_accuracy": 99.97,
+    "robust_accuracy": 99.9,
+    "robustness_score": 0.999,
+    "asr": 0.08,
+    "accuracy_drop": 0.07,
+    "is_robust": true,
+    "sensitivity_map": {
+      "annotation.fraud_labels.meta_victim_story": 0.5,
+      "annotation.key_features.urgency_level": 0.5
+    }
+  }
+]

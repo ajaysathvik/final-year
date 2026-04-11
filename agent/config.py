@@ -12,7 +12,7 @@ AGENT_ROOT = Path(__file__).resolve().parent
 REPO_ROOT  = AGENT_ROOT.parent
 DATA_ROOT  = REPO_ROOT / "9k-dataset"
 
-DATASET_PATH = DATA_ROOT / "data.csv"
+DATASET_PATH = AGENT_ROOT / "main_data.csv"
 TRAIN_BALANCED_SCHEMA_PATH = (
     DATA_ROOT / "artifacts" / "xgb_balanced_train_imbalanced_test_3k" / "train_balanced.csv"
 )
@@ -40,7 +40,7 @@ USE_SCRAPED_DRIFT_DATA = os.getenv("USE_SCRAPED_DRIFT_DATA", "true").strip().low
 
 # ── Random drift data generation ──────────────────────────────────
 # When GENERATE_RANDOM_DRIFT_DATA=true, the pipeline regenerates
-# drift_test_dataset.csv before each run using procedural scenarios so
+# drift_data.csv before each run using procedural scenarios so
 # drift patterns and class balance shift continuously across runs.
 GENERATE_RANDOM_DRIFT_DATA = os.getenv("GENERATE_RANDOM_DRIFT_DATA", "false").strip().lower() in {
     "1", "true", "yes", "on"

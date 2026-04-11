@@ -155,7 +155,7 @@ def ingest_node(state: dict) -> dict:
     print(f"  Base features from train_balanced.csv: {len(available_base_cols)}")
 
     # Handle scraped data ingestion
-    drift_file = _AGENT_ROOT / "drift_test_dataset.csv"
+    drift_file = _AGENT_ROOT / "drift_data.csv"
     scraped_df = None
     if drift_file.exists():
         print(f"  📥 Found scraped data in {drift_file}")

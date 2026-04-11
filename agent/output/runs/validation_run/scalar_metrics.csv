@@ -1,0 +1,10 @@
+metric,value
+eval.f1,0.9982
+eval.fpr,0.0339
+eval.precision,0.9982
+eval.recall,0.9982
+eval.roc_auc,0.9961
+simulation.bootstrap_mean_f1,0.998
+simulation.bootstrap_std,0.001
+simulation.robustness_score,0.992
+simulation.worst_noise_f1,0.9877

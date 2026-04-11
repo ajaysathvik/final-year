@@ -632,7 +632,7 @@ def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -
         ("training.train_f1", "Train F1", "#1f77b4"),
         ("simulation.bootstrap_mean_f1", "Bootstrap Mean F1", "#ff7f0e"),
         ("simulation.worst_noise_f1", "Worst Attacked F1", "#2ca02c"),
-        ("simulation.robustness_score", "Robustness Score", "#9467bd"),
+        ("simulation.robustness_score", "Average Robustness Score", "#9467bd"),
     ]
 
     # Determine which runs re-used the previous model (no new training).
@@ -769,17 +769,44 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
     robust_rows = []
     for run in selected_runs:
         sim = run.get("simulation_results") or {}
-        mean_f1 = sim.get("bootstrap_mean_f1")
-        std_f1 = sim.get("bootstrap_std")
-        worst_f1 = sim.get("worst_noise_f1")
-        if any(value is not None for value in (mean_f1, std_f1, worst_f1)):
+        training = run.get("training_metrics") or {}
+
+        # Extract all F1 scores from the multi-epsilon FGSM attack curve
+        attack_curve: dict[str, float] = sim.get("noise_stress_test") or {}
+        curve_vals: list[float] = []
+        for k, v in sorted(attack_curve.items(),
+                            key=lambda kv: float(kv[0].split("_", 1)[1])):
+            try:
+                curve_vals.append(float(v))
+            except (ValueError, TypeError):
+                continue
+
+        if curve_vals:
+            import statistics  # noqa: PLC0415
+            mean_rob = statistics.mean(curve_vals)
+            var_rob = statistics.variance(curve_vals) if len(curve_vals) > 1 else 0.0
+            worst_f1 = min(curve_vals)
+            worst_eps = _resolve_worst_case_epsilon(run)
+        else:
+            # Fallback to stored scalar if curve unavailable
+            tb_score = training.get("tabularbench_robustness_score") or sim.get("robustness_score")
+            mean_rob = float(tb_score) if tb_score is not None else None
+            var_rob = (float(sim["bootstrap_std"]) ** 2
+                       if sim.get("bootstrap_std") is not None else None)
+            worst_f1 = sim.get("worst_noise_f1")
+            worst_eps = _resolve_worst_case_epsilon(run)
+
+        if any(v is not None for v in (mean_rob, var_rob, worst_f1)):
             robust_rows.append(
                 {
                     "run_id": _display_run_label(run),
-                    "mean_f1": float(mean_f1) if mean_f1 is not None else None,
-                    "variance": float(std_f1) ** 2 if std_f1 is not None else None,
+                    "mean_robustness": float(mean_rob) if mean_rob is not None else None,
+                    "variance": float(var_rob) if var_rob is not None else None,
                     "worst_f1": float(worst_f1) if worst_f1 is not None else None,
-                    "worst_eps": _resolve_worst_case_epsilon(run),
+                    "worst_eps": worst_eps,
+                    "n_epsilons": len(curve_vals),
+                    "is_robust": bool(training.get("tabularbench_is_robust", sim.get("passed", True))),
+                    "asr": float(training.get("tabularbench_asr", 0.0)),
                 }
             )
 
@@ -789,77 +816,139 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
     run_labels = [row["run_id"] for row in robust_rows]
     x = list(range(len(run_labels)))
 
+    # ── Light theme ───────────────────────────────────────────────
+    BG    = "white"
+    AX_BG = "#f8f9fa"
+    SPINE = "#dee2e6"
+    TEXT  = "#212529"
+    BLUE  = "#3d7eba"
+    RED   = "#e05c5c"
+    GREEN = "#2d9f6e"
+
     metric_panels = [
-        ("mean_f1", "Average Robustness (Higher Better)", "#1f77b4", True),
-        ("variance", "Variance Across Resamples (Lower Better)", "#e45756", False),
-        ("worst_f1", "Worst-Case Attacked F1 (Higher Better)", "#2ca02c", True),
+        ("mean_robustness", "Mean Robustness Score\nacross Attack Epsilons (\u2191 Better)", BLUE,  True),
+        ("variance",        "Variance of Robustness\nacross Attack Epsilons (\u2193 Better)", RED,   False),
+        ("worst_f1",        "Worst-Case Attacked F1\n(Minimum across Epsilons, \u2191 Better)", GREEN, True),
     ]
 
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.8), sharex=False)
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    fig.patch.set_facecolor(BG)
+    fig.suptitle(
+        "Robustness Criteria \u2014 Experimental Configuration Comparison",
+        fontsize=14, fontweight="bold", y=1.03,
+    )
+
+    def _style_ax(ax):
+        ax.set_facecolor(AX_BG)
+        ax.tick_params(labelsize=9)
+        for sp in ["bottom", "left"]:
+            ax.spines[sp].set_color(SPINE)
+        for sp in ["top", "right"]:
+            ax.spines[sp].set_color("none")
 
     plotted = False
     for ax, (metric_key, title, color, higher_better) in zip(axes, metric_panels):
         values = [row[metric_key] for row in robust_rows]
-        valid_values = [value for value in values if value is not None]
+        valid_values = [v for v in values if v is not None]
         if not valid_values:
             ax.set_visible(False)
             continue
 
+        _style_ax(ax)
         best_value = max(valid_values) if higher_better else min(valid_values)
-        bar_colors = []
-        for value in values:
-            if value is None:
-                bar_colors.append("#cfcfcf")
-            elif abs(value - best_value) < 1e-12:
-                bar_colors.append("#111111")
-            else:
-                bar_colors.append(color)
 
-        heights = [float(value) if value is not None else 0.0 for value in values]
-        bars = ax.bar(x, heights, color=bar_colors, edgecolor="black", linewidth=0.4)
+        bar_colors = []
+        for v in values:
+            if v is None:
+                bar_colors.append("#dee2e6")
+            elif abs(v - best_value) < 1e-12:
+                bar_colors.append(color)
+            else:
+                bar_colors.append("#adb5bd")
+
+        heights = [float(v) if v is not None else 0.0 for v in values]
+        bars = ax.bar(
+            x, heights, color=bar_colors, edgecolor=SPINE,
+            linewidth=0.6, width=0.55, zorder=3,
+        )
         ax.set_xticks(x)
-        ax.set_xticklabels(run_labels, rotation=25, ha="right")
-        ax.set_title(title, fontsize=10)
-        ax.set_ylabel("Robustness")
-        ax.grid(axis="y", linestyle="--", alpha=0.3)
+        ax.set_xticklabels(run_labels, rotation=20, ha="right")
+        ax.set_title(title, fontsize=10, pad=12)
+        ax.set_ylabel("Score" if metric_key != "variance" else "Variance", fontsize=9)
+        ax.grid(axis="y", linestyle="--", alpha=0.4, color=SPINE, zorder=0)
         plotted = True
 
         if metric_key == "variance":
-            top = max(valid_values) * 1.25 if max(valid_values) > 0 else 1.0
+            top = max(valid_values) * 1.35 if max(valid_values) > 0 else 1.0
             ax.set_ylim(0, top)
-            label_offset = top * 0.025
-            label_fmt = "{:.6f}"
+            label_offset = top * 0.03
+            label_fmt = "{:.2e}"
+        elif metric_key == "robustness_score":
+            ymin = max(0.0, min(valid_values) - 0.02)
+            ymax = min(1.0, max(valid_values) + 0.04)
+            ax.set_ylim(ymin, ymax)
+            label_offset = (ymax - ymin) * 0.025
+            label_fmt = "{:.4f}"
         else:
             ymin = max(0.0, min(valid_values) - 0.03)
-            ymax = min(1.0, max(valid_values) + 0.05)
+            ymax = min(1.0, max(valid_values) + 0.06)
             if ymax <= ymin:
-                ymax = min(1.0, ymin + 0.05)
+                ymax = min(1.0, ymin + 0.06)
             ax.set_ylim(ymin, ymax)
-            label_offset = (ymax - ymin) * 0.02
+            label_offset = (ymax - ymin) * 0.025
             label_fmt = "{:.4f}"
 
-        for idx, (bar, value) in enumerate(zip(bars, values)):
-            if value is None:
+        for idx, (bar, v) in enumerate(zip(bars, values)):
+            if v is None:
                 continue
-            text_label = label_fmt.format(float(value))
+            text_label = label_fmt.format(float(v))
             if metric_key == "worst_f1" and robust_rows[idx]["worst_eps"] is not None:
-                text_label = f"{text_label}\n@ eps={robust_rows[idx]['worst_eps']:.2f}"
+                text_label = f"{text_label}\n@ \u03b5={robust_rows[idx]['worst_eps']:.2f}"
+            is_winner = abs(float(v) - best_value) < 1e-12
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
                 bar.get_height() + label_offset,
-                text_label,
-                ha="center",
-                va="bottom",
+                text_label + ("\n\u2605" if is_winner else ""),
+                ha="center", va="bottom",
                 fontsize=8,
+                color=color if is_winner else TEXT,
+                fontweight="bold" if is_winner else "normal",
             )
+
+        if metric_key == "mean_robustness":
+            for idx, row in enumerate(robust_rows):
+                asr = row.get("asr", 0.0)
+                n_eps = row.get("n_epsilons", 0)
+                status_icon = "\u2714" if row.get("is_robust", True) else "\u2718"
+                label_inner = (f"n={n_eps}\nASR {asr:.1f}%\n{status_icon}"
+                               if n_eps > 0 else f"ASR {asr:.1f}%\n{status_icon}")
+                ax.text(
+                    x[idx], heights[idx] / 2 if heights[idx] > 0 else 0.01,
+                    label_inner,
+                    ha="center", va="center",
+                    fontsize=7.5, color="white", fontweight="bold", zorder=5,
+                )
 
     if not plotted:
         plt.close(fig)
         return False
 
-    fig.suptitle("Robustness Criteria Across Experimental Configurations", fontsize=13)
+    from matplotlib.patches import Patch  # noqa: PLC0415
+    legend_elements = [
+        Patch(facecolor=BLUE,    edgecolor=SPINE, label="Best (Mean Robustness)"),
+        Patch(facecolor=GREEN,   edgecolor=SPINE, label="Best (Worst-Case F1)"),
+        Patch(facecolor=RED,     edgecolor=SPINE, label="Best (Variance)"),
+        Patch(facecolor="#adb5bd", edgecolor=SPINE, label="Non-winner"),
+    ]
+    fig.legend(
+        handles=legend_elements,
+        loc="lower center", ncol=4,
+        edgecolor=SPINE,
+        fontsize=8, bbox_to_anchor=(0.5, -0.08),
+    )
+
     fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor=BG)
     plt.close(fig)
     return True
 

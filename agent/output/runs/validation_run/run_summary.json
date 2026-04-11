@@ -1,8 +1,8 @@
 {
-  "timestamp": "20260411_115053",
+  "timestamp": "2026-04-11T11:51:36.664410",
   "drift_detected": false,
   "run_context": {
-    "use_scraped_drift_data": false,
+    "use_scraped_drift_data": true,
     "generate_random_drift_data": false
   },
   "balance_report": {
@@ -20,47 +20,18 @@
   },
   "supervisor_decision": "proceed",
   "policy_decision": {
-    "should_retrain": true,
+    "should_retrain": false,
     "should_rebalance": false,
     "should_skip": false,
-    "should_validate_existing": false,
+    "should_validate_existing": true,
     "reasons": [
-      "no_existing_model"
+      "validation_required_for_current_run"
     ],
     "supervisor_health": 0.92,
-    "current_f1": 0.0,
+    "current_f1": 0.9982,
     "l4_count": 0
   },
-  "training_metrics": {
-    "model_type": "XGBoost",
-    "train_f1": 0.9998,
-    "f1_history": [
-      0.9998
-    ],
-    "total_rows": 2882,
-    "n_fraud": 2614,
-    "n_non_fraud": 268,
-    "n_estimators": 200,
-    "l3_count": 0,
-    "used_drift_remediation": false,
-    "drift_rows_added": 0,
-    "used_adversarial_samples": false,
-    "adversarial_sample_count": 0,
-    "adversarial_method": null,
-    "adversarial_epsilon": null,
-    "timestamp": "20260411_115053",
-    "tabularbench_standard_accuracy": 99.97,
-    "tabularbench_robust_accuracy": 99.9,
-    "tabularbench_robustness_score": 0.999,
-    "tabularbench_accuracy_drop": 0.07,
-    "tabularbench_asr": 0.08,
-    "tabularbench_is_robust": true,
-    "tabularbench_sensitivity_map": {
-      "annotation.fraud_labels.meta_victim_story": 0.5,
-      "annotation.key_features.urgency_level": 0.5
-    },
-    "tabularbench_plot_path": "D:\\ajay\\final-year\\agent\\output\\plots\\tabularbench_cumulative.png"
-  },
+  "training_metrics": null,
   "eval_metrics": {
     "f1": 0.9982,
     "precision": 0.9982,
@@ -94,29 +65,29 @@
       0.25,
       0.3
     ],
-    "bootstrap_mean_f1": 0.9981,
-    "bootstrap_std": 0.0009,
+    "bootstrap_mean_f1": 0.998,
+    "bootstrap_std": 0.001,
     "bootstrap_ci_95": [
-      0.9962,
-      0.9995
+      0.9963,
+      0.9997
     ],
     "worst_noise_f1": 0.9877,
-    "robustness_score": 0.9919,
+    "robustness_score": 0.992,
     "threshold": 0.6,
     "passed": true
   },
   "simulation_passed": true,
   "deployment_decision": {
-    "promoted": true,
+    "promoted": false,
     "reasons": [
-      "all_checks_passed"
+      "policy_did_not_request_retrain",
+      "no_candidate_model"
     ],
     "simulation_passed": true,
-    "policy_retrain": true,
-    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260411_115053.joblib",
-    "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
+    "policy_retrain": false,
+    "candidate_path": null
   },
-  "promoted": true,
+  "promoted": false,
   "feedback_loops": {
     "L1_eval_to_balance": 0,
     "L2_eval_to_strategy": 0,
@@ -124,5 +95,5 @@
     "L4_supervisor_policy": 0,
     "L5_eval_to_kb": 1
   },
-  "run_id": "normal_data_run"
+  "run_id": "validation_run"
 }

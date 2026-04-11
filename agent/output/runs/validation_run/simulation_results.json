@@ -24,14 +24,14 @@
     0.25,
     0.3
   ],
-  "bootstrap_mean_f1": 0.9981,
-  "bootstrap_std": 0.0009,
+  "bootstrap_mean_f1": 0.998,
+  "bootstrap_std": 0.001,
   "bootstrap_ci_95": [
-    0.9962,
-    0.9995
+    0.9963,
+    0.9997
   ],
   "worst_noise_f1": 0.9877,
-  "robustness_score": 0.9919,
+  "robustness_score": 0.992,
   "threshold": 0.6,
   "passed": true
 }

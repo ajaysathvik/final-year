@@ -1,67 +1,56 @@
 {
   "timestamp": null,
-  "drift_detected": true,
+  "drift_detected": false,
   "run_context": {
     "use_scraped_drift_data": true,
     "generate_random_drift_data": false
   },
   "balance_report": {
-    "action": "skipped",
-    "reason": "already_balanced",
-    "ratio": 1.2343,
-    "class_ratio": "1.23:1"
+    "action": "balanced",
+    "method": "CTGAN",
+    "minority_class": "non_fraud",
+    "original_fraud": 2614,
+    "original_non_fraud": 134,
+    "original_class_ratio": "19.51:1",
+    "synthetic_generated": 134,
+    "total_after": 2882,
+    "balanced_fraud": 2614,
+    "balanced_non_fraud": 268,
+    "balanced_class_ratio": "9.75:1"
   },
   "supervisor_decision": "proceed",
   "policy_decision": {
-    "should_retrain": true,
+    "should_retrain": false,
     "should_rebalance": false,
     "should_skip": false,
-    "should_validate_existing": false,
+    "should_validate_existing": true,
     "reasons": [
-      "drift_detected"
+      "validation_required_for_current_run"
     ],
-    "supervisor_health": 0.82,
-    "current_f1": 0.9794,
+    "supervisor_health": 0.92,
+    "current_f1": 0.9982,
     "l4_count": 0
   },
-  "training_metrics": {
-    "model_type": "XGBoost",
-    "train_f1": 0.995,
-    "f1_history": [
-      0.995
-    ],
-    "total_rows": 15524,
-    "n_fraud": 8576,
-    "n_non_fraud": 6948,
-    "n_estimators": 200,
-    "l3_count": 0,
-    "used_drift_remediation": true,
-    "drift_rows_added": 300,
-    "used_adversarial_samples": true,
-    "adversarial_sample_count": 7762,
-    "adversarial_method": "fgsm_style_random_sign",
-    "adversarial_epsilon": 0.05,
-    "timestamp": "20260408_120722"
-  },
+  "training_metrics": null,
   "eval_metrics": {
-    "f1": 0.9939,
-    "precision": 0.9898,
-    "recall": 0.9981,
-    "roc_auc": 0.9997,
-    "fpr": 0.0128
+    "f1": 0.9982,
+    "precision": 0.9982,
+    "recall": 0.9982,
+    "roc_auc": 0.9961,
+    "fpr": 0.0339
   },
   "simulation_results": {
     "noise_stress_test": {
-      "eps_0.0": 0.9939,
-      "eps_0.01": 0.993,
-      "eps_0.03": 0.9939,
-      "eps_0.05": 0.9911,
-      "eps_0.08": 0.8599,
-      "eps_0.1": 0.8576,
-      "eps_0.15": 0.8625,
-      "eps_0.2": 0.8678,
-      "eps_0.25": 0.8595,
-      "eps_0.3": 0.8562
+      "eps_0.0": 0.9982,
+      "eps_0.01": 0.9941,
+      "eps_0.03": 0.9913,
+      "eps_0.05": 0.9895,
+      "eps_0.08": 0.9882,
+      "eps_0.1": 0.9886,
+      "eps_0.15": 0.9895,
+      "eps_0.2": 0.9904,
+      "eps_0.25": 0.9891,
+      "eps_0.3": 0.9877
     },
     "attack_method": "fgsm_style_random_sign",
     "attack_epsilons": [
@@ -76,29 +65,29 @@
       0.25,
       0.3
     ],
-    "bootstrap_mean_f1": 0.9944,
-    "bootstrap_std": 0.0015,
+    "bootstrap_mean_f1": 0.998,
+    "bootstrap_std": 0.001,
     "bootstrap_ci_95": [
-      0.9922,
-      0.9978
+      0.9963,
+      0.9997
     ],
-    "worst_noise_f1": 0.8562,
-    "robustness_score": 0.9242,
+    "worst_noise_f1": 0.9877,
+    "robustness_score": 0.992,
     "threshold": 0.6,
     "passed": true
   },
   "simulation_passed": true,
   "deployment_decision": {
-    "promoted": true,
+    "promoted": false,
     "reasons": [
-      "all_checks_passed"
+      "policy_did_not_request_retrain",
+      "no_candidate_model"
     ],
     "simulation_passed": true,
-    "policy_retrain": true,
-    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260408_120722.joblib",
-    "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
+    "policy_retrain": false,
+    "candidate_path": null
   },
-  "promoted": true,
+  "promoted": false,
   "feedback_loops": {
     "L1_eval_to_balance": 0,
     "L2_eval_to_strategy": 0,
@@ -106,19 +95,17 @@
     "L4_supervisor_policy": 0,
     "L5_eval_to_kb": 1
   },
-  "run_id": "scraped_drift_run",
+  "run_id": "validation_run",
   "artifact_paths": {
-    "run_id": "scraped_drift_run",
-    "run_dir": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run",
+    "run_id": "validation_run",
+    "run_dir": "D:\\ajay\\final-year\\agent\\output\\runs\\validation_run",
     "plots_dir": "D:\\ajay\\final-year\\agent\\output\\plots",
     "comparison_csv": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_metrics.csv",
-    "evaluation_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\evaluation_metrics_bar.png",
-    "robustness_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\robustness_curve.png",
-    "learning_rate_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\learning_rate_curve.png",
+    "evaluation_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\validation_run\\plots\\evaluation_metrics_bar.png",
+    "robustness_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\validation_run\\plots\\robustness_curve.png",
     "eval_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_eval_metrics.png",
     "fpr_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_fpr.png",
     "robustness_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_robustness_metrics.png",
-    "robustness_criteria_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_robustness_criteria.png",
     "attack_curve_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_attack_curves.png"
   }
 }
