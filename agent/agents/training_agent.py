@@ -4,9 +4,10 @@ Trains a model on balanced data using the Strategy Agent's plan.
 L3 feedback loop: self-loop for iterative retraining.
 On success, returns control to Strategy so Strategy remains the central hub.
 
-Evaluation: TabularBench-style robustness metrics computed inline —
-  Standard Accuracy, Robust Accuracy (under CAA), Attack Success Rate (ASR),
-  Feature Sensitivity Map — plotted and saved to artifacts/training_robustness/.
+Evaluation: FGSM-style robustness metrics computed inline —
+  Standard Accuracy, Robust Accuracy (under FGSM perturbation), Attack Success
+  Rate (ASR), Feature Sensitivity Map — plotted and saved to
+  artifacts/training_robustness/.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timezone
 from pathlib import Path
 from sklearn.metrics import f1_score, accuracy_score
+from sklearn.linear_model import LogisticRegression
 
 from config import MODELS_DIR, RANDOM_STATE, MAX_L3_ITERATIONS, F1_THRESHOLD
 
@@ -32,66 +34,98 @@ except ImportError:
     ADVANCED_ADV_AVAILABLE = False
 
 
-# ── TabularBench-style CAA evaluation (inline, no external imports) ──────────
+def _as_model_input(model, X, feature_cols: list[str]):
+    """Preserve feature names for estimators fitted with named columns."""
+    if isinstance(X, pd.DataFrame):
+        return X.loc[:, feature_cols] if feature_cols else X
+    if getattr(model, "feature_names_in_", None) is not None:
+        return pd.DataFrame(X, columns=feature_cols)
+    return X
 
-def _caa_attack_inline(
+
+# ── FGSM-style robustness evaluation ──────────────────────────────────────────
+
+def _fgsm_attack_inline(
     X_in: np.ndarray,
     y_in: np.ndarray,
     model,
     feature_cols: list[str],
     epsilon: float = 0.1,
+    attack_positive_only: bool = False,
 ) -> tuple[np.ndarray, float, dict[str, float]]:
     """
-    Constrained Adaptive Attack (CAA) — TabularBench framework logic,
-    implemented inline without importing tabularbench_caa.py.
-
-    Returns:
-        X_adv       — perturbed samples
-        asr         — attack success rate (0-100)
-        sensitivity — {feature_name: contribution_fraction}
+    Surrogate FGSM for tabular models.
+    Fits a lightweight logistic surrogate, computes sign of input gradient,
+    then evaluates attack success against the provided model.
     """
     X_adv = X_in.copy().astype(np.float32)
-    fraud_indices = np.where(y_in == 1)[0]
+    if X_adv.size == 0:
+        return X_adv, 0.0, {}
 
-    success_flags = np.zeros(len(fraud_indices), dtype=np.float32)
-    feature_flips: dict[str, int] = {f: 0 for f in feature_cols}
+    y_arr = np.asarray(y_in).astype(int)
+    if len(np.unique(y_arr)) < 2:
+        return X_adv, 0.0, {}
 
+    surrogate = LogisticRegression(
+        max_iter=500,
+        random_state=RANDOM_STATE,
+        class_weight="balanced",
+    )
     try:
-        y_pred_initial = model.predict(X_in)
+        surrogate.fit(X_adv, y_arr)
     except Exception:
         return X_adv, 0.0, {}
 
-    for idx_i, idx in enumerate(fraud_indices):
-        # Only attack samples the model already identifies as fraud
-        if y_pred_initial[idx] == 0:
-            continue
+    probs = surrogate.predict_proba(X_adv)[:, 1]
+    weights = surrogate.coef_[0].astype(np.float32)
+    grad_scalar = (probs - y_arr).astype(np.float32)
+    gradients = grad_scalar[:, None] * weights[None, :]
 
-        x_curr = X_adv[idx].copy()
-        for f_idx, f_name in enumerate(feature_cols):
-            perturbation = np.random.uniform(-epsilon * 50, epsilon * 50)
-            x_test = x_curr.copy()
-            x_test[f_idx] += perturbation
-            try:
-                pred = model.predict(x_test.reshape(1, -1))[0]
-            except Exception:
-                continue
-            if pred == 0:
-                X_adv[idx] = x_test
-                feature_flips[f_name] += 1
-                success_flags[idx_i] = 1
-                break
+    feature_scale = np.std(X_adv, axis=0).astype(np.float32)
+    feature_scale = np.where(feature_scale < 1e-3, 1.0, feature_scale)
+    perturbation = epsilon * np.sign(gradients) * feature_scale
 
-    total_successes = sum(feature_flips.values())
-    if total_successes > 0:
-        sensitivity = {
-            k: v / total_successes
-            for k, v in feature_flips.items()
-            if v > 0
-        }
-    else:
-        sensitivity = {}
+    if attack_positive_only:
+        mask = (y_arr == 1).astype(np.float32)[:, None]
+        perturbation = perturbation * mask
 
-    asr = float(np.mean(success_flags) * 100)
+    X_adv = X_adv + perturbation.astype(np.float32)
+
+    if model is None:
+        return X_adv, 0.0, {}
+
+    try:
+        y_pred_before = model.predict(_as_model_input(model, X_in, feature_cols))
+        y_pred_after = model.predict(_as_model_input(model, X_adv, feature_cols))
+    except Exception:
+        return X_adv, 0.0, {}
+
+    attacked_idx = np.where(y_arr == 1)[0] if attack_positive_only else np.arange(len(y_arr))
+    if attacked_idx.size == 0:
+        return X_adv, 0.0, {}
+
+    initially_correct = y_pred_before[attacked_idx] == y_arr[attacked_idx]
+    attacked_idx = attacked_idx[initially_correct]
+    if attacked_idx.size == 0:
+        return X_adv, 0.0, {}
+
+    success_mask = y_pred_after[attacked_idx] != y_arr[attacked_idx]
+    successful_idx = attacked_idx[success_mask]
+    asr = float(np.mean(success_mask) * 100)
+
+    if successful_idx.size == 0:
+        return X_adv, asr, {}
+
+    feature_contrib = np.abs(perturbation[successful_idx]).sum(axis=0)
+    total = float(feature_contrib.sum())
+    if total <= 0:
+        return X_adv, asr, {}
+
+    sensitivity = {
+        feature_cols[i]: float(feature_contrib[i] / total)
+        for i in range(len(feature_cols))
+        if feature_contrib[i] > 0
+    }
     return X_adv, asr, sensitivity
 
 
@@ -103,28 +137,32 @@ def _compute_tabularbench_metrics(
     epsilon: float = 0.1,
 ) -> dict:
     """
-    Compute TabularBench-framework robustness metrics:
+    Compute FGSM-style robustness metrics:
       - standard_accuracy  : clean accuracy on eval set
-      - robust_accuracy    : accuracy after CAA perturbation
+      - robust_accuracy    : accuracy after FGSM perturbation
       - asr                : attack success rate (%)
-      - sensitivity_map    : feature → contribution fraction
       - is_robust          : bool — drop < 20 pp considered robust
     """
     try:
-        y_pred_clean = model.predict(X_eval)
+        y_pred_clean = model.predict(_as_model_input(model, X_eval, feature_cols))
         std_acc = float(accuracy_score(y_eval, y_pred_clean) * 100)
     except Exception:
         std_acc = 0.0
 
     rng_state = np.random.get_state()
     np.random.seed(RANDOM_STATE)
-    X_adv, asr, sensitivity = _caa_attack_inline(
-        X_eval, y_eval, model, feature_cols, epsilon=epsilon
+    X_adv, asr, _sensitivity = _fgsm_attack_inline(
+        X_eval,
+        y_eval,
+        model,
+        feature_cols,
+        epsilon=epsilon,
+        attack_positive_only=True,
     )
     np.random.set_state(rng_state)
 
     try:
-        y_pred_adv = model.predict(X_adv)
+        y_pred_adv = model.predict(_as_model_input(model, X_adv, feature_cols))
         rob_acc = float(accuracy_score(y_eval, y_pred_adv) * 100)
     except Exception:
         rob_acc = 0.0
@@ -140,7 +178,6 @@ def _compute_tabularbench_metrics(
         "asr": round(asr, 2),
         "accuracy_drop": round(std_acc - rob_acc, 2),
         "is_robust": is_robust,
-        "sensitivity_map": sensitivity,
     }
 
 
@@ -170,6 +207,25 @@ def _save_history(history: list[dict], output_dir: Path) -> None:
         json.dump(history, f, indent=2)
 
 
+def _normalize_history(history: list[dict]) -> list[dict]:
+    """Collapse duplicate entries that share the same run_label.
+
+    Keeps only the latest entry per label so the cumulative chart stays
+    at two real runs (baseline + baseline with drift) instead of
+    accumulating stale pseudo-runs.
+    """
+    latest_by_label: dict[str, dict] = {}
+    for entry in history:
+        label = entry.get("run_label", f"run_{entry.get('run', '?')}")
+        latest_by_label[label] = entry  # last occurrence wins
+
+    # Re-number sequentially after dedup.
+    deduped = list(latest_by_label.values())
+    for idx, entry in enumerate(deduped, start=1):
+        entry["run"] = idx
+    return deduped
+
+
 # ── Cumulative multi-run plot ─────────────────────────────────────────────────
 
 def _plot_tabularbench_metrics(
@@ -177,22 +233,28 @@ def _plot_tabularbench_metrics(
     model_type: str,
     timestamp: str,
     output_dir: Path,
+    is_refinement: bool = False,
+    run_label: str = "baseline",
 ) -> str:
     """
-    Append current run to history, then generate a cumulative 3-panel plot:
+    Append current run to history, then generate a cumulative 2-panel plot:
       Panel 1 — Standard vs Robust Accuracy trend over all runs (line)
       Panel 2 — ASR & Accuracy Drop trend over all runs (line)
-      Panel 3 — Latest Feature Sensitivity Map (barh, top-5)
     Plot saved as 'tabularbench_cumulative.png' (overwritten each run so
-    latest always at a fixed path) plus a timestamped snapshot copy.
+    latest always at a fixed path).
+
+    Duplicate entries with the same ``run_label`` are collapsed so the
+    chart never exceeds two real runs (baseline + baseline with drift).
     Returns the fixed cumulative path.
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    # ── Load, append, save history ────────────────────────────────
+    # ── Load, append, normalize, save history ─────────────────────
     history = _load_history(output_dir)
-    history.append({
-        "run": len(history) + 1,
+
+    new_entry = {
+        "run": len(history) + 1 if not (is_refinement and history) else history[-1]["run"],
+        "run_label": run_label,
         "timestamp": timestamp,
         "model_type": model_type,
         "standard_accuracy": tb_metrics["standard_accuracy"],
@@ -201,19 +263,21 @@ def _plot_tabularbench_metrics(
         "asr": tb_metrics["asr"],
         "accuracy_drop": tb_metrics["accuracy_drop"],
         "is_robust": tb_metrics["is_robust"],
-        "sensitivity_map": tb_metrics.get("sensitivity_map", {}),
-    })
+    }
+
+    if is_refinement and history:
+        history[-1] = new_entry
+    else:
+        history.append(new_entry)
+
+    # Collapse duplicate labels → keep latest per condition.
+    history = _normalize_history(history)
     _save_history(history, output_dir)
 
     # ── Extract series ────────────────────────────────────────────
     run_labels = []
     for h in history:
-        if h["run"] == 1:
-            lbl = "baseline"
-        elif h["run"] == 2:
-            lbl = "baseline with drift"
-        else:
-            lbl = f"Run {h['run']}"
+        lbl = h.get("run_label", f"Run {h['run']}")
         run_labels.append(f"{lbl}\n{h['timestamp'][4:13]}")
     x = list(range(1, len(history) + 1))
     std_accs = [h["standard_accuracy"] for h in history]
@@ -221,13 +285,6 @@ def _plot_tabularbench_metrics(
     asrs = [h["asr"] for h in history]
     drops = [h["accuracy_drop"] for h in history]
     robust_flags = [h["is_robust"] for h in history]
-
-    # Latest sensitivity
-    sensitivity = tb_metrics.get("sensitivity_map", {})
-    sorted_sens = dict(sorted(sensitivity.items(), key=lambda kv: kv[1], reverse=True))
-    top_features = list(sorted_sens.keys())[:5]
-    top_vals = [sorted_sens[k] * 100 for k in top_features]
-    clean_labels = [f.split(".")[-1].replace("_", " ").title() for f in top_features]
 
     # ── Light theme ───────────────────────────────────────────────
     BG     = "white"
@@ -239,8 +296,7 @@ def _plot_tabularbench_metrics(
     YELLOW = "#d4880a"
     TEXT   = "#212529"
 
-    n_panels = 3
-    fig, axes = plt.subplots(1, n_panels, figsize=(20, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     fig.patch.set_facecolor(BG)
     fig.suptitle(
         f"TabularBench Robustness — Cumulative ({len(history)} run{'s' if len(history) != 1 else ''})",
@@ -259,7 +315,7 @@ def _plot_tabularbench_metrics(
     ax1 = axes[0]
     _style_ax(ax1)
     ax1.plot(x, std_accs, marker="o", color=GREEN,  linewidth=2, label="Standard Acc", markersize=6)
-    ax1.plot(x, rob_accs, marker="s", color=RED,    linewidth=2, label="Robust Acc (CAA)", markersize=6)
+    ax1.plot(x, rob_accs, marker="s", color=RED,    linewidth=2, label="Robust Acc (FGSM)", markersize=6)
     for xi, (sa, ra, ok) in enumerate(zip(std_accs, rob_accs, robust_flags), start=1):
         ax1.annotate(f"{sa:.1f}%", (xi, sa), textcoords="offset points", xytext=(0, 7),
                      ha="center", color=GREEN, fontsize=7)
@@ -298,21 +354,6 @@ def _plot_tabularbench_metrics(
     lines2, labs2 = ax2_twin.get_legend_handles_labels()
     ax2.legend(lines1 + lines2, labs1 + labs2, fontsize=8)
     ax2.grid(axis="y", linestyle="--", alpha=0.4, color=SPINE)
-
-    # ── Panel 3: Latest feature sensitivity barh ──────────────────
-    ax3 = axes[2]
-    _style_ax(ax3)
-    if top_features:
-        bars = ax3.barh(clean_labels, top_vals, color=BLUE, edgecolor=SPINE, height=0.5)
-        ax3.invert_yaxis()
-        ax3.set_xlabel("Contribution to Successful Attacks (%)", fontsize=9)
-        for i, v in enumerate(top_vals):
-            ax3.text(v + 0.4, i, f"{v:.1f}%", va="center", color=TEXT, fontsize=8)
-    else:
-        ax3.text(0.5, 0.5, "No sensitivity data\n(no CAA successes)",
-                 transform=ax3.transAxes, ha="center", va="center", color=TEXT, fontsize=10)
-    ax3.set_title(f"Feature Sensitivity Map\n(Latest run — {model_type})", pad=12, fontsize=11)
-    ax3.grid(axis="x", linestyle="--", alpha=0.4, color=SPINE)
 
     # ── Robustness status footer ──────────────────────────────────
     current = history[-1]
@@ -357,8 +398,6 @@ def _generate_adversarial_samples(
     X_train = train_df[feature_cols].values.astype(np.float32)
     y_train = train_df[target_col].values.astype(int)
 
-    rng = np.random.RandomState(RANDOM_STATE)
-
     if use_advanced and ADVANCED_ADV_AVAILABLE:
         enable_apfe = advanced_config.get("enable_apfe", True)
         enable_asc = advanced_config.get("enable_asc", True)
@@ -400,15 +439,15 @@ def _generate_adversarial_samples(
 
         return adv_df, report
 
-    from xgboost import XGBClassifier
-
-    # Train preliminary model for CAA guided generation
-    prelim_model = XGBClassifier(
-        n_estimators=50, max_depth=6, learning_rate=0.1, use_label_encoder=False, eval_metric="logloss"
+    # Generate FGSM-perturbed training rows using a surrogate gradient.
+    X_adv, _, _ = _fgsm_attack_inline(
+        X_train,
+        y_train,
+        None,
+        feature_cols,
+        epsilon=epsilon,
+        attack_positive_only=False,
     )
-    prelim_model.fit(X_train, y_train)
-
-    X_adv, _, _ = _caa_attack_inline(X_train, y_train, prelim_model, feature_cols, epsilon=epsilon)
 
     adv_df = pd.DataFrame(X_adv, columns=feature_cols)
     adv_df[target_col] = y_train
@@ -416,7 +455,7 @@ def _generate_adversarial_samples(
     report = {
         "generated": int(len(adv_df)),
         "base_rows": int(len(train_df)),
-        "method": "caa_attack",
+        "method": "fgsm_attack",
         "epsilon": epsilon,
         "augmented_total": int(len(train_df) + len(adv_df)),
     }
@@ -430,7 +469,7 @@ def training_agent(state: dict) -> dict:
     Train a classifier using the balanced dataset and strategy plan.
     Supports L3 self-loop for iterative improvement.
     Increments l3_count when self-looping.
-    After training, runs TabularBench-style robustness evaluation and plots results.
+    After training, runs FGSM-style robustness evaluation and plots results.
     """
     print("\n" + "=" * 60)
     print(" [ TRAINING AGENT ] Training candidate model...")
@@ -484,7 +523,7 @@ def training_agent(state: dict) -> dict:
             f"fraud={n_fraud_post}, non-fraud={n_non_fraud_post}, ratio={post_aug_ratio:.2f}"
         )
 
-    X_train = train_data[feature_cols].values
+    X_train = train_data[feature_cols].copy()
     y_train = train_data[target_col].values.astype(int)
 
     print(
@@ -499,7 +538,7 @@ def training_agent(state: dict) -> dict:
     if use_adversarial_training:
         if used_adversarial_samples:
             print(
-                f"  ℹ️  CAA adversarial strengthening enabled "
+                f"  ℹ️  FGSM adversarial strengthening enabled "
                 f"(epsilon={adv_report.get('epsilon', 'n/a')}, generated={len(adv_samples)})"
             )
         else:
@@ -576,7 +615,7 @@ def training_agent(state: dict) -> dict:
     model.fit(X_train, y_train)
 
     # Quick training-set check
-    train_preds = model.predict(X_train)
+    train_preds = model.predict(_as_model_input(model, X_train, feature_cols))
     train_f1 = round(float(f1_score(y_train, train_preds, zero_division=0)), 4)
     print(f"  ✅ Training complete. Train-set F1={train_f1} ({model_type})")
 
@@ -586,8 +625,8 @@ def training_agent(state: dict) -> dict:
     joblib.dump(model, model_path)
     print(f"  💾 Saved model: {model_path}")
 
-    # ── TabularBench-style robustness evaluation ─────────────────
-    print("\n  [ TABULARBENCH EVAL ] Running CAA robustness evaluation...")
+    # ── FGSM-style robustness evaluation ─────────────────────────
+    print("\n  [ TABULARBENCH EVAL ] Running FGSM robustness evaluation...")
     adv_epsilon = float(
         strategy.get("adversarial_strategy", {})
         .get("noise_perturbation", {})
@@ -595,7 +634,7 @@ def training_agent(state: dict) -> dict:
     )
     tb_metrics = _compute_tabularbench_metrics(
         model=model,
-        X_eval=X_train,
+        X_eval=X_train.to_numpy(),
         y_eval=y_train,
         feature_cols=feature_cols,
         epsilon=adv_epsilon,
@@ -606,20 +645,21 @@ def training_agent(state: dict) -> dict:
     print(f"  Accuracy Drop     : {tb_metrics['accuracy_drop']:.2f} pp")
     print(f"  Attack Success Rate (ASR): {tb_metrics['asr']:.2f}%")
     print(f"  Robustness Status : {'✔ ROBUST' if tb_metrics['is_robust'] else '✘ NOT ROBUST'}")
-    if tb_metrics["sensitivity_map"]:
-        print("  Top Feature Vulnerabilities:")
-        for feat, contrib in list(
-            sorted(tb_metrics["sensitivity_map"].items(), key=lambda x: x[1], reverse=True)
-        )[:5]:
-            print(f"    - {feat}: {contrib * 100:.1f}%")
 
     # ── Plot & save ───────────────────────────────────────────────
     plot_output_dir = Path(MODELS_DIR).parent / "plots"
+    # Determine the descriptive run label for this pass.
+    if used_drift_remediation or state.get("drift_detected"):
+        _run_label = "baseline with drift"
+    else:
+        _run_label = "baseline"
     plot_path = _plot_tabularbench_metrics(
         tb_metrics=tb_metrics,
         model_type=model_type,
         timestamp=timestamp,
         output_dir=plot_output_dir,
+        is_refinement=(state.get("l2_count", 0) > 0 or l3_count > 0),
+        run_label=_run_label,
     )
     _history_count = len(_load_history(plot_output_dir))  # already includes this run
     print(f"  📊 Cumulative robustness plot updated ({_history_count} run(s)): {plot_path}")
@@ -666,7 +706,7 @@ def training_agent(state: dict) -> dict:
         "tabularbench_accuracy_drop": tb_metrics["accuracy_drop"],
         "tabularbench_asr": tb_metrics["asr"],
         "tabularbench_is_robust": tb_metrics["is_robust"],
-        "tabularbench_sensitivity_map": tb_metrics["sensitivity_map"],
+
         "tabularbench_plot_path": plot_path,
     }
 

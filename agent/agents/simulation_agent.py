@@ -11,6 +11,15 @@ from sklearn.metrics import f1_score
 from config import ROBUSTNESS_THRESHOLD
 
 
+def _as_model_input(model, X, feature_cols: list[str]):
+    """Preserve feature names for estimators fitted with named columns."""
+    if isinstance(X, pd.DataFrame):
+        return X.loc[:, feature_cols] if feature_cols else X
+    if getattr(model, "feature_names_in_", None) is not None:
+        return pd.DataFrame(X, columns=feature_cols)
+    return X
+
+
 def _fgsm_perturb(X: np.ndarray, epsilon: float, seed: int) -> np.ndarray:
     """Match the reference FGSM-style random-sign perturbation used in training."""
     if epsilon <= 0 or X.size == 0:
@@ -60,7 +69,7 @@ def simulation_agent(state: dict) -> dict:
 
     for eps in epsilons:
         X_attacked = _fgsm_perturb(X_test, epsilon=eps, seed=42 + int(eps * 1000))
-        preds = model.predict(X_attacked)
+        preds = model.predict(_as_model_input(model, X_attacked, feature_cols))
         f1 = round(float(f1_score(y_test, preds, zero_division=0)), 4)
         attack_scores[f"eps_{eps}"] = f1
         if eps == epsilons[-1] and len(X_test) > 0:
@@ -73,7 +82,7 @@ def simulation_agent(state: dict) -> dict:
     boot_f1s = []
     for _ in range(n_bootstrap):
         idx = np.random.choice(len(X_test), size=len(X_test), replace=True)
-        preds_b = model.predict(X_test[idx])
+        preds_b = model.predict(_as_model_input(model, X_test[idx], feature_cols))
         boot_f1s.append(float(f1_score(y_test[idx], preds_b, zero_division=0)))
 
     boot_mean = round(float(np.mean(boot_f1s)), 4)

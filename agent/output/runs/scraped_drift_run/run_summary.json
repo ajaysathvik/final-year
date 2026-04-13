@@ -1,5 +1,5 @@
 {
-  "timestamp": null,
+  "timestamp": "20260413_063922",
   "drift_detected": true,
   "run_context": {
     "use_scraped_drift_data": true,
@@ -120,19 +120,5 @@
     "L4_supervisor_policy": 0,
     "L5_eval_to_kb": 1
   },
-  "run_id": "scraped_drift_run",
-  "artifact_paths": {
-    "run_id": "scraped_drift_run",
-    "run_dir": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run",
-    "plots_dir": "D:\\ajay\\final-year\\agent\\output\\plots",
-    "comparison_csv": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_metrics.csv",
-    "evaluation_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\evaluation_metrics_bar.png",
-    "robustness_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\robustness_curve.png",
-    "learning_rate_plot": "D:\\ajay\\final-year\\agent\\output\\runs\\scraped_drift_run\\plots\\learning_rate_curve.png",
-    "eval_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_eval_metrics.png",
-    "fpr_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_fpr.png",
-    "robustness_comparison_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_robustness_metrics.png",
-    "robustness_criteria_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_robustness_criteria.png",
-    "attack_curve_plot": "D:\\ajay\\final-year\\agent\\output\\plots\\run_comparison_attack_curves.png"
-  }
+  "run_id": "scraped_drift_run"
 }

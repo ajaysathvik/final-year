@@ -26,10 +26,21 @@ from sklearn.model_selection import train_test_split
 from config import F1_THRESHOLD, PRECISION_THRESHOLD, FPR_THRESHOLD, TEST_SIZE, RANDOM_STATE
 
 
+def _as_model_input(model, X, feature_cols: list[str]):
+    """Preserve feature names for estimators fitted with named columns."""
+    if isinstance(X, pd.DataFrame):
+        return X.loc[:, feature_cols] if feature_cols else X
+    if getattr(model, "feature_names_in_", None) is not None:
+        return pd.DataFrame(X, columns=feature_cols)
+    return X
+
+
 def _compute_metrics(model, X: np.ndarray, y: np.ndarray) -> dict[str, float]:
     """Compute standard classification metrics."""
-    preds = model.predict(X)
-    proba = model.predict_proba(X)[:, 1] if hasattr(model, "predict_proba") else preds.astype(float)
+    feature_cols = list(getattr(model, "feature_names_in_", []))
+    model_input = _as_model_input(model, X, feature_cols)
+    preds = model.predict(model_input)
+    proba = model.predict_proba(model_input)[:, 1] if hasattr(model, "predict_proba") else preds.astype(float)
 
     tn, fp, fn, tp = confusion_matrix(y, preds, labels=[0, 1]).ravel() if len(np.unique(y)) > 1 else (0, 0, 0, 0)
     fpr = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0

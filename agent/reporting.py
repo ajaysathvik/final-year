@@ -332,24 +332,35 @@ def _ensure_unique_run_id(base_id: str) -> str:
 
 
 def _assign_descriptive_run_ids(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Assign condition-based run IDs.
+
+    When the same condition label (e.g. 'normal_data_run') appears more than
+    once — such as two near-identical baseline runs — only the latest one is
+    kept so plots show exactly one 'baseline' and one 'baseline with drift'.
+    """
     if not runs:
         return []
 
-    counts: dict[str, int] = {}
-    labeled_runs: list[dict[str, Any]] = []
-
-    for run in sorted(
+    sorted_runs = sorted(
         runs, key=lambda item: (_resolve_timestamp(item), str(item.get("run_id", "")))
-    ):
+    )
+
+    # Deduplicate: keep only the latest run per condition label.
+    latest_by_label: dict[str, dict[str, Any]] = {}
+    for run in sorted_runs:
+        latest_by_label[_derive_run_label(run)] = run
+
+    labeled_runs: list[dict[str, Any]] = []
+    for run in sorted_runs:
+        base_id = _derive_run_label(run)
+        if latest_by_label.get(base_id) is not run:
+            continue  # skip older duplicate with same label
         normalized = dict(run)
-        base_id = _derive_run_label(normalized)
-        counts[base_id] = counts.get(base_id, 0) + 1
-        normalized["run_id"] = (
-            base_id if counts[base_id] == 1 else f"{base_id}_{counts[base_id]}"
-        )
+        normalized["run_id"] = base_id
         labeled_runs.append(normalized)
 
     return labeled_runs
+
 
 
 def _build_scalar_snapshot(summary: dict[str, Any]) -> dict[str, float]:

@@ -1,8 +1,8 @@
 {
   "model_type": "XGBoost",
-  "train_f1": 0.9998,
+  "train_f1": 1.0,
   "f1_history": [
-    0.9998
+    1.0
   ],
   "total_rows": 2882,
   "n_fraud": 2614,
@@ -15,16 +15,12 @@
   "adversarial_sample_count": 0,
   "adversarial_method": null,
   "adversarial_epsilon": null,
-  "timestamp": "20260411_115053",
-  "tabularbench_standard_accuracy": 99.97,
-  "tabularbench_robust_accuracy": 99.9,
-  "tabularbench_robustness_score": 0.999,
-  "tabularbench_accuracy_drop": 0.07,
-  "tabularbench_asr": 0.08,
+  "timestamp": "20260413_063719",
+  "tabularbench_standard_accuracy": 100.0,
+  "tabularbench_robust_accuracy": 99.65,
+  "tabularbench_robustness_score": 0.9965,
+  "tabularbench_accuracy_drop": 0.35,
+  "tabularbench_asr": 0.38,
   "tabularbench_is_robust": true,
-  "tabularbench_sensitivity_map": {
-    "annotation.fraud_labels.meta_victim_story": 0.5,
-    "annotation.key_features.urgency_level": 0.5
-  },
   "tabularbench_plot_path": "D:\\ajay\\final-year\\agent\\output\\plots\\tabularbench_cumulative.png"
 }

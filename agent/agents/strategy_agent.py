@@ -415,7 +415,7 @@ def strategy_agent(state: dict) -> dict:
             "noise_perturbation": {"enabled": True, "std": round(noise_std, 4)},
             "boundary_attack": {"enabled": False, "k": ADVERSARIAL_BOUNDARY_K},
             "evasion_mutation": {"enabled": False, "std": round(noise_std * 0.6, 4)},
-            "method": "caa_attack"
+            "method": "fgsm_attack"
             if use_adversarial_training
             else "fgsm_style_random_sign",
             "use_advanced": False,

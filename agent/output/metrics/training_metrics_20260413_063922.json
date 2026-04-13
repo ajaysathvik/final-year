@@ -1,0 +1,26 @@
+{
+  "model_type": "XGBoost",
+  "train_f1": 0.9959,
+  "f1_history": [
+    0.9959
+  ],
+  "total_rows": 6798,
+  "n_fraud": 5394,
+  "n_non_fraud": 1404,
+  "n_estimators": 200,
+  "l3_count": 0,
+  "used_drift_remediation": true,
+  "drift_rows_added": 300,
+  "used_adversarial_samples": true,
+  "adversarial_sample_count": 3399,
+  "adversarial_method": "fgsm_attack",
+  "adversarial_epsilon": 0.05,
+  "timestamp": "20260413_063922",
+  "tabularbench_standard_accuracy": 99.35,
+  "tabularbench_robust_accuracy": 99.68,
+  "tabularbench_robustness_score": 0.9968,
+  "tabularbench_accuracy_drop": -0.32,
+  "tabularbench_asr": 0.02,
+  "tabularbench_is_robust": true,
+  "tabularbench_plot_path": "D:\\ajay\\final-year\\agent\\output\\plots\\tabularbench_cumulative.png"
+}

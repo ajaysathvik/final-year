@@ -271,6 +271,7 @@ def drift_agent(state: dict) -> dict:
         psi_val = _psi(ref_vals, cur_vals)
         ks_stat, ks_pval = stats.ks_2samp(ref_vals, cur_vals)
         drifted = psi_val > PSI_THRESHOLD or ks_pval < KS_THRESHOLD
+        print(f"  📊  Feature {col:20} | PSI: {psi_val:.6f} | KS Stat: {ks_stat:.6f} | KS P-val: {ks_pval:.6f}")
 
         drift_report[col] = {
             "psi": round(psi_val, 6),
