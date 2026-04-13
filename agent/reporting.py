@@ -82,10 +82,6 @@ def generate_run_reports(summary: dict[str, Any]) -> dict[str, str]:
     if _plot_fpr_comparison(historical_runs, fpr_cmp):
         comparison_paths["fpr_comparison_plot"] = str(fpr_cmp)
 
-    robust_cmp = PLOTS_DIR / "run_comparison_robustness_metrics.png"
-    if _plot_robustness_comparison(historical_runs, robust_cmp):
-        comparison_paths["robustness_comparison_plot"] = str(robust_cmp)
-
     robust_criteria = PLOTS_DIR / "run_comparison_robustness_criteria.png"
     if _plot_robustness_criteria(historical_runs, robust_criteria):
         comparison_paths["robustness_criteria_plot"] = str(robust_criteria)
@@ -622,153 +618,6 @@ def _plot_fpr_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
     return True
 
 
-def _plot_robustness_comparison(runs: list[dict[str, Any]], output_path: Path) -> bool:
-    """
-    Robustness comparison with *persistence lines*: solid segments denote runs
-    where a new model was trained; dashed segments denote runs where the
-    previous model was re-used (training_metrics is None).
-
-    For Train F1, the last successful value is carried forward on re-used runs
-    so the line remains continuous.
-    """
-    from matplotlib.lines import Line2D  # noqa: PLC0415
-
-    plt = _load_pyplot()
-    if plt is None:
-        return False
-    if len(runs) < 2:
-        return False
-
-    metric_specs = [
-        ("training.train_f1", "Train F1", "#1f77b4"),
-        ("simulation.bootstrap_mean_f1", "Bootstrap Mean F1", "#ff7f0e"),
-        ("simulation.worst_noise_f1", "Worst Attacked F1", "#2ca02c"),
-        ("simulation.robustness_score", "Average Robustness Score", "#9467bd"),
-    ]
-
-    # Determine which runs re-used the previous model (no new training).
-    model_reused = [(run.get("training_metrics") is None) for run in runs]
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    plotted = False
-    run_labels = [_display_run_label(run) for run in runs]
-    x_indices = list(range(len(runs)))
-
-    for metric_key, label, color in metric_specs:
-        raw_values = [_build_scalar_snapshot(run).get(metric_key) for run in runs]
-
-        # For Train F1, carry forward the last known value on re-used runs.
-        if metric_key == "training.train_f1":
-            filled_values: list[float | None] = []
-            last_known: float | None = None
-            for i, val in enumerate(raw_values):
-                if val is not None:
-                    last_known = float(val)
-                    filled_values.append(last_known)
-                elif model_reused[i] and last_known is not None:
-                    filled_values.append(last_known)
-                else:
-                    filled_values.append(None)
-            values = filled_values
-        else:
-            values = [float(v) if v is not None else None for v in raw_values]
-
-        if not any(v is not None for v in values):
-            continue
-
-        # Draw segment-by-segment: solid for trained, dashed for re-used.
-        for i in range(len(runs) - 1):
-            y0, y1 = values[i], values[i + 1]
-            if y0 is None or y1 is None:
-                continue
-            # A segment is "re-used" if the *destination* run re-used the model.
-            is_reused_segment = model_reused[i + 1]
-            ax.plot(
-                [x_indices[i], x_indices[i + 1]],
-                [y0, y1],
-                linestyle="--" if is_reused_segment else "-",
-                linewidth=2,
-                color=color,
-            )
-
-        # Draw markers: filled circle for trained, open circle for re-used.
-        for i, val in enumerate(values):
-            if val is None:
-                continue
-            ax.plot(
-                x_indices[i],
-                val,
-                marker="o",
-                markersize=7,
-                color=color,
-                markerfacecolor="white" if model_reused[i] else color,
-                markeredgewidth=1.8 if model_reused[i] else 1.2,
-                markeredgecolor=color,
-            )
-
-        # Invisible full line just for the primary legend entry.
-        ax.plot([], [], marker="o", linewidth=2, color=color, label=label)
-        plotted = True
-
-    if not plotted:
-        plt.close(fig)
-        return False
-
-    ax.set_xticks(x_indices)
-    ax.set_xticklabels(run_labels)
-    ax.set_ylim(0, 1.05)
-    ax.set_xlabel("Experiment Configuration", fontsize=11)
-    ax.set_ylabel("Metric Score", fontsize=11)
-    ax.set_title("Training and Robustness Metrics Comparison")
-    ax.grid(True, linestyle="--", alpha=0.35)
-    ax.tick_params(axis="x", rotation=30)
-
-    # Primary legend (metric names).
-    primary_legend = ax.legend(frameon=False, loc="lower left")
-    ax.add_artist(primary_legend)
-
-    # Secondary legend explaining line styles.
-    style_handles = [
-        Line2D(
-            [0],
-            [0],
-            color="grey",
-            linewidth=2,
-            linestyle="-",
-            marker="o",
-            markersize=6,
-            label="New Model Trained",
-        ),
-        Line2D(
-            [0],
-            [0],
-            color="grey",
-            linewidth=2,
-            linestyle="--",
-            marker="o",
-            markerfacecolor="white",
-            markeredgewidth=1.8,
-            markersize=6,
-            label="Previous Model Re-used",
-        ),
-    ]
-    ax.legend(
-        handles=style_handles,
-        frameon=True,
-        fancybox=True,
-        framealpha=0.85,
-        edgecolor="#ccc",
-        fontsize=8,
-        loc="upper right",
-    )
-    # Re-add primary legend (adding second legend removes the first).
-    ax.add_artist(primary_legend)
-
-    fig.tight_layout()
-    fig.savefig(output_path, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-    return True
-
 
 def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> bool:
     plt = _load_pyplot()
@@ -782,42 +631,52 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
         sim = run.get("simulation_results") or {}
         training = run.get("training_metrics") or {}
 
-        # Extract all F1 scores from the multi-epsilon FGSM attack curve
-        attack_curve: dict[str, float] = sim.get("noise_stress_test") or {}
-        curve_vals: list[float] = []
-        for k, v in sorted(attack_curve.items(),
-                            key=lambda kv: float(kv[0].split("_", 1)[1])):
-            try:
-                curve_vals.append(float(v))
-            except (ValueError, TypeError):
-                continue
+        # Pull robustness metrics directly from TabularBench evaluation
+        tb_score = training.get("tabularbench_robustness_score")
+        tb_robust_acc = training.get("tabularbench_robust_accuracy")
+        tb_acc_drop = training.get("tabularbench_accuracy_drop")
+        tb_asr = training.get("tabularbench_asr")
+        tb_is_robust = training.get("tabularbench_is_robust")
 
-        if curve_vals:
-            import statistics  # noqa: PLC0415
-            mean_rob = statistics.mean(curve_vals)
-            var_rob = statistics.variance(curve_vals) if len(curve_vals) > 1 else 0.0
-            worst_f1 = min(curve_vals)
-            worst_eps = _resolve_worst_case_epsilon(run)
+        # tabularbench_robustness_score is already 0-1; robust_accuracy is 0-100
+        mean_rob = float(tb_score) if tb_score is not None else None
+        # accuracy_drop as absolute drop fraction (lower = better)
+        acc_drop = abs(float(tb_acc_drop)) / 100.0 if tb_acc_drop is not None else None
+        # robust accuracy as 0-1 score
+        robust_acc = float(tb_robust_acc) / 100.0 if tb_robust_acc is not None else None
+
+        # Fallback to simulation curve if TabularBench fields are absent
+        if mean_rob is None:
+            attack_curve: dict[str, float] = sim.get("noise_stress_test") or {}
+            curve_vals: list[float] = []
+            for k, v in sorted(attack_curve.items(),
+                                key=lambda kv: float(kv[0].split("_", 1)[1])):
+                try:
+                    curve_vals.append(float(v))
+                except (ValueError, TypeError):
+                    continue
+            if curve_vals:
+                import statistics  # noqa: PLC0415
+                mean_rob = statistics.mean(curve_vals)
+                acc_drop = (statistics.variance(curve_vals)
+                            if len(curve_vals) > 1 else 0.0)
+                robust_acc = min(curve_vals)
         else:
-            # Fallback to stored scalar if curve unavailable
-            tb_score = training.get("tabularbench_robustness_score") or sim.get("robustness_score")
-            mean_rob = float(tb_score) if tb_score is not None else None
-            var_rob = (float(sim["bootstrap_std"]) ** 2
-                       if sim.get("bootstrap_std") is not None else None)
-            worst_f1 = sim.get("worst_noise_f1")
-            worst_eps = _resolve_worst_case_epsilon(run)
+            curve_vals = []
 
-        if any(v is not None for v in (mean_rob, var_rob, worst_f1)):
+        asr_val = float(tb_asr) if tb_asr is not None else float(sim.get("attack_success_rate", 0.0))
+        is_robust_val = bool(tb_is_robust if tb_is_robust is not None else sim.get("passed", True))
+
+        if any(v is not None for v in (mean_rob, acc_drop, robust_acc)):
             robust_rows.append(
                 {
                     "run_id": _display_run_label(run),
-                    "mean_robustness": float(mean_rob) if mean_rob is not None else None,
-                    "variance": float(var_rob) if var_rob is not None else None,
-                    "worst_f1": float(worst_f1) if worst_f1 is not None else None,
-                    "worst_eps": worst_eps,
+                    "mean_robustness": mean_rob,
+                    "acc_drop": acc_drop,
+                    "robust_acc": robust_acc,
                     "n_epsilons": len(curve_vals),
-                    "is_robust": bool(training.get("tabularbench_is_robust", sim.get("passed", True))),
-                    "asr": float(training.get("tabularbench_asr", 0.0)),
+                    "is_robust": is_robust_val,
+                    "asr": asr_val,
                 }
             )
 
@@ -837,9 +696,9 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
     GREEN = "#2d9f6e"
 
     metric_panels = [
-        ("mean_robustness", "Mean Robustness Score\nacross Attack Epsilons (\u2191 Better)", BLUE,  True),
-        ("variance",        "Variance of Robustness\nacross Attack Epsilons (\u2193 Better)", RED,   False),
-        ("worst_f1",        "Worst-Case Attacked F1\n(Minimum across Epsilons, \u2191 Better)", GREEN, True),
+        ("mean_robustness", "TabularBench Robustness Score\n(\u2191 Better)", BLUE,  True),
+        ("acc_drop",        "TabularBench Accuracy Drop\n(Absolute, \u2193 Better)",  RED,   False),
+        ("robust_acc",      "TabularBench Robust Accuracy\n(\u2191 Better)",           GREEN, True),
     ]
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -885,26 +744,20 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
         ax.set_xticks(x)
         ax.set_xticklabels(run_labels, rotation=20, ha="right")
         ax.set_title(title, fontsize=10, pad=12)
-        ax.set_ylabel("Score" if metric_key != "variance" else "Variance", fontsize=9)
+        ax.set_ylabel("Score" if metric_key != "acc_drop" else "Accuracy Drop", fontsize=9)
         ax.grid(axis="y", linestyle="--", alpha=0.4, color=SPINE, zorder=0)
         plotted = True
 
-        if metric_key == "variance":
-            top = max(valid_values) * 1.35 if max(valid_values) > 0 else 1.0
+        if metric_key == "acc_drop":
+            top = max(valid_values) * 1.35 if max(valid_values) > 0 else 0.01
             ax.set_ylim(0, top)
             label_offset = top * 0.03
-            label_fmt = "{:.2e}"
-        elif metric_key == "robustness_score":
-            ymin = max(0.0, min(valid_values) - 0.02)
-            ymax = min(1.0, max(valid_values) + 0.04)
-            ax.set_ylim(ymin, ymax)
-            label_offset = (ymax - ymin) * 0.025
             label_fmt = "{:.4f}"
         else:
-            ymin = max(0.0, min(valid_values) - 0.03)
-            ymax = min(1.0, max(valid_values) + 0.06)
+            ymin = max(0.0, min(valid_values) - 0.005)
+            ymax = min(1.0, max(valid_values) + 0.01)
             if ymax <= ymin:
-                ymax = min(1.0, ymin + 0.06)
+                ymax = min(1.0, ymin + 0.01)
             ax.set_ylim(ymin, ymax)
             label_offset = (ymax - ymin) * 0.025
             label_fmt = "{:.4f}"
@@ -913,8 +766,6 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
             if v is None:
                 continue
             text_label = label_fmt.format(float(v))
-            if metric_key == "worst_f1" and robust_rows[idx]["worst_eps"] is not None:
-                text_label = f"{text_label}\n@ \u03b5={robust_rows[idx]['worst_eps']:.2f}"
             is_winner = abs(float(v) - best_value) < 1e-12
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
@@ -946,9 +797,9 @@ def _plot_robustness_criteria(runs: list[dict[str, Any]], output_path: Path) -> 
 
     from matplotlib.patches import Patch  # noqa: PLC0415
     legend_elements = [
-        Patch(facecolor=BLUE,    edgecolor=SPINE, label="Best (Mean Robustness)"),
-        Patch(facecolor=GREEN,   edgecolor=SPINE, label="Best (Worst-Case F1)"),
-        Patch(facecolor=RED,     edgecolor=SPINE, label="Best (Variance)"),
+        Patch(facecolor=BLUE,    edgecolor=SPINE, label="Best (Robustness Score)"),
+        Patch(facecolor=GREEN,   edgecolor=SPINE, label="Best (Robust Accuracy)"),
+        Patch(facecolor=RED,     edgecolor=SPINE, label="Best (Accuracy Drop)"),
         Patch(facecolor="#adb5bd", edgecolor=SPINE, label="Non-winner"),
     ]
     fig.legend(

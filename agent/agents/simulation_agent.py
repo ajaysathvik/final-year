@@ -99,7 +99,12 @@ def simulation_agent(state: dict) -> dict:
     if len(set(attack_scores.values())) <= 1 and worst_noise_f1 > 0:
         print("  ⚠️ WARNING: All epsilon levels produced identical F1. FGSM-style perturbation may not be effective.")
 
-    robustness_score = round(float(np.mean([worst_noise_f1, boot_lower])), 4)
+    tb_metrics = state.get("tabularbench_metrics", {})
+    if tb_metrics and "robust_accuracy" in tb_metrics:
+        robustness_score = round(float(tb_metrics["robust_accuracy"]) / 100.0, 4)
+        print("  Using TabularBench robust accuracy for robustness score.")
+    else:
+        robustness_score = round(float(np.mean([worst_noise_f1, boot_lower])), 4)
 
     passed = robustness_score >= ROBUSTNESS_THRESHOLD
 

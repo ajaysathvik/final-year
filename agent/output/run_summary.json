@@ -28,7 +28,7 @@
       "drift_detected"
     ],
     "supervisor_health": 0.74,
-    "current_f1": 0.9711,
+    "current_f1": 0.9696,
     "l4_count": 0
   },
   "training_metrics": {
@@ -48,12 +48,12 @@
     "adversarial_sample_count": 3399,
     "adversarial_method": "fgsm_attack",
     "adversarial_epsilon": 0.05,
-    "timestamp": "20260413_063922",
+    "timestamp": "20260413_083118",
     "tabularbench_standard_accuracy": 99.35,
-    "tabularbench_robust_accuracy": 99.68,
-    "tabularbench_robustness_score": 0.9968,
-    "tabularbench_accuracy_drop": -0.32,
-    "tabularbench_asr": 0.02,
+    "tabularbench_robust_accuracy": 94.78,
+    "tabularbench_robustness_score": 0.9478,
+    "tabularbench_accuracy_drop": 4.57,
+    "tabularbench_asr": 5.79,
     "tabularbench_is_robust": true,
     "tabularbench_plot_path": "D:\\ajay\\final-year\\agent\\output\\plots\\tabularbench_cumulative.png"
   },
@@ -61,21 +61,21 @@
     "f1": 0.9911,
     "precision": 0.9911,
     "recall": 0.9911,
-    "roc_auc": 0.997,
+    "roc_auc": 0.9966,
     "fpr": 0.0779
   },
   "simulation_results": {
     "noise_stress_test": {
       "eps_0.0": 0.9911,
-      "eps_0.01": 0.9872,
-      "eps_0.03": 0.9834,
-      "eps_0.05": 0.9834,
+      "eps_0.01": 0.9887,
+      "eps_0.03": 0.9865,
+      "eps_0.05": 0.9857,
       "eps_0.08": 0.9826,
-      "eps_0.1": 0.9842,
-      "eps_0.15": 0.9811,
-      "eps_0.2": 0.9819,
-      "eps_0.25": 0.9804,
-      "eps_0.3": 0.9766
+      "eps_0.1": 0.9826,
+      "eps_0.15": 0.9803,
+      "eps_0.2": 0.9842,
+      "eps_0.25": 0.9803,
+      "eps_0.3": 0.9819
     },
     "attack_method": "fgsm_style_random_sign",
     "attack_epsilons": [
@@ -90,14 +90,14 @@
       0.25,
       0.3
     ],
-    "bootstrap_mean_f1": 0.9918,
-    "bootstrap_std": 0.0019,
+    "bootstrap_mean_f1": 0.9909,
+    "bootstrap_std": 0.0026,
     "bootstrap_ci_95": [
-      0.9879,
-      0.9948
+      0.9865,
+      0.9956
     ],
-    "worst_noise_f1": 0.9766,
-    "robustness_score": 0.9823,
+    "worst_noise_f1": 0.9803,
+    "robustness_score": 0.9834,
     "threshold": 0.6,
     "passed": true
   },
@@ -109,7 +109,7 @@
     ],
     "simulation_passed": true,
     "policy_retrain": true,
-    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260413_063922.joblib",
+    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260413_083118.joblib",
     "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
   },
   "promoted": true,

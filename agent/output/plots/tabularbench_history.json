@@ -2,25 +2,25 @@
   {
     "run": 1,
     "run_label": "baseline",
-    "timestamp": "20260413_063738",
-    "model_type": "LightGBM",
-    "standard_accuracy": 100.0,
-    "robust_accuracy": 99.84,
-    "robustness_score": 0.9984,
-    "asr": 0.19,
-    "accuracy_drop": 0.16,
+    "timestamp": "20260413_082917",
+    "model_type": "XGBoost",
+    "standard_accuracy": 99.9,
+    "robust_accuracy": 99.68,
+    "robustness_score": 0.9968,
+    "asr": 0.34,
+    "accuracy_drop": 0.22,
     "is_robust": true
   },
   {
     "run": 2,
     "run_label": "baseline with drift",
-    "timestamp": "20260413_063922",
+    "timestamp": "20260413_083118",
     "model_type": "XGBoost",
     "standard_accuracy": 99.35,
-    "robust_accuracy": 99.68,
-    "robustness_score": 0.9968,
-    "asr": 0.02,
-    "accuracy_drop": -0.32,
+    "robust_accuracy": 94.78,
+    "robustness_score": 0.9478,
+    "asr": 5.79,
+    "accuracy_drop": 4.57,
     "is_robust": true
   }
 ]

@@ -1,15 +1,15 @@
 {
   "noise_stress_test": {
-    "eps_0.0": 0.9711,
-    "eps_0.01": 0.9703,
-    "eps_0.03": 0.9703,
-    "eps_0.05": 0.9703,
-    "eps_0.08": 0.9703,
-    "eps_0.1": 0.9703,
-    "eps_0.15": 0.9703,
-    "eps_0.2": 0.9696,
-    "eps_0.25": 0.9703,
-    "eps_0.3": 0.9703
+    "eps_0.0": 0.9696,
+    "eps_0.01": 0.9613,
+    "eps_0.03": 0.9634,
+    "eps_0.05": 0.9591,
+    "eps_0.08": 0.9571,
+    "eps_0.1": 0.9605,
+    "eps_0.15": 0.9571,
+    "eps_0.2": 0.9606,
+    "eps_0.25": 0.9578,
+    "eps_0.3": 0.9593
   },
   "attack_method": "fgsm_style_random_sign",
   "attack_epsilons": [
@@ -24,14 +24,14 @@
     0.25,
     0.3
   ],
-  "bootstrap_mean_f1": 0.9706,
-  "bootstrap_std": 0.0049,
+  "bootstrap_mean_f1": 0.9701,
+  "bootstrap_std": 0.0047,
   "bootstrap_ci_95": [
-    0.9628,
-    0.9808
+    0.9608,
+    0.9781
   ],
-  "worst_noise_f1": 0.9696,
-  "robustness_score": 0.9662,
+  "worst_noise_f1": 0.9571,
+  "robustness_score": 0.9589,
   "threshold": 0.6,
   "passed": true
 }

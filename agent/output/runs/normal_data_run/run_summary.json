@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260413_063738",
+  "timestamp": "20260413_082917",
   "drift_detected": false,
   "run_context": {
     "use_scraped_drift_data": false,
@@ -32,17 +32,17 @@
     "l4_count": 0
   },
   "training_metrics": {
-    "model_type": "LightGBM",
-    "train_f1": 1.0,
+    "model_type": "XGBoost",
+    "train_f1": 0.9994,
     "f1_history": [
       1.0,
-      0.9998,
-      1.0
+      0.9996,
+      0.9994
     ],
     "total_rows": 3150,
     "n_fraud": 2614,
     "n_non_fraud": 536,
-    "n_estimators": 200,
+    "n_estimators": 250,
     "l3_count": 0,
     "used_drift_remediation": false,
     "drift_rows_added": 0,
@@ -50,34 +50,34 @@
     "adversarial_sample_count": 0,
     "adversarial_method": null,
     "adversarial_epsilon": null,
-    "timestamp": "20260413_063738",
-    "tabularbench_standard_accuracy": 100.0,
-    "tabularbench_robust_accuracy": 99.84,
-    "tabularbench_robustness_score": 0.9984,
-    "tabularbench_accuracy_drop": 0.16,
-    "tabularbench_asr": 0.19,
+    "timestamp": "20260413_082917",
+    "tabularbench_standard_accuracy": 99.9,
+    "tabularbench_robust_accuracy": 99.68,
+    "tabularbench_robustness_score": 0.9968,
+    "tabularbench_accuracy_drop": 0.22,
+    "tabularbench_asr": 0.34,
     "tabularbench_is_robust": true,
     "tabularbench_plot_path": "D:\\ajay\\final-year\\agent\\output\\plots\\tabularbench_cumulative.png"
   },
   "eval_metrics": {
-    "f1": 0.9711,
-    "precision": 0.9437,
-    "recall": 1.0,
-    "roc_auc": 0.9894,
-    "fpr": 0.5195
+    "f1": 0.9696,
+    "precision": 0.9423,
+    "recall": 0.9985,
+    "roc_auc": 0.993,
+    "fpr": 0.5325
   },
   "simulation_results": {
     "noise_stress_test": {
-      "eps_0.0": 0.9711,
-      "eps_0.01": 0.9703,
-      "eps_0.03": 0.9703,
-      "eps_0.05": 0.9703,
-      "eps_0.08": 0.9703,
-      "eps_0.1": 0.9703,
-      "eps_0.15": 0.9703,
-      "eps_0.2": 0.9696,
-      "eps_0.25": 0.9703,
-      "eps_0.3": 0.9703
+      "eps_0.0": 0.9696,
+      "eps_0.01": 0.9613,
+      "eps_0.03": 0.9634,
+      "eps_0.05": 0.9591,
+      "eps_0.08": 0.9571,
+      "eps_0.1": 0.9605,
+      "eps_0.15": 0.9571,
+      "eps_0.2": 0.9606,
+      "eps_0.25": 0.9578,
+      "eps_0.3": 0.9593
     },
     "attack_method": "fgsm_style_random_sign",
     "attack_epsilons": [
@@ -92,14 +92,14 @@
       0.25,
       0.3
     ],
-    "bootstrap_mean_f1": 0.9706,
-    "bootstrap_std": 0.0049,
+    "bootstrap_mean_f1": 0.9701,
+    "bootstrap_std": 0.0047,
     "bootstrap_ci_95": [
-      0.9628,
-      0.9808
+      0.9608,
+      0.9781
     ],
-    "worst_noise_f1": 0.9696,
-    "robustness_score": 0.9662,
+    "worst_noise_f1": 0.9571,
+    "robustness_score": 0.9589,
     "threshold": 0.6,
     "passed": true
   },
@@ -111,7 +111,7 @@
     ],
     "simulation_passed": true,
     "policy_retrain": true,
-    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_lightgbm_20260413_063738.joblib",
+    "candidate_path": "D:\\ajay\\final-year\\agent\\output\\models\\candidate_xgboost_20260413_082917.joblib",
     "promoted_model_path": "D:\\ajay\\final-year\\agent\\output\\models\\promoted_model.joblib"
   },
   "promoted": true,
